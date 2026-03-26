@@ -14,13 +14,11 @@ func SetupRoutes(router *gin.Engine) {
 		api.GET("/items", handlers.GetItems)
 		api.POST("/setup-user", handlers.SetupUser)
 
-		api.POST("/shopping", handlers.AddShoppingItem)
-		api.GET("/shopping/:familyId", handlers.GetShoppingList)
-		api.POST("/shopping/:id/purchase", handlers.PurchaseShoppingItem)
+		api.GET("/lists/:familyId", handlers.GetLists)
 
-		api.GET("/history/:familyId", handlers.GetPurchaseHistory)
-
-		api.GET("/fridge/:familyId", handlers.GetFridgeItems)
+		api.POST("/items", handlers.AddListItem)
+		api.PUT("/items/:id", handlers.UpdateListItem)
+		api.DELETE("/items/:id", handlers.DeleteListItem)
 
 		api.GET("/chat/:familyId", handlers.GetChatMessages)
 		api.POST("/chat", handlers.SendChatMessage)

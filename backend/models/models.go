@@ -34,12 +34,10 @@ type User struct {
 
 type Family struct {
 	Base
-	Name            string            `json:"name"`
-	Users           []User            `json:"users,omitempty"`
-	ShoppingItems   []ShoppingItem    `json:"shoppingItems,omitempty"`
-	FridgeItems     []FridgeItem      `json:"fridgeItems,omitempty"`
-	PurchaseHistory []PurchaseHistory `json:"purchaseHistory,omitempty"`
-	Messages        []ChatMessage     `json:"messages,omitempty"`
+	Name      string        `json:"name"`
+	Users     []User        `json:"users,omitempty"`
+	ListItems []ListItem    `json:"listItems,omitempty"`
+	Messages  []ChatMessage `json:"messages,omitempty"`
 }
 
 type Category struct {
@@ -56,16 +54,14 @@ func (category *Category) BeforeCreate(tx *gorm.DB) error {
 }
 
 type ItemTemplate struct {
-	ID              string            `gorm:"type:uuid;primary_key;" json:"id"`
-	Name            string            `json:"name"`
-	CategoryID      string            `gorm:"type:uuid" json:"categoryId"`
-	Category        Category          `json:"category,omitempty"`
-	DefaultDays     int               `gorm:"default:7" json:"defaultDays"`
-	IsSystem        bool              `gorm:"default:true" json:"isSystem"`
-	FamilyID        *string           `gorm:"type:uuid" json:"familyId"`
-	ShoppingItems   []ShoppingItem    `json:"shoppingItems,omitempty"`
-	FridgeItems     []FridgeItem      `json:"fridgeItems,omitempty"`
-	PurchaseHistory []PurchaseHistory `json:"purchaseHistory,omitempty"`
+	ID          string     `gorm:"type:uuid;primary_key;" json:"id"`
+	Name        string     `json:"name"`
+	CategoryID  string     `gorm:"type:uuid" json:"categoryId"`
+	Category    Category   `json:"category,omitempty"`
+	DefaultDays int        `gorm:"default:7" json:"defaultDays"`
+	IsSystem    bool       `gorm:"default:true" json:"isSystem"`
+	FamilyID    *string    `gorm:"type:uuid" json:"familyId"`
+	ListItems   []ListItem `json:"listItems,omitempty"`
 }
 
 func (item *ItemTemplate) BeforeCreate(tx *gorm.DB) error {
@@ -75,51 +71,28 @@ func (item *ItemTemplate) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-type ShoppingItem struct {
+// ListItem represents an item card in a kanban board format.
+// Statuses: "SHOPPING", "FRIDGE", "CONSUMED"
+type ListItem struct {
 	Base
 	FamilyID       string       `gorm:"type:uuid" json:"familyId"`
 	Family         Family       `json:"family,omitempty"`
 	ItemTemplateID string       `gorm:"type:uuid" json:"itemTemplateId"`
 	ItemTemplate   ItemTemplate `json:"itemTemplate,omitempty"`
-	Priority       string       `gorm:"default:'TODAY'" json:"priority"`
-	Note           *string      `json:"note"`
-	IsPurchased    bool         `gorm:"default:false" json:"isPurchased"`
-}
 
-type FridgeItem struct {
-	ID             string       `gorm:"type:uuid;primary_key;" json:"id"`
-	FamilyID       string       `gorm:"type:uuid" json:"familyId"`
-	Family         Family       `json:"family,omitempty"`
-	ItemTemplateID string       `gorm:"type:uuid" json:"itemTemplateId"`
-	ItemTemplate   ItemTemplate `json:"itemTemplate,omitempty"`
-	Location       string       `gorm:"default:'FRIDGE'" json:"location"`
-	ExpirationDate time.Time    `json:"expirationDate"`
-	AddedAt        time.Time    `gorm:"autoCreateTime" json:"addedAt"`
-}
+	// Kanban List identifier
+	Status string `gorm:"default:'SHOPPING'" json:"status"`
 
-func (fridgeItem *FridgeItem) BeforeCreate(tx *gorm.DB) error {
-	if fridgeItem.ID == "" {
-		fridgeItem.ID = uuid.New().String()
-	}
-	return nil
-}
+	// Shopping Item specific fields
+	Priority string  `gorm:"default:'TODAY'" json:"priority"`
+	Note     *string `json:"note"`
 
-type PurchaseHistory struct {
-	ID             string       `gorm:"type:uuid;primary_key;" json:"id"`
-	FamilyID       string       `gorm:"type:uuid" json:"familyId"`
-	Family         Family       `json:"family,omitempty"`
-	ItemTemplateID string       `gorm:"type:uuid" json:"itemTemplateId"`
-	ItemTemplate   ItemTemplate `json:"itemTemplate,omitempty"`
-	PurchasedAt    time.Time    `gorm:"autoCreateTime" json:"purchasedAt"`
-	Price          *float64     `json:"price"`
-	Quantity       int          `gorm:"default:1" json:"quantity"`
-}
+	// Fridge Item specific fields
+	ExpirationDate *time.Time `json:"expirationDate"`
 
-func (purchase *PurchaseHistory) BeforeCreate(tx *gorm.DB) error {
-	if purchase.ID == "" {
-		purchase.ID = uuid.New().String()
-	}
-	return nil
+	// Purchase/Consumed History specific fields
+	Price    *float64 `json:"price"`
+	Quantity int      `gorm:"default:1" json:"quantity"`
 }
 
 type ChatMessage struct {

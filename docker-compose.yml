@@ -16,7 +16,7 @@ services:
       - HTTPS_PROXY=${HTTPS_PROXY:-}
       - NO_PROXY=${NO_PROXY:-}
     volumes:
-      - ./backend/dev.db:/app/dev.db
+      - ./backend/data:/app/data
 
   frontend:
     build:

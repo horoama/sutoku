@@ -11,7 +11,7 @@ import (
 var DB *gorm.DB
 
 func Connect() {
-	db, err := gorm.Open(sqlite.Open("dev.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("data/dev.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
@@ -22,9 +22,7 @@ func Connect() {
 		&models.Family{},
 		&models.Category{},
 		&models.ItemTemplate{},
-		&models.ShoppingItem{},
-		&models.FridgeItem{},
-		&models.PurchaseHistory{},
+		&models.ListItem{},
 		&models.ChatMessage{},
 	)
 	if err != nil {

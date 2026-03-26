@@ -79,13 +79,46 @@ func SetupUser(c *gin.Context) {
 	})
 }
 
-// Add to Shopping List
-func AddShoppingItem(c *gin.Context) {
+// Get Kanban Lists grouped by status
+func GetLists(c *gin.Context) {
+	familyID := c.Param("familyId")
+	var items []models.ListItem
+
+	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("updated_at desc").Find(&items).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch lists"})
+		return
+	}
+
+	shopping := []models.ListItem{}
+	fridge := []models.ListItem{}
+	consumed := []models.ListItem{}
+
+	for _, item := range items {
+		switch item.Status {
+		case "SHOPPING":
+			shopping = append(shopping, item)
+		case "FRIDGE":
+			fridge = append(fridge, item)
+		case "CONSUMED":
+			consumed = append(consumed, item)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"SHOPPING": shopping,
+		"FRIDGE":   fridge,
+		"CONSUMED": consumed,
+	})
+}
+
+// Add Item to List (Default: SHOPPING)
+func AddListItem(c *gin.Context) {
 	var input struct {
 		FamilyID       string  `json:"familyId"`
 		ItemTemplateID string  `json:"itemTemplateId"`
 		Priority       string  `json:"priority"`
 		Note           *string `json:"note"`
+		Status         string  `json:"status"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -93,16 +126,28 @@ func AddShoppingItem(c *gin.Context) {
 		return
 	}
 
-	// Priority fallback
+	if input.Status == "" {
+		input.Status = "SHOPPING"
+	}
+
 	if input.Priority == "" {
 		input.Priority = "TODAY"
 	}
 
-	item := models.ShoppingItem{
+	item := models.ListItem{
 		FamilyID:       input.FamilyID,
 		ItemTemplateID: input.ItemTemplateID,
+		Status:         input.Status,
 		Priority:       input.Priority,
 		Note:           input.Note,
+	}
+
+	// Auto-calculate expiration date if directly added to fridge
+	if input.Status == "FRIDGE" {
+		var template models.ItemTemplate
+		database.DB.First(&template, "id = ?", input.ItemTemplateID)
+		exp := time.Now().AddDate(0, 0, template.DefaultDays)
+		item.ExpirationDate = &exp
 	}
 
 	if err := database.DB.Create(&item).Error; err != nil {
@@ -110,97 +155,81 @@ func AddShoppingItem(c *gin.Context) {
 		return
 	}
 
-	// Fetch with relationship to match previous response
 	database.DB.Preload("ItemTemplate").First(&item, "id = ?", item.ID)
 	c.JSON(http.StatusOK, item)
 }
 
-// Get Shopping List
-func GetShoppingList(c *gin.Context) {
-	familyID := c.Param("familyId")
-	var items []models.ShoppingItem
-
-	if err := database.DB.Preload("ItemTemplate").Where("family_id = ? AND is_purchased = ?", familyID, false).Find(&items).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch shopping list"})
-		return
-	}
-
-	c.JSON(http.StatusOK, items)
-}
-
-// Move Shopping Item to Fridge (Purchase)
-func PurchaseShoppingItem(c *gin.Context) {
+// Move item between lists or update fields
+func UpdateListItem(c *gin.Context) {
 	itemID := c.Param("id")
-	var shoppingItem models.ShoppingItem
+	var input struct {
+		Status   string   `json:"status"`
+		Price    *float64 `json:"price"`
+		Quantity *int     `json:"quantity"`
+	}
 
-	if err := database.DB.Preload("ItemTemplate").Where("id = ?", itemID).First(&shoppingItem).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	tx := database.DB.Begin()
+	var item models.ListItem
+	if err := database.DB.Preload("ItemTemplate").Where("id = ?", itemID).First(&item).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+		return
+	}
 
-	// Update Shopping Item
-	if err := tx.Model(&shoppingItem).Update("is_purchased", true).Error; err != nil {
-		tx.Rollback()
+	updates := map[string]interface{}{}
+
+	if input.Status != "" && input.Status != item.Status {
+		updates["status"] = input.Status
+
+		// When moving to FRIDGE, set Expiration Date if it doesn't have one
+		if input.Status == "FRIDGE" {
+			if item.ExpirationDate == nil {
+				exp := time.Now().AddDate(0, 0, item.ItemTemplate.DefaultDays)
+				updates["expiration_date"] = exp
+			}
+		}
+
+		// When moving to CONSUMED, set quantity and price if provided
+		if input.Status == "CONSUMED" {
+			if input.Quantity != nil {
+				updates["quantity"] = *input.Quantity
+			}
+			if input.Price != nil {
+				updates["price"] = *input.Price
+			}
+		}
+	} else {
+		// Just updating fields without moving
+		if input.Quantity != nil {
+			updates["quantity"] = *input.Quantity
+		}
+		if input.Price != nil {
+			updates["price"] = *input.Price
+		}
+	}
+
+	if err := database.DB.Model(&item).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item"})
 		return
 	}
 
-	// Create Fridge Item
-	expirationDate := time.Now().AddDate(0, 0, shoppingItem.ItemTemplate.DefaultDays)
-	fridgeItem := models.FridgeItem{
-		FamilyID:       shoppingItem.FamilyID,
-		ItemTemplateID: shoppingItem.ItemTemplateID,
-		ExpirationDate: expirationDate,
-		Location:       "FRIDGE",
-	}
-	if err := tx.Create(&fridgeItem).Error; err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add to fridge"})
-		return
-	}
-
-	// Record Purchase History
-	purchaseHistory := models.PurchaseHistory{
-		FamilyID:       shoppingItem.FamilyID,
-		ItemTemplateID: shoppingItem.ItemTemplateID,
-		Quantity:       1,
-	}
-	if err := tx.Create(&purchaseHistory).Error; err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record history"})
-		return
-	}
-
-	tx.Commit()
-	c.JSON(http.StatusOK, gin.H{"message": "Moved to fridge and history recorded"})
+	database.DB.Preload("ItemTemplate").First(&item, "id = ?", item.ID)
+	c.JSON(http.StatusOK, item)
 }
 
-// Get Purchase History
-func GetPurchaseHistory(c *gin.Context) {
-	familyID := c.Param("familyId")
-	var history []models.PurchaseHistory
+// Delete item
+func DeleteListItem(c *gin.Context) {
+	itemID := c.Param("id")
 
-	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("purchased_at desc").Find(&history).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch history"})
+	if err := database.DB.Where("id = ?", itemID).Delete(&models.ListItem{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item"})
 		return
 	}
 
-	c.JSON(http.StatusOK, history)
-}
-
-// Get Fridge Items
-func GetFridgeItems(c *gin.Context) {
-	familyID := c.Param("familyId")
-	var items []models.FridgeItem
-
-	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("expiration_date asc").Find(&items).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch fridge items"})
-		return
-	}
-
-	c.JSON(http.StatusOK, items)
+	c.JSON(http.StatusOK, gin.H{"message": "Item deleted"})
 }
 
 // Get Chat Messages
