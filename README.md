@@ -21,6 +21,15 @@ Docker と Docker Compose を使用して、手元の環境で簡単に起動で
    docker-compose up -d --build
    ```
 
+   *プロキシ環境下の場合は、あらかじめ環境変数を設定して起動してください。*
+   ```bash
+   export HTTP_PROXY="http://your.proxy.address:port"
+   export HTTPS_PROXY="http://your.proxy.address:port"
+   export NO_PROXY="localhost,127.0.0.1"
+   docker-compose build --build-arg http_proxy=$HTTP_PROXY --build-arg https_proxy=$HTTPS_PROXY
+   docker-compose up -d
+   ```
+
 2. **アプリへのアクセス**
    - **フロントエンド (Expo Web)**: http://localhost:8081
    - **バックエンド API**: http://localhost:3000

@@ -2,22 +2,37 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        - http_proxy=${HTTP_PROXY:-}
+        - https_proxy=${HTTPS_PROXY:-}
+        - no_proxy=${NO_PROXY:-}
     ports:
       - "3000:3000"
     environment:
       - PORT=3000
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-}
     volumes:
       - ./backend/src:/app/src
       - ./backend/prisma/dev.db:/app/prisma/dev.db
-    # dev.db は永続化するか、初期データ投入用にvolumeでマウントします
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        - http_proxy=${HTTP_PROXY:-}
+        - https_proxy=${HTTPS_PROXY:-}
+        - no_proxy=${NO_PROXY:-}
     ports:
       - "8081:8081"
     environment:
       - EXPO_WEB_PORT=8081
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-}
     volumes:
       - ./frontend/src:/app/src
     depends_on:
