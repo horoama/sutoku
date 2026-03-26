@@ -1,45 +1,88 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from '@expo/vector-icons/Ionicons';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Icon from "@expo/vector-icons/MaterialIcons";
+import { View, Text, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import ShoppingListScreen from '../screens/ShoppingListScreen';
-import FridgeScreen from '../screens/FridgeScreen';
-import HistoryScreen from '../screens/HistoryScreen';
-import ChatScreen from '../screens/ChatScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import ShoppingListScreen from "../screens/ShoppingListScreen";
+import FridgeScreen from "../screens/FridgeScreen";
+import ChatScreen from "../screens/ChatScreen";
+import SettingsScreen from "../screens/SettingsScreen";
 
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabNavigator() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName = '';
+        headerShown: false,
+        tabBarStyle: {
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 80 + insets.bottom,
+          backgroundColor: "rgba(255, 255, 255, 0.9)",
+          borderTopLeftRadius: 48,
+          borderTopRightRadius: 48,
+          borderTopWidth: 0,
+          elevation: 10,
+          shadowColor: "#191c1a",
+          shadowOffset: { width: 0, height: -8 },
+          shadowOpacity: 0.06,
+          shadowRadius: 24,
+          paddingBottom: insets.bottom + 10,
+          paddingTop: 12,
+          flexDirection: "row",
+          justifyContent: "space-around",
+          alignItems: "center",
+        },
+        tabBarShowLabel: false,
+        tabBarIcon: ({ focused }) => {
+          let iconName = "home";
+          let label = "";
 
-          if (route.name === 'Shopping') {
-            iconName = focused ? 'cart' : 'cart-outline';
-          } else if (route.name === 'Fridge') {
-            iconName = focused ? 'snow' : 'snow-outline';
-          } else if (route.name === 'History') {
-            iconName = focused ? 'stats-chart' : 'stats-chart-outline';
-          } else if (route.name === 'Chat') {
-            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-          } else if (route.name === 'Settings') {
-            iconName = focused ? 'settings' : 'settings-outline';
+          if (route.name === "Shopping") {
+            iconName = "shopping-basket";
+            label = "List";
+          } else if (route.name === "Fridge") {
+            iconName = "kitchen";
+            label = "Pantry";
+          } else if (route.name === "Chat") {
+            iconName = "forum";
+            label = "Chat";
+          } else if (route.name === "Settings") {
+            iconName = "person";
+            label = "Profile";
           }
 
-          return <Icon name={iconName} size={size} color={color} />;
+          if (focused) {
+            return (
+              <View className="flex flex-col items-center justify-center bg-[#a1f4c8] dark:bg-[#005236] rounded-full px-6 py-2">
+                <Icon name={iconName} size={24} color="#005236" />
+                <Text className="font-[Be Vietnam Pro] text-[10px] uppercase tracking-[0.05rem] font-bold mt-1 text-[#005236]">
+                  {label}
+                </Text>
+              </View>
+            );
+          }
+
+          return (
+            <View className="flex flex-col items-center justify-center px-6 py-2 rounded-full">
+              <Icon name={iconName} size={24} color="#64748b" />
+              <Text className="font-[Be Vietnam Pro] text-[10px] uppercase tracking-[0.05rem] font-bold mt-1 text-slate-500">
+                {label}
+              </Text>
+            </View>
+          );
         },
-        tabBarActiveTintColor: 'tomato',
-        tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Shopping" component={ShoppingListScreen} options={{ title: '買い物リスト' }} />
-      <Tab.Screen name="Fridge" component={FridgeScreen} options={{ title: '冷蔵庫・食糧庫' }} />
-      <Tab.Screen name="History" component={HistoryScreen} options={{ title: '購入履歴' }} />
-      <Tab.Screen name="Chat" component={ChatScreen} options={{ title: 'チャット' }} />
-      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: '設定' }} />
+      <Tab.Screen name="Shopping" component={ShoppingListScreen} />
+      <Tab.Screen name="Fridge" component={FridgeScreen} />
+      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }
