@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma/dev.db:/app/prisma/dev.db
+    # dev.db は永続化するか、初期データ投入用にvolumeでマウントします
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8081:8081"
+    environment:
+      - EXPO_WEB_PORT=8081
+    volumes:
+      - ./frontend/src:/app/src
+    depends_on:
+      - backend
