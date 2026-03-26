@@ -1,6 +1,4 @@
 Starting project at /app/frontend
-NativeWind made the following changes to your project to support TypeScript:
-  - Created nativewind-env.d.ts
 Starting Metro Bundler
 
 warning: Bundler cache is empty, rebuilding (this may take a minute)
@@ -11,8 +9,8 @@ Your project may not work correctly until you install the expected versions of t
 Waiting on http://localhost:8081
 Logs for your project will appear below.
 Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 55.8% ( 85/143)
-Web ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 55.8% (317/663)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.1% (910/943)
-Web Bundled 11189ms index.ts (985 modules)
+Web ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 55.2% (126/234)
+Web ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 55.2% (369/715)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.5% (953/970)
+Web Bundled 10936ms index.ts (985 modules)
  LOG  [web] Logs will appear in the browser console
