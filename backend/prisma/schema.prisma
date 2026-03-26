@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  familyId  String?
+  family    Family?  @relation(fields: [familyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages  ChatMessage[]
+}
+
+model Family {
+  id        String   @id @default(uuid())
+  name      String
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shoppingItems ShoppingItem[]
+  fridgeItems   FridgeItem[]
+  purchaseHistory PurchaseHistory[]
+  messages      ChatMessage[]
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  items     ItemTemplate[]
+}
+
+// Master list of available items (System + User customized)
+model ItemTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  defaultDays Int      @default(7) // Default expiration in days
+  isSystem    Boolean  @default(true) // System-wide vs custom item
+  familyId    String?  // If it's a custom item for a family
+  shoppingItems ShoppingItem[]
+  fridgeItems   FridgeItem[]
+  purchaseHistory PurchaseHistory[]
+}
+
+model ShoppingItem {
+  id             String   @id @default(uuid())
+  familyId       String
+  family         Family   @relation(fields: [familyId], references: [id])
+  itemTemplateId String
+  itemTemplate   ItemTemplate @relation(fields: [itemTemplateId], references: [id])
+  priority       String   @default("TODAY") // "TODAY" | "SOMEDAY"
+  note           String?  // e.g. "Buy 2 of these"
+  isPurchased    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model FridgeItem {
+  id             String   @id @default(uuid())
+  familyId       String
+  family         Family   @relation(fields: [familyId], references: [id])
+  itemTemplateId String
+  itemTemplate   ItemTemplate @relation(fields: [itemTemplateId], references: [id])
+  location       String   @default("FRIDGE") // "FRIDGE" | "PANTRY"
+  expirationDate DateTime
+  addedAt        DateTime @default(now())
+}
+
+model PurchaseHistory {
+  id             String   @id @default(uuid())
+  familyId       String
+  family         Family   @relation(fields: [familyId], references: [id])
+  itemTemplateId String
+  itemTemplate   ItemTemplate @relation(fields: [itemTemplateId], references: [id])
+  purchasedAt    DateTime @default(now())
+  price          Float?
+  quantity       Int      @default(1)
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  text      String
+  createdAt DateTime @default(now())
+}
