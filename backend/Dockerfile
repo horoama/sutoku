@@ -1,9 +1,12 @@
-FROM node:18-alpine
+FROM node:18-bookworm-slim
 
 # プロキシ設定の引数を受け取る
 ARG http_proxy
 ARG https_proxy
 ARG no_proxy
+
+# Prisma エンジン用のOpenSSLをインストール
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # 環境変数として設定する (コンテナ実行時にも引き継がれる)
 ENV http_proxy=$http_proxy
