@@ -1,4 +1,4 @@
-FROM node:18-bookworm-slim
+FROM node:20-bookworm-slim
 
 # プロキシ設定の引数を受け取る
 ARG http_proxy

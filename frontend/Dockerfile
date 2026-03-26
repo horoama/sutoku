@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 # プロキシ設定の引数を受け取る
 ARG http_proxy
