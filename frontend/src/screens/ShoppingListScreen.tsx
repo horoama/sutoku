@@ -1,21 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Alert, TextInput } from 'react-native';
-import { useAppStore } from '../store/appStore';
-import { useShoppingStore, ItemTemplate, ShoppingItem } from '../store/shoppingStore';
-import Icon from '@expo/vector-icons/Ionicons';
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, TouchableOpacity, Modal, Alert, TextInput, ScrollView, Image } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppStore } from "../store/appStore";
+import { useShoppingStore, ItemTemplate, ShoppingItem } from "../store/shoppingStore";
+import Icon from "@expo/vector-icons/MaterialIcons";
 
 export default function ShoppingListScreen() {
+  const insets = useSafeAreaInsets();
   const { user, family, initializeUser } = useAppStore();
   const { categories, shoppingList, fetchCategories, fetchShoppingList, addToShoppingList, purchaseItem } = useShoppingStore();
 
-  const [activeTab, setActiveTab] = useState<'LIST' | 'ADD'>('LIST');
+  const [activeTab, setActiveTab] = useState<"LIST" | "ADD">("LIST");
   const [selectedItem, setSelectedItem] = useState<ShoppingItem | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
-
-  // New states for item addition with note
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [itemToAdd, setItemToAdd] = useState<ItemTemplate | null>(null);
-  const [addNote, setAddNote] = useState('');
+  const [addNote, setAddNote] = useState("");
 
   useEffect(() => {
     initializeUser();
@@ -38,174 +38,193 @@ export default function ShoppingListScreen() {
       await purchaseItem(selectedItem.id);
       setModalVisible(false);
       setSelectedItem(null);
-      Alert.alert('完了', '冷蔵庫に追加しました！');
+      Alert.alert("完了", "冷蔵庫に追加しました！");
+    }
+  };
+
+  const openAddModal = (item: ItemTemplate) => {
+    setItemToAdd(item);
+    setAddNote("");
+    setAddModalVisible(true);
+  };
+
+  const confirmAddItem = (priority: "TODAY" | "SOMEDAY") => {
+    if (itemToAdd) {
+      addToShoppingList(itemToAdd.id, priority, addNote.trim());
+      setAddModalVisible(false);
+      setItemToAdd(null);
+      setAddNote("");
+      Alert.alert("追加完了", `${itemToAdd.name} をリストに追加しました`);
     }
   };
 
   const renderShoppingItem = ({ item }: { item: ShoppingItem }) => (
     <TouchableOpacity
-      style={styles.listItem}
+      className="group relative overflow-hidden bg-surface-container-lowest rounded-lg p-4 flex-row items-center justify-between transition-all active:scale-[0.98] mb-3 border border-surface-variant/20"
       onLongPress={() => handleLongPress(item)}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
-      <View style={styles.itemInfo}>
-        <View>
-          <Text style={styles.itemName}>{item.itemTemplate.name}</Text>
-          {item.note && <Text style={styles.itemNote}>メモ: {item.note}</Text>}
+      <View className="flex-row items-center gap-4 flex-1">
+        <View className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center">
+          <Icon name="local-grocery-store" size={24} className="text-primary-container" />
         </View>
-        <Text style={[styles.priorityBadge, item.priority === 'TODAY' ? styles.todayBadge : styles.somedayBadge]}>
-          {item.priority === 'TODAY' ? '今日買う' : 'いつか'}
-        </Text>
+        <View className="flex-1">
+          <Text className="font-headline font-bold text-on-surface text-base">{item.itemTemplate.name}</Text>
+          {item.note ? (
+            <Text className="text-xs text-outline font-medium">{item.note}</Text>
+          ) : null}
+          {item.priority === "TODAY" && (
+            <View className="flex-row gap-2 mt-1">
+              <View className="bg-tertiary-container px-2 py-0.5 rounded-full">
+                <Text className="text-on-tertiary-container text-[10px] font-bold uppercase">High Priority</Text>
+              </View>
+            </View>
+          )}
+        </View>
       </View>
-      <Icon name="chevron-forward-outline" size={20} color="#ccc" />
+      <View className="flex-row items-center gap-3">
+        <TouchableOpacity className="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center">
+          <Icon name="check" size={20} className="text-on-secondary-fixed-variant" />
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 
-  const openAddModal = (item: ItemTemplate) => {
-    setItemToAdd(item);
-    setAddNote('');
-    setAddModalVisible(true);
-  };
-
-  const confirmAddItem = (priority: 'TODAY' | 'SOMEDAY') => {
-    if (itemToAdd) {
-      addToShoppingList(itemToAdd.id, priority, addNote.trim());
-      setAddModalVisible(false);
-      setItemToAdd(null);
-      setAddNote('');
-      Alert.alert('追加完了', `${itemToAdd.name} をリストに追加しました`);
-    }
-  };
-
-  const renderCategoryItem = ({ item }: { item: ItemTemplate }) => (
-    <View style={styles.addItemRow}>
-      <Text style={styles.addItemName}>{item.name}</Text>
-      <TouchableOpacity style={styles.openAddModalBtn} onPress={() => openAddModal(item)}>
-        <Icon name="add-circle" size={24} color="tomato" />
-      </TouchableOpacity>
-    </View>
-  );
-
   return (
-    <View style={styles.container}>
-      <View style={styles.tabs}>
-        <TouchableOpacity style={[styles.tab, activeTab === 'LIST' && styles.activeTab]} onPress={() => setActiveTab('LIST')}>
-          <Text style={[styles.tabText, activeTab === 'LIST' && styles.activeTabText]}>買い物リスト</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, activeTab === 'ADD' && styles.activeTab]} onPress={() => setActiveTab('ADD')}>
-          <Text style={[styles.tabText, activeTab === 'ADD' && styles.activeTabText]}>アイテムを追加</Text>
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      {/* Top Navigation */}
+      <View className="w-full flex-row items-center justify-between px-6 py-4 bg-background z-50">
+        <View className="flex-row items-center gap-3">
+          <View className="w-10 h-10 rounded-full overflow-hidden bg-surface-container">
+            <Image
+              source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBowsR1V_bmcfj3DnRBJQG6Tn9zWNWiH1HX9l28XP8xy3hJ6GZeUmkN7jg8CX6lPc0KFWVP7nar6sSrHgnEIxp3oi-6nwIDVXJ9vjttUP_O4P-8suIxcEPr0tQGYEMRaXycC9CPL5WeOf9HicgMi9sggebxUZJZVj3WFLAPBH4PSDZ7FvIRfbrQwpuSrhmJKUNok5lEBM8a5pf20_XJYXBOq_YnbDTzXN86_KHrq_rnfjrvas0hhilKEbrZjzxadvuLaWdxnRqg1BuE" }}
+              className="w-full h-full"
+            />
+          </View>
+          <Text className="text-primary font-headline font-bold text-lg tracking-tight">The Living Larder</Text>
+        </View>
+        <TouchableOpacity className="active:opacity-80 transition-opacity">
+          <Icon name="notifications" size={24} className="text-primary" />
         </TouchableOpacity>
       </View>
 
-      {activeTab === 'LIST' ? (
-        <View style={{ flex: 1 }}>
-          <Text style={styles.helpText}>長押しで冷蔵庫へ移動</Text>
-          <FlatList
-            data={shoppingList}
-            keyExtractor={item => item.id}
-            renderItem={renderShoppingItem}
-            ListEmptyComponent={<Text style={styles.emptyText}>買い物リストは空です</Text>}
-          />
-        </View>
-      ) : (
-        <FlatList
-          data={categories}
-          keyExtractor={item => item.id}
-          renderItem={({ item: category }) => (
-            <View style={styles.categoryContainer}>
-              <Text style={styles.categoryTitle}>{category.name}</Text>
-              <FlatList
-                data={category.items}
-                keyExtractor={item => item.id}
-                renderItem={renderCategoryItem}
-              />
+      <ScrollView className="px-6 pt-4" contentContainerStyle={{ paddingBottom: 160 }}>
+        {/* Hero / Progress Section */}
+        <View className="space-y-4 mb-8">
+          <View className="flex-row justify-between items-end mb-2">
+            <View className="space-y-1">
+              <Text className="font-label text-xs font-bold uppercase tracking-[0.05rem] text-outline">WEEKLY RUN</Text>
+              <Text className="font-headline text-3xl font-extrabold text-primary tracking-tight">Shopping List</Text>
             </View>
-          )}
-        />
-      )}
+            <View className="items-end">
+              <Text className="font-headline text-2xl font-black text-primary">{shoppingList?.length || 0}</Text>
+              <Text className="font-body text-sm text-outline">items</Text>
+            </View>
+          </View>
+          <View className="h-4 w-full bg-surface-container-high rounded-full overflow-hidden p-1">
+            <View className="h-full w-1/2 bg-primary rounded-full"></View>
+          </View>
+        </View>
 
-      {/* Long Press Modal */}
+        {/* Categories / Items */}
+        {activeTab === "LIST" ? (
+          <View className="space-y-10">
+            <View className="flex-row items-center justify-between mb-4">
+              <View className="flex-row items-center gap-2">
+                <Icon name="shopping-basket" size={24} className="text-primary" />
+                <Text className="font-headline text-xl font-bold text-primary">To Buy</Text>
+              </View>
+              <View className="bg-primary-fixed px-3 py-1 rounded-full">
+                <Text className="text-on-primary-fixed text-xs font-bold uppercase tracking-wider">{shoppingList?.length || 0} Items</Text>
+              </View>
+            </View>
+
+            <FlatList
+              data={shoppingList}
+              keyExtractor={(item) => item.id}
+              renderItem={renderShoppingItem}
+              scrollEnabled={false}
+              ListEmptyComponent={<Text className="text-center text-outline mt-10">買い物リストは空です</Text>}
+            />
+          </View>
+        ) : (
+          <View className="space-y-6">
+            <Text className="font-headline text-xl font-bold text-primary mb-4">Add Items</Text>
+            {categories.map(category => (
+              <View key={category.id} className="mb-6 bg-surface-container-low rounded-xl p-4">
+                <Text className="font-headline font-bold text-lg text-on-surface mb-3">{category.name}</Text>
+                {category.items.map(item => (
+                  <View key={item.id} className="flex-row justify-between items-center py-3 border-b border-surface-variant/30">
+                    <Text className="font-body text-on-surface text-base">{item.name}</Text>
+                    <TouchableOpacity
+                      className="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center"
+                      onPress={() => openAddModal(item)}
+                    >
+                      <Icon name="add" size={20} className="text-on-secondary-fixed-variant" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Floating Action Bar */}
+      <View className="absolute bottom-32 right-6 z-50">
+        <TouchableOpacity
+          className="flex-row items-center gap-3 bg-primary px-6 py-4 rounded-xl shadow-lg active:scale-95 transition-all"
+          onPress={() => setActiveTab(activeTab === "LIST" ? "ADD" : "LIST")}
+        >
+          <Icon name={activeTab === "LIST" ? "add-circle" : "list"} size={24} color="#ffffff" />
+          <Text className="text-on-primary font-headline font-bold">
+            {activeTab === "LIST" ? "Add Item" : "View List"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Modals */}
       <Modal visible={isModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{selectedItem?.itemTemplate.name} を購入しましたか？</Text>
-            <TouchableOpacity style={[styles.modalButton, { backgroundColor: 'tomato' }]} onPress={handleMoveToFridge}>
-              <Text style={styles.modalButtonText}>冷蔵庫 / 食糧庫に入れる</Text>
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <View className="bg-surface-container-lowest p-6 rounded-2xl w-4/5 items-center">
+            <Text className="font-headline text-lg font-bold mb-6 text-center text-on-surface">
+              {selectedItem?.itemTemplate.name} を購入しましたか？
+            </Text>
+            <TouchableOpacity className="w-full bg-primary py-4 rounded-xl items-center mb-3" onPress={handleMoveToFridge}>
+              <Text className="text-on-primary font-bold text-base">冷蔵庫 / 食糧庫に入れる</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setModalVisible(false)}>
-              <Text style={styles.cancelButtonText}>キャンセル</Text>
+            <TouchableOpacity className="w-full bg-surface-variant py-4 rounded-xl items-center" onPress={() => setModalVisible(false)}>
+              <Text className="text-on-surface-variant font-bold text-base">キャンセル</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Add Item with Note Modal */}
       <Modal visible={addModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{itemToAdd?.name} を追加</Text>
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <View className="bg-surface-container-lowest p-6 rounded-2xl w-11/12 items-center">
+            <Text className="font-headline text-lg font-bold mb-4 text-on-surface">{itemToAdd?.name} を追加</Text>
             <TextInput
-              style={styles.noteInput}
+              className="w-full bg-surface-container-low p-4 rounded-xl mb-6 font-body text-base text-on-surface"
               placeholder="メモ (例: 2個、メーカー指定など)"
               value={addNote}
               onChangeText={setAddNote}
             />
-            <View style={styles.addButtonsRow}>
-              <TouchableOpacity style={[styles.modalButton, styles.todayBtn]} onPress={() => confirmAddItem('TODAY')}>
-                <Text style={styles.modalButtonText}>今日買う</Text>
+            <View className="flex-row justify-between w-full gap-3 mb-3">
+              <TouchableOpacity className="flex-1 bg-tertiary-container py-4 rounded-xl items-center" onPress={() => confirmAddItem("TODAY")}>
+                <Text className="text-on-tertiary-container font-bold text-sm">今日買う</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.somedayBtn]} onPress={() => confirmAddItem('SOMEDAY')}>
-                <Text style={styles.modalButtonText}>いつか買う</Text>
+              <TouchableOpacity className="flex-1 bg-primary-fixed py-4 rounded-xl items-center" onPress={() => confirmAddItem("SOMEDAY")}>
+                <Text className="text-on-primary-fixed font-bold text-sm">いつか買う</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={[styles.modalButton, styles.cancelButton, { marginTop: 10 }]} onPress={() => setAddModalVisible(false)}>
-              <Text style={styles.cancelButtonText}>キャンセル</Text>
+            <TouchableOpacity className="w-full bg-surface-variant py-4 rounded-xl items-center mt-2" onPress={() => setAddModalVisible(false)}>
+              <Text className="text-on-surface-variant font-bold text-base">キャンセル</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  tabs: { flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#eee' },
-  tab: { flex: 1, padding: 15, alignItems: 'center' },
-  activeTab: { borderBottomWidth: 2, borderBottomColor: 'tomato' },
-  tabText: { fontSize: 16, color: '#666' },
-  activeTabText: { color: 'tomato', fontWeight: 'bold' },
-
-  helpText: { textAlign: 'center', padding: 10, color: '#888', fontSize: 12 },
-  emptyText: { textAlign: 'center', marginTop: 50, color: '#999' },
-
-  listItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#fff', marginHorizontal: 15, marginVertical: 5, borderRadius: 10, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 },
-  itemInfo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1, marginRight: 10 },
-  itemName: { fontSize: 16, fontWeight: '500' },
-  itemNote: { fontSize: 12, color: '#888', marginTop: 2 },
-  priorityBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 5, fontSize: 12, color: '#fff', overflow: 'hidden' },
-  todayBadge: { backgroundColor: 'tomato' },
-  somedayBadge: { backgroundColor: '#4db8ff' },
-
-  categoryContainer: { marginBottom: 20, backgroundColor: '#fff', paddingVertical: 10 },
-  categoryTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 15, marginBottom: 10, color: '#333' },
-  addItemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, borderBottomWidth: 1, borderColor: '#eee' },
-  addItemName: { fontSize: 16 },
-  addButtons: { flexDirection: 'row' },
-  addBtnToday: { backgroundColor: 'tomato', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 5, marginRight: 10 },
-  addBtnSomeday: { backgroundColor: '#4db8ff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 5 },
-  openAddModalBtn: { padding: 5 },
-
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#fff', padding: 25, borderRadius: 15, width: '80%', alignItems: 'center' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 20 },
-  noteInput: { width: '100%', backgroundColor: '#f5f5f5', padding: 15, borderRadius: 10, marginBottom: 20, fontSize: 16 },
-  addButtonsRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
-  modalButton: { padding: 15, borderRadius: 10, width: '100%', alignItems: 'center', marginBottom: 10 },
-  todayBtn: { backgroundColor: 'tomato', width: '48%' },
-  somedayBtn: { backgroundColor: '#4db8ff', width: '48%' },
-  modalButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  cancelButton: { backgroundColor: '#eee' },
-  cancelButtonText: { color: '#666', fontSize: 16, fontWeight: 'bold' }
-});
