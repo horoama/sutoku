@@ -30,14 +30,18 @@ type User struct {
 	FamilyID *string       `gorm:"type:uuid" json:"familyId"`
 	Family   *Family       `json:"family,omitempty"`
 	Messages []ChatMessage `json:"messages,omitempty"`
+	Role     string        `gorm:"default:'member'" json:"role"` // "admin", "member", "guest"
+	AvatarURL string       `json:"avatarUrl"`
 }
 
 type Family struct {
 	Base
-	Name      string        `json:"name"`
-	Users     []User        `json:"users,omitempty"`
-	ListItems []ListItem    `json:"listItems,omitempty"`
-	Messages  []ChatMessage `json:"messages,omitempty"`
+	Name       string        `json:"name"`
+	InviteCode string        `gorm:"unique" json:"inviteCode"`
+	Users      []User        `json:"users,omitempty"`
+	ListItems  []ListItem    `json:"listItems,omitempty"`
+	Messages   []ChatMessage `json:"messages,omitempty"`
+	Activities []ActivityLog `json:"activities,omitempty"`
 }
 
 type Category struct {
@@ -59,6 +63,7 @@ type ItemTemplate struct {
 	CategoryID  string     `gorm:"type:uuid" json:"categoryId"`
 	Category    Category   `json:"category,omitempty"`
 	DefaultDays int        `gorm:"default:7" json:"defaultDays"`
+	ImageURL    string     `json:"imageUrl"`
 	IsSystem    bool       `gorm:"default:true" json:"isSystem"`
 	FamilyID    *string    `gorm:"type:uuid" json:"familyId"`
 	ListItems   []ListItem `json:"listItems,omitempty"`
@@ -84,8 +89,11 @@ type ListItem struct {
 	Status string `gorm:"default:'SHOPPING'" json:"status"`
 
 	// Shopping Item specific fields
-	Priority string  `gorm:"default:'TODAY'" json:"priority"`
+	Priority string  `gorm:"default:'NORMAL'" json:"priority"` // "URGENT", "HIGH", "NORMAL", "SOMEDAY"
 	Note     *string `json:"note"`
+
+	// Fridge/Pantry Location ("FRIDGE", "PANTRY", "FREEZER")
+	Location string `gorm:"default:'FRIDGE'" json:"location"`
 
 	// Fridge Item specific fields
 	ExpirationDate *time.Time `json:"expirationDate"`
@@ -93,6 +101,26 @@ type ListItem struct {
 	// Purchase/Consumed History specific fields
 	Price    *float64 `json:"price"`
 	Quantity int      `gorm:"default:1" json:"quantity"`
+}
+
+type ActivityLog struct {
+	ID        string    `gorm:"type:uuid;primary_key;" json:"id"`
+	FamilyID  string    `gorm:"type:uuid;index" json:"familyId"`
+	Family    Family    `json:"family,omitempty"`
+	UserID    string    `gorm:"type:uuid;index" json:"userId"`
+	User      User      `json:"user,omitempty"`
+	Action    string    `json:"action"` // e.g., "added", "bought", "marked_expiring", "cleared"
+	Entity    string    `json:"entity"` // e.g., "Organic Whole Milk", "Produce Drawer"
+	Amount    *float64  `json:"amount"` // e.g., cost, null if N/A
+	Tags      string    `json:"tags"`   // JSON or comma separated e.g. "GROCERIES, URGENT"
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"createdAt"`
+}
+
+func (log *ActivityLog) BeforeCreate(tx *gorm.DB) error {
+	if log.ID == "" {
+		log.ID = uuid.New().String()
+	}
+	return nil
 }
 
 type ChatMessage struct {

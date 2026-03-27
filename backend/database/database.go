@@ -23,6 +23,7 @@ func Connect() {
 		&models.Category{},
 		&models.ItemTemplate{},
 		&models.ListItem{},
+		&models.ActivityLog{},
 		&models.ChatMessage{},
 	)
 	if err != nil {

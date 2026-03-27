@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import ShoppingListScreen from "../screens/ShoppingListScreen";
 import FridgeScreen from "../screens/FridgeScreen";
-import ChatScreen from "../screens/ChatScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 
 const Tab = createBottomTabNavigator();
@@ -40,21 +39,18 @@ export default function BottomTabNavigator() {
         },
         tabBarShowLabel: false,
         tabBarIcon: ({ focused }) => {
-          let iconName = "home";
+          let iconName: React.ComponentProps<typeof Icon>['name'] = "home";
           let label = "";
 
           if (route.name === "Shopping") {
             iconName = "shopping-basket";
             label = "List";
           } else if (route.name === "Fridge") {
-            iconName = "kitchen";
+            iconName = "inventory-2";
             label = "Pantry";
-          } else if (route.name === "Chat") {
-            iconName = "forum";
-            label = "Chat";
           } else if (route.name === "Settings") {
-            iconName = "person";
-            label = "Profile";
+            iconName = "group";
+            label = "Family";
           }
 
           if (focused) {
@@ -81,7 +77,6 @@ export default function BottomTabNavigator() {
     >
       <Tab.Screen name="Shopping" component={ShoppingListScreen} />
       <Tab.Screen name="Fridge" component={FridgeScreen} />
-      <Tab.Screen name="Chat" component={ChatScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

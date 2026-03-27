@@ -5,12 +5,14 @@ import { useAppStore } from "../store/appStore";
 import { useShoppingStore, ItemTemplate, ShoppingItem } from "../store/shoppingStore";
 import Icon from "@expo/vector-icons/MaterialIcons";
 
+import { useNavigation } from "@react-navigation/native";
+
 export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const { user, family, initializeUser } = useAppStore();
   const { categories, shoppingList, fetchCategories, fetchShoppingList, addToShoppingList, purchaseItem } = useShoppingStore();
 
-  const [activeTab, setActiveTab] = useState<"LIST" | "ADD">("LIST");
   const [selectedItem, setSelectedItem] = useState<ShoppingItem | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
@@ -48,7 +50,7 @@ export default function ShoppingListScreen() {
     setAddModalVisible(true);
   };
 
-  const confirmAddItem = (priority: "TODAY" | "SOMEDAY") => {
+  const confirmAddItem = (priority: "NORMAL" | "SOMEDAY") => {
     if (itemToAdd) {
       addToShoppingList(itemToAdd.id, priority, addNote.trim());
       setAddModalVisible(false);
@@ -58,130 +60,121 @@ export default function ShoppingListScreen() {
     }
   };
 
-  const renderShoppingItem = ({ item }: { item: ShoppingItem }) => (
-    <TouchableOpacity
-      className="group relative overflow-hidden bg-surface-container-lowest rounded-lg p-4 flex-row items-center justify-between transition-all active:scale-[0.98] mb-3 border border-surface-variant/20"
-      onLongPress={() => handleLongPress(item)}
-      activeOpacity={0.8}
-    >
-      <View className="flex-row items-center gap-4 flex-1">
-        <View className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center">
-          <Icon name="local-grocery-store" size={24} className="text-primary-container" />
+  const renderShoppingItem = ({ item }: { item: ShoppingItem }) => {
+    let iconName: React.ComponentProps<typeof Icon>['name'] = "local-grocery-store";
+    let iconColorClass = "text-primary text-2xl";
+    let iconBgClass = "bg-primary-fixed";
+    let categoryName = "GROCERY";
+    let priorityBadge = null;
+
+    if (item.priority === "URGENT" || item.priority === "HIGH") {
+      iconName = "eco";
+      iconColorClass = "text-tertiary text-2xl";
+      iconBgClass = "bg-tertiary-fixed";
+      categoryName = "PRODUCE";
+      priorityBadge = (
+        <View className="px-3 py-0.5 rounded-full bg-tertiary-container">
+          <Text className="text-on-tertiary-fixed-variant text-[10px] font-bold tracking-[0.1em] uppercase font-label">URGENT</Text>
+        </View>
+      );
+    } else if (item.itemTemplate.name.toLowerCase().includes("milk") || item.itemTemplate.name.toLowerCase().includes("egg") || item.itemTemplate.name.toLowerCase().includes("yogurt")) {
+      iconName = "egg";
+      categoryName = "DAIRY";
+      priorityBadge = (
+        <View className="px-3 py-0.5 rounded-full bg-surface-container">
+          <Text className="text-on-surface-variant text-[10px] font-bold tracking-[0.1em] uppercase font-label">NORMAL</Text>
+        </View>
+      );
+    }
+
+    return (
+      <TouchableOpacity
+        className="group relative bg-surface-container-lowest rounded-lg p-5 flex-row items-center gap-5 transition-all active:scale-[0.98] mb-4 shadow-sm"
+        onLongPress={() => handleLongPress(item)}
+        activeOpacity={0.8}
+        style={{
+          shadowColor: "#191c1a",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.04,
+          shadowRadius: 24,
+          elevation: 2,
+        }}
+      >
+        <View className={`w-14 h-14 rounded-full flex items-center justify-center ${iconBgClass}`}>
+          <Icon name={iconName} size={24} className={iconColorClass} />
         </View>
         <View className="flex-1">
-          <Text className="font-headline font-bold text-on-surface text-base">{item.itemTemplate.name}</Text>
-          {item.note ? (
-            <Text className="text-xs text-outline font-medium">{item.note}</Text>
-          ) : null}
-          {item.priority === "TODAY" && (
-            <View className="flex-row gap-2 mt-1">
-              <View className="bg-tertiary-container px-2 py-0.5 rounded-full">
-                <Text className="text-on-tertiary-container text-[10px] font-bold uppercase">High Priority</Text>
-              </View>
-            </View>
-          )}
+          <View className="flex-row items-center gap-2 mb-1">
+            <Text className="font-headline font-bold text-xl text-on-surface">{item.itemTemplate.name}</Text>
+            {priorityBadge}
+          </View>
+          <View className="flex-row items-center gap-3">
+            <Text className="text-sm font-semibold text-on-surface-variant font-body">{item.note || "1 unit"}</Text>
+            <View className="w-1 h-1 rounded-full bg-outline-variant"></View>
+            <Text className="text-xs font-bold text-primary font-label tracking-widest uppercase">{categoryName}</Text>
+          </View>
         </View>
-      </View>
-      <View className="flex-row items-center gap-3">
-        <TouchableOpacity className="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center">
-          <Icon name="check" size={20} className="text-on-secondary-fixed-variant" />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+
+        {/* Placeholder for family member avatars who requested this */}
+        <View className="flex-row -space-x-3">
+          <View className="w-8 h-8 rounded-full border-2 border-surface-container-lowest overflow-hidden bg-surface-container">
+             <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAWXxIn9vkOJkM6PINi0yWB5YnNUFN2iUe8ENrb1prTy3CywJnqQgcSyUGjHjGzRKF5FVKQzfrFCxc1LflbtW1H-7Kjz4EyBhEG2Ir5-lzht5fkn07JXndNTHy26vznKGojtw6tQeFBobHuHP3F1c34TDx8ikUeiv0UNeKkxhi38LvSIZJnNAm67ooMtjERCHnxuSF-pUZ6hFXtDrWBbz0-UDBDlJY5EVX6A5Okq8Cx7z4ei6GutfcWV5NTCRCRvrasLGGu_o0ZPcTw" }} className="w-full h-full" />
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      {/* Top Navigation */}
-      <View className="w-full flex-row items-center justify-between px-6 py-4 bg-background z-50">
+    <View className="flex-1 bg-surface text-on-surface pb-32" style={{ paddingTop: insets.top }}>
+      {/* TopAppBar */}
+      <View className="w-full flex-row items-center justify-between px-6 py-4 bg-surface z-50">
         <View className="flex-row items-center gap-3">
-          <View className="w-10 h-10 rounded-full overflow-hidden bg-surface-container">
+          <Icon name="restaurant-menu" size={24} className="text-primary" />
+          <Text className="font-headline font-extrabold tracking-tight text-2xl text-primary italic">The Living Larder</Text>
+        </View>
+        <View className="flex-row items-center gap-4">
+          <TouchableOpacity className="active:opacity-80 transition-opacity active:scale-95">
+            <Icon name="search" size={24} className="text-slate-500" />
+          </TouchableOpacity>
+          <View className="w-10 h-10 rounded-full bg-surface-container-high border-2 border-primary-fixed overflow-hidden">
             <Image
-              source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBowsR1V_bmcfj3DnRBJQG6Tn9zWNWiH1HX9l28XP8xy3hJ6GZeUmkN7jg8CX6lPc0KFWVP7nar6sSrHgnEIxp3oi-6nwIDVXJ9vjttUP_O4P-8suIxcEPr0tQGYEMRaXycC9CPL5WeOf9HicgMi9sggebxUZJZVj3WFLAPBH4PSDZ7FvIRfbrQwpuSrhmJKUNok5lEBM8a5pf20_XJYXBOq_YnbDTzXN86_KHrq_rnfjrvas0hhilKEbrZjzxadvuLaWdxnRqg1BuE" }}
+              source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAWXxIn9vkOJkM6PINi0yWB5YnNUFN2iUe8ENrb1prTy3CywJnqQgcSyUGjHjGzRKF5FVKQzfrFCxc1LflbtW1H-7Kjz4EyBhEG2Ir5-lzht5fkn07JXndNTHy26vznKGojtw6tQeFBobHuHP3F1c34TDx8ikUeiv0UNeKkxhi38LvSIZJnNAm67ooMtjERCHnxuSF-pUZ6hFXtDrWBbz0-UDBDlJY5EVX6A5Okq8Cx7z4ei6GutfcWV5NTCRCRvrasLGGu_o0ZPcTw" }}
               className="w-full h-full"
             />
           </View>
-          <Text className="text-primary font-headline font-bold text-lg tracking-tight">The Living Larder</Text>
         </View>
-        <TouchableOpacity className="active:opacity-80 transition-opacity">
-          <Icon name="notifications" size={24} className="text-primary" />
-        </TouchableOpacity>
       </View>
 
-      <ScrollView className="px-6 pt-4" contentContainerStyle={{ paddingBottom: 160 }}>
-        {/* Hero / Progress Section */}
-        <View className="space-y-4 mb-8">
-          <View className="flex-row justify-between items-end mb-2">
-            <View className="space-y-1">
-              <Text className="font-label text-xs font-bold uppercase tracking-[0.05rem] text-outline">WEEKLY RUN</Text>
-              <Text className="font-headline text-3xl font-extrabold text-primary tracking-tight">Shopping List</Text>
-            </View>
-            <View className="items-end">
-              <Text className="font-headline text-2xl font-black text-primary">{shoppingList?.length || 0}</Text>
-              <Text className="font-body text-sm text-outline">items</Text>
-            </View>
-          </View>
-          <View className="h-4 w-full bg-surface-container-high rounded-full overflow-hidden p-1">
-            <View className="h-full w-1/2 bg-primary rounded-full"></View>
-          </View>
+      <ScrollView className="px-6 pt-8" contentContainerStyle={{ paddingBottom: 160 }}>
+        {/* Editorial Header Section */}
+        <View className="mb-12 ml-4">
+          <Text className="font-headline font-extrabold text-primary leading-tight tracking-tighter text-4xl mb-2">Shopping List</Text>
+          <Text className="font-body text-on-surface-variant text-lg">Fresh ingredients for the week ahead.</Text>
         </View>
 
-        {/* Categories / Items */}
-        {activeTab === "LIST" ? (
-          <View className="space-y-10">
-            <View className="flex-row items-center justify-between mb-4">
-              <View className="flex-row items-center gap-2">
-                <Icon name="shopping-basket" size={24} className="text-primary" />
-                <Text className="font-headline text-xl font-bold text-primary">To Buy</Text>
-              </View>
-              <View className="bg-primary-fixed px-3 py-1 rounded-full">
-                <Text className="text-on-primary-fixed text-xs font-bold uppercase tracking-wider">{shoppingList?.length || 0} Items</Text>
-              </View>
-            </View>
-
+        {/* List Section */}
+        <View className="space-y-4">
+          {shoppingList.length > 0 ? (
             <FlatList
               data={shoppingList}
               keyExtractor={(item) => item.id}
               renderItem={renderShoppingItem}
               scrollEnabled={false}
-              ListEmptyComponent={<Text className="text-center text-outline mt-10">買い物リストは空です</Text>}
             />
-          </View>
-        ) : (
-          <View className="space-y-6">
-            <Text className="font-headline text-xl font-bold text-primary mb-4">Add Items</Text>
-            {categories.map(category => (
-              <View key={category.id} className="mb-6 bg-surface-container-low rounded-xl p-4">
-                <Text className="font-headline font-bold text-lg text-on-surface mb-3">{category.name}</Text>
-                {category.items.map(item => (
-                  <View key={item.id} className="flex-row justify-between items-center py-3 border-b border-surface-variant/30">
-                    <Text className="font-body text-on-surface text-base">{item.name}</Text>
-                    <TouchableOpacity
-                      className="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center"
-                      onPress={() => openAddModal(item)}
-                    >
-                      <Icon name="add" size={20} className="text-on-secondary-fixed-variant" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-            ))}
-          </View>
-        )}
+          ) : (
+            <Text className="text-center text-outline mt-10 font-body">買い物リストは空です</Text>
+          )}
+        </View>
       </ScrollView>
 
-      {/* Floating Action Bar */}
-      <View className="absolute bottom-32 right-6 z-50">
-        <TouchableOpacity
-          className="flex-row items-center gap-3 bg-primary px-6 py-4 rounded-xl shadow-lg active:scale-95 transition-all"
-          onPress={() => setActiveTab(activeTab === "LIST" ? "ADD" : "LIST")}
-        >
-          <Icon name={activeTab === "LIST" ? "add-circle" : "list"} size={24} color="#ffffff" />
-          <Text className="text-on-primary font-headline font-bold">
-            {activeTab === "LIST" ? "Add Item" : "View List"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {/* Contextual FAB */}
+      <TouchableOpacity
+        className="absolute bottom-28 right-6 w-16 h-16 bg-primary rounded-xl flex items-center justify-center shadow-xl active:scale-90 transition-all z-50"
+        onPress={() => navigation.navigate("AddToShoppingList")}
+      >
+        <Icon name="add" size={28} className="text-on-primary" />
+      </TouchableOpacity>
 
       {/* Modals */}
       <Modal visible={isModalVisible} transparent animationType="fade">
@@ -211,7 +204,7 @@ export default function ShoppingListScreen() {
               onChangeText={setAddNote}
             />
             <View className="flex-row justify-between w-full gap-3 mb-3">
-              <TouchableOpacity className="flex-1 bg-tertiary-container py-4 rounded-xl items-center" onPress={() => confirmAddItem("TODAY")}>
+              <TouchableOpacity className="flex-1 bg-tertiary-container py-4 rounded-xl items-center" onPress={() => confirmAddItem("NORMAL")}>
                 <Text className="text-on-tertiary-container font-bold text-sm">今日買う</Text>
               </TouchableOpacity>
               <TouchableOpacity className="flex-1 bg-primary-fixed py-4 rounded-xl items-center" onPress={() => confirmAddItem("SOMEDAY")}>
