@@ -13,6 +13,7 @@ export interface ItemTemplate {
   name: string;
   categoryId: string;
   defaultDays: number;
+  imageUrl: string;
 }
 
 export interface ShoppingItem {
@@ -35,6 +36,7 @@ interface ShoppingState {
   fetchShoppingList: () => Promise<void>;
   addToShoppingList: (itemTemplateId: string, priority: 'URGENT' | 'HIGH' | 'NORMAL' | 'SOMEDAY', note?: string) => Promise<void>;
   purchaseItem: (id: string, price?: number) => Promise<void>;
+  createItemTemplate: (name: string, categoryId: string, defaultDays: number) => Promise<ItemTemplate | null>;
 }
 
 export const useShoppingStore = create<ShoppingState>((set, get) => ({
@@ -76,6 +78,20 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
       set({ error: err.message });
+    }
+  },
+
+  createItemTemplate: async (name, categoryId, defaultDays) => {
+    const familyId = useAppStore.getState().family?.id;
+    if (!familyId) return null;
+
+    try {
+      const { data } = await api.post('/item-templates', { name, categoryId, defaultDays, familyId });
+      get().fetchCategories();
+      return data;
+    } catch (err: any) {
+      set({ error: err.message });
+      return null;
     }
   },
 

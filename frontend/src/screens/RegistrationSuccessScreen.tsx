@@ -1,12 +1,23 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
+import { useAppStore } from "../store/appStore";
+
+type ParamList = {
+  RegistrationSuccess: { itemName: string, location: string, expiresIn: string };
+};
 
 export default function RegistrationSuccessScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<ParamList, 'RegistrationSuccess'>>();
+  const { user } = useAppStore();
+
+  const itemName = route.params?.itemName || "Organic Avocados (3ct)";
+  const location = route.params?.location || "Main Pantry";
+  const expiresIn = route.params?.expiresIn || "5 Days";
 
   return (
     <View className="flex-1 bg-surface font-body text-on-surface flex-col" style={{ paddingTop: insets.top }}>
@@ -37,7 +48,7 @@ export default function RegistrationSuccessScreen() {
               Item Registered Successfully!
             </Text>
             <Text className="text-on-surface-variant text-lg px-4 leading-relaxed text-center">
-              Organic Avocados (3ct) has been added to your Pantry and is shared with the Family.
+              {itemName} has been added to your list and is shared with the Family.
             </Text>
           </View>
 
@@ -45,11 +56,11 @@ export default function RegistrationSuccessScreen() {
           <View className="flex-row w-full gap-4 mb-8">
             <View className="flex-1 bg-surface-container-lowest p-5 rounded-lg text-left shadow-sm">
               <Text className="font-label text-[10px] uppercase tracking-widest text-outline block mb-1">Location</Text>
-              <Text className="font-semibold text-on-surface text-base">Main Pantry</Text>
+              <Text className="font-semibold text-on-surface text-base">{location}</Text>
             </View>
             <View className="flex-1 bg-surface-container-lowest p-5 rounded-lg text-left shadow-sm">
-              <Text className="font-label text-[10px] uppercase tracking-widest text-outline block mb-1">Expires In</Text>
-              <Text className="font-semibold text-tertiary text-base">5 Days</Text>
+              <Text className="font-label text-[10px] uppercase tracking-widest text-outline block mb-1">Default Expiration</Text>
+              <Text className="font-semibold text-tertiary text-base">{expiresIn}</Text>
             </View>
           </View>
 
@@ -74,9 +85,9 @@ export default function RegistrationSuccessScreen() {
           <View className="pt-8 opacity-60">
             <View className="flex-row items-center justify-center gap-2">
               <View className="w-6 h-6 rounded-full overflow-hidden border border-outline-variant">
-                <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuB8cMzTD2GLf2BawZZcU1HfsEzz6ahdyZPtGerCIxnTn-jkt8_Bsfqr6etkXznuhdSXIwGTLb2Gr9zyHKx_GS1h1bdnkdt831UjRQdz6rm40_OouEEdjFniBbO8tMBb4VU49s9LkIHbbXvb0KkH7iFmGJN58Egh2K5S1E4tHkJcgECBj0XaprnDJGcZfQcSD_j-LZjdvc0xeuu0X5DbyxBjp3mR-NEElVEAyQF0uefxBEhS3y4IabdMAGPMPFkF0CGOuZyTItoynKRL" }} className="w-full h-full" />
+                <Image source={{ uri: user?.avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuB8cMzTD2GLf2BawZZcU1HfsEzz6ahdyZPtGerCIxnTn-jkt8_Bsfqr6etkXznuhdSXIwGTLb2Gr9zyHKx_GS1h1bdnkdt831UjRQdz6rm40_OouEEdjFniBbO8tMBb4VU49s9LkIHbbXvb0KkH7iFmGJN58Egh2K5S1E4tHkJcgECBj0XaprnDJGcZfQcSD_j-LZjdvc0xeuu0X5DbyxBjp3mR-NEElVEAyQF0uefxBEhS3y4IabdMAGPMPFkF0CGOuZyTItoynKRL" }} className="w-full h-full" />
               </View>
-              <Text className="font-label text-xs uppercase tracking-widest text-on-surface-variant">Confirmed by Dad • Just now</Text>
+              <Text className="font-label text-xs uppercase tracking-widest text-on-surface-variant">Confirmed by {user?.name || "You"} • Just now</Text>
             </View>
           </View>
 

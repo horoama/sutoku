@@ -12,6 +12,7 @@ func SetupRoutes(router *gin.Engine) {
 		api.GET("/health", handlers.HealthCheck)
 		api.POST("/seed", handlers.SeedData)
 		api.GET("/items", handlers.GetItems)
+		api.POST("/item-templates", handlers.CreateItemTemplate)
 		api.POST("/setup-user", handlers.SetupUser)
 
 		api.GET("/family/:familyId/members", handlers.GetFamilyMembers)

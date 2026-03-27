@@ -22,14 +22,6 @@ export default function DairyCategoryScreen() {
   const dairyCategory = categories.find(c => c.name.includes("乳") || c.name.toLowerCase().includes("dairy"));
   const items = dairyCategory?.items || [];
 
-  // Use mock images based on index for aesthetic prototype purposes
-  const mockImages = [
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuCkGOc_Ap1YySmuNl3pCJUekeTLWcXTSOfVgu9or9HXIMe8oMKuoKMMC3d7YYBRDe1JnSdFUiisAe5iEzcjv1G52KlfIyTNAQ5qM47yYbzYncfrZh2w4ATZMxXVS2OtqlxzrCAeCfFOlUg24HljQx5rOZqVjKvqT5XikxmJfKAdr0uo5e6Ibs8lxfbVEiLbLs98SiDBWowlv58JkjDLIPZqP0FBHuo8_rgIf4qQRLqG87A7HqvdFgW_2GQj2FF9AKhbSwLgBxQ26ZdH',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBQzoIZZWjwL2nAxOc9m01GsuFBOG7ZSxAMJieeTtgjvLBsY8c1UXPgAaks5wKdcWtCo10Pa6NxwD-a0aKB9HxRF8AEph_Dc5dSoy9LwmruaoKEEZvYaURWpmT-h-cGhitk2JWDuKQCjZEHMIRiK--5cLFEQroQnV72JxE_JExKytMkMtx2OPmWvoHhPNgSqkpxSPaSExveFDza0PRb7Eq2DJiBKMBKQt8m2VuSbt8qsTYpT5DD-2SIZvQk-6Rcq9KLMK6vU03yfNYp',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuD32Ez88h2btiK0pXsswkCUaufRqnNi2BN449D6L93j_ecvZi6tJbmJsT1AuVG2x7r1_fVeeIgyl362Zjipxh2z4I2id5ss3ZrFtkukbEhu3DCNy95_RESQrhPjZdWjJN7ddfSiG95-l71zb4rCCE9tDG2TSv5lFmuQpG8TMsS59-CfWRTuCsFYpHBBHBJsM4_By4ieuxlyynZsWJl1Iq9AVm1O6b9WDKWRhplGYPmFFsX6fnf3OxbDHtPg-EbV07bYrIv7helcgwoT',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuC5c4XfDQYmlHRDMRocrW3tJi3GPMoYEP20wVWBlo-h_81YYd-XedM58S3xLPCwgYPo-FZF2pJFpr3U6Z-wLJfB25JRTBODucpAfj90Z4xUW07PztUVhbdzhvILqoICSNy8A_xPNhU-6pF4b1IvgZxJqqsURmLkOlnqTJ4qZz9iMVxBKaXYEo8MHCIaSff_95X3HxERQbOtR7Pdi8TjqEornVr03YswfcHL13WPATv8sU_el5khXbzH1_lSoD5VpeaI3rDOodIjqGrV',
-  ];
-
   const handleAddItem = async (templateId: string, itemName: string) => {
     await addToShoppingList(templateId, 'NORMAL', '');
     Alert.alert("追加完了", `${itemName} をリストに追加しました`);
@@ -101,7 +93,13 @@ export default function DairyCategoryScreen() {
               className={`w-[48%] bg-surface-container-lowest rounded-lg p-4 flex-col gap-3 mb-6 shadow-sm ${index % 2 !== 0 ? 'mt-8' : ''}`}
             >
               <View className="aspect-square rounded-lg overflow-hidden bg-surface-container-low relative">
-                <Image source={{ uri: mockImages[index % mockImages.length] }} className="w-full h-full" />
+                {item.imageUrl ? (
+                  <Image source={{ uri: item.imageUrl }} className="w-full h-full" />
+                ) : (
+                  <View className="w-full h-full items-center justify-center bg-surface-variant">
+                    <Icon name="local-drink" size={40} className="text-outline" />
+                  </View>
+                )}
                 <TouchableOpacity
                   className="absolute bottom-3 right-3 w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
                   onPress={() => handleAddItem(item.id, item.name)}

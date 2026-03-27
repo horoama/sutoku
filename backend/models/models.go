@@ -63,6 +63,7 @@ type ItemTemplate struct {
 	CategoryID  string     `gorm:"type:uuid" json:"categoryId"`
 	Category    Category   `json:"category,omitempty"`
 	DefaultDays int        `gorm:"default:7" json:"defaultDays"`
+	ImageURL    string     `json:"imageUrl"`
 	IsSystem    bool       `gorm:"default:true" json:"isSystem"`
 	FamilyID    *string    `gorm:"type:uuid" json:"familyId"`
 	ListItems   []ListItem `json:"listItems,omitempty"`

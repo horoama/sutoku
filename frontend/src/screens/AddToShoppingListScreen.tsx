@@ -28,21 +28,15 @@ export default function AddToShoppingListScreen() {
   };
 
   const activeCategoryData = categories.find(c => c.id === activeCategoryId);
-  const itemsToDisplay = activeCategoryData ? activeCategoryData.items : [];
+  const allItemsToDisplay = activeCategoryData ? activeCategoryData.items : [];
+  const itemsToDisplay = allItemsToDisplay.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const mockImages = [
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuA8kkp34mw6Wt-qiNyZaQFhf9wlTQKDGN2ziPMQZR3fzr3ExFv4FIlfbsxBidCVtIZNjCWcNU1TPZ70zHUqDb9yhTSR0K8B2Uqw4GXL6E5PIituNp2IqeFYAT8U0_yT8Hwhvd1gAZ9eqPh6hfPnFa3seJhLm1hKcy1T1X64oMd0ltH3p4Idp7ES7_IMVgc-xZBZtBA6-KE9Q1uy5WqgudOQ7hzrSfW7NsZobszgdw89_yl2CJtPiP3__exBSrmbViOtqs4Eogyogc8Y',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBSLzYs2y0wrPXChIsW32ulotHgEUxbCtpkuUjICxa7xGzKRcwuUPvGiYLwhoIMkvSxlV0dBMFTetPgSjlN6feLIsEkrCkS6AaWU4eSbCFfuAKeyZA0PidqaU_5cNJXonB_VyaWYJp58Gum1xqkvqCXJXi4YY1twokTlemJ_FmIzMvhewQD5EaGt3RXH9rSH80pPzB5TebM5ZfUjVZQDy1yPOINJcpRIP8qE5VDDERDE6576JjgiYlTBZ140JENDYV-qbk1TzDQFL0x',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBA21PhyN_KyriPgkdWJ23qVHr99lipQBpzwLjfaKrudlApUatqdrxgSlBdfOhBONz1Y4zXapCZ8rW6wMgez0guCKVrfncwI0VYw3Hazvxi3h5hoXN4MCf5sKjYmMbf4uferEYOPmptb_2mdfbtbsaB1lbv8KiKIHF3acMpEwy_57TpHtUcyR7TwP5X2OPhh4m0616OkJVHv7CbNmF37J7GiXjcoqym7-_movAuqmmb76IhOkjQiDA6Yd3vccmGr_kNKKoc5isnuY4h',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDtaJkj1EDExPCp2WlkpD2HY_9syXTGXTxhzTXz0SDAbe6xZ_yjuXsO0mRUoPcIHD5zTBRKYa9Fi0imCVfxtuJElDBDvFHFYiSjY6Ab1QLcFKNb0Iqz-8jCIqPzUMjfPOTErVo8zRCGRrc1lkT8q8evOeE6Apzf-vRrQnXAmQYqip2TDTl5lJJZP1BUb7JJ9tvzjxKkw9uZoHR2Avj608YkLtpQUP3gxgr-QqlvHlws3pU9YmMMkiq3jGvj7_0Fzr0wO9sUrDgGN9GF'
-  ];
-
-  // This would typically come from a store, mocking for UI
-  const suggestions = [
-    { id: '1', name: 'Avocados', templateId: itemsToDisplay[0]?.id, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBzOSU-2v4ZJP-JVFluqYX3ESN9tRG4-6g29R3EUvuCymSsY2Hmx7q-eeo_1lZc9sh_y6wmpwcAiyitVV7Vb4yUxOlvR3dief-JzPdW1j1YKaDKAHKOo_4cf58UVYA0xLbWinMdhx0lcXCAaPKCWigJKbNh5-4W0nPCSbROiSNhkvQEpDMrcaIgUarkrx91oexWbfIJSa5_6VA8ENClXIXUBFQquJU-HpnCEd4FA8s5afDANcXyZ7pNG_87ru58QELzIju3v0Pag3-C' },
-    { id: '2', name: 'Whole Milk', templateId: itemsToDisplay[0]?.id, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHM1cl2XHfGXVe0fURNtZwkgbdyspcpTt2B8_EdcUUMWD5Vz66ZkVLwzzAvg6KxcFV_8BfxRYseIYRx9deN4q3I1GsXU3CpsgTOhCwzwVzrAKmuetYJkMdDA6G_RAjcTDFufIHPyU5mwicvzvCIQf0692n-2f2VIK1Tq5fkbj6XnrJymso97Qqfd0FOy99iLVONqyoI7YuyzhtyPr1eVnWiWzuh_WZWPJD4N1thLakHXgh9wma9vJ8UVDf1GoQ7Gl6BvcQOWI_Tm7n' },
-    { id: '3', name: 'Sourdough', templateId: itemsToDisplay[0]?.id, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDm56M2nO3h2qsoH2HfjNIHlpwtAo6kjNJ_DP618AZ-R4oJmNboYnZ9aegn0_nbxZLxooNSBaCjSVcLnjLA2yZOW5cecV19zSF2LtNeEH7mVfuT6sGxsSXWNR6u4chrXzoSnCcVEMA258u-1MLBYA5IFHWeHMJjoH-XK6t3M9gm2SZot3cFfsML0azHS_HgJXxNPWxJ60ApBzPzZnizNyUwwws0-xViDS8pQ-FRhA8cQvmV-uiJopjqpMS4YnS9oNBz_QJurUD7VXnb' }
-  ];
+  // Generate suggestions based on available templates, taking top 3
+  let suggestions: ItemTemplate[] = [];
+  if (categories.length > 0) {
+    const allItems = categories.flatMap(c => c.items);
+    suggestions = allItems.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 3);
+  }
 
   return (
     <View className="flex-1 bg-surface font-body text-on-surface" style={{ paddingTop: insets.top }}>
@@ -102,13 +96,19 @@ export default function AddToShoppingListScreen() {
             {suggestions.map(item => (
               <View key={item.id} className="w-40 bg-surface-container-lowest rounded-lg overflow-hidden mr-4 shadow-sm border border-surface-variant/20">
                 <View className="h-32 w-full bg-surface-container-low">
-                  <Image source={{ uri: item.image }} className="w-full h-full" resizeMode="cover" />
+                  {item.imageUrl ? (
+                     <Image source={{ uri: item.imageUrl }} className="w-full h-full" resizeMode="cover" />
+                  ) : (
+                     <View className="w-full h-full items-center justify-center">
+                        <Icon name="eco" size={32} className="text-outline" />
+                     </View>
+                  )}
                 </View>
                 <View className="p-4 space-y-3">
                   <Text className="font-headline font-semibold text-sm" numberOfLines={1}>{item.name}</Text>
                   <TouchableOpacity
                     className="w-full bg-secondary-fixed py-2 rounded-xl flex-row items-center justify-center gap-2 active:bg-secondary-container"
-                    onPress={() => item.templateId ? handleAddItem(item.templateId, item.name) : null}
+                    onPress={() => handleAddItem(item.id, item.name)}
                   >
                     <Icon name="add" size={16} className="text-on-secondary-fixed-variant" />
                     <Text className="text-on-secondary-fixed-variant font-label text-xs font-bold">Add</Text>
@@ -139,7 +139,13 @@ export default function AddToShoppingListScreen() {
           {itemsToDisplay.length > 0 ? itemsToDisplay.map((item, index) => (
              <View key={item.id} className="bg-surface-container-low rounded-lg p-4 flex-row items-center gap-4 mb-3">
                <View className="w-16 h-16 rounded-xl overflow-hidden bg-surface-container-highest">
-                 <Image source={{ uri: mockImages[index % mockImages.length] }} className="w-full h-full" />
+                 {item.imageUrl ? (
+                   <Image source={{ uri: item.imageUrl }} className="w-full h-full" />
+                 ) : (
+                   <View className="w-full h-full items-center justify-center">
+                     <Icon name="eco" size={32} className="text-outline" />
+                   </View>
+                 )}
                </View>
                <View className="flex-1">
                  <Text className="font-headline font-bold text-on-surface text-base">{item.name}</Text>

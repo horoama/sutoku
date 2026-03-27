@@ -8,11 +8,12 @@ import { useShoppingStore } from "../store/shoppingStore";
 export default function RegisterItemScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { categories, addToShoppingList } = useShoppingStore();
+  const { categories, addToShoppingList, createItemTemplate } = useShoppingStore();
 
   const [itemName, setItemName] = useState("");
   const [notes, setNotes] = useState("");
   const [freshness, setFreshness] = useState(7);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Default to first category if available
   const [activeCategoryId, setActiveCategoryId] = useState(categories.length > 0 ? categories[0].id : "");
@@ -23,20 +24,29 @@ export default function RegisterItemScreen() {
       Alert.alert("エラー", "アイテム名を入力してください");
       return;
     }
-
-    // In a real app, you would likely first create the ItemTemplate if it doesn't exist.
-    // For this prototype, we'll try to find an existing one or just use a default from the first category.
-    // Assumption: the API handles template creation or expects an existing template ID.
-    // Here we'll just pick a template ID from the active category to satisfy the API.
-    const selectedCategory = categories.find(c => c.id === activeCategoryId) || categories[0];
-    if (!selectedCategory || !selectedCategory.items || selectedCategory.items.length === 0) {
-       Alert.alert("エラー", "有効なカテゴリがありません");
-       return;
+    if (!activeCategoryId) {
+      Alert.alert("エラー", "カテゴリを選択してください");
+      return;
     }
-    const templateId = selectedCategory.items[0].id; // Fallback to first item template in category
 
-    await addToShoppingList(templateId, activePriority, notes.trim());
-    navigation.navigate("RegistrationSuccess");
+    setIsSubmitting(true);
+    try {
+      const newTemplate = await createItemTemplate(itemName, activeCategoryId, freshness);
+      if (newTemplate && newTemplate.id) {
+        await addToShoppingList(newTemplate.id, activePriority, notes.trim());
+        navigation.navigate("RegistrationSuccess", {
+          itemName: newTemplate.name,
+          location: "Main Pantry", // Example location
+          expiresIn: `${freshness} Days`
+        });
+      } else {
+        Alert.alert("エラー", "アイテムの作成に失敗しました");
+      }
+    } catch (e) {
+      Alert.alert("エラー", "アイテムの作成に失敗しました");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

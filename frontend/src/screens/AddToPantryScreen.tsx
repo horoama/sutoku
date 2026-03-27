@@ -16,19 +16,17 @@ export default function AddToPantryScreen() {
   const { categories } = useShoppingStore();
 
   const handleQuickStock = async (itemTemplateId: string) => {
-    // Basic mock implementation. In real app, we'd match name to templateId.
-    // Here we'll fallback to a category item if we don't have exactly matching IDs for the hardcoded quick stock.
-    const fallbackTemplate = categories.length > 0 && categories[0].items.length > 0 ? categories[0].items[0].id : "";
-    await addToFridge(fallbackTemplate, 'FRIDGE', 'NORMAL', '');
+    if (!itemTemplateId) return;
+    await addToFridge(itemTemplateId, 'FRIDGE', 'NORMAL', '');
     alert("Added to Fridge!");
   };
 
-  const quickStockItems = [
-    { id: '1', name: 'Whole Milk', info: 'Dairy • 1 Gallon', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBamihkDt5vnmuw8-0pIVWD6KcszuebUUtawDkjNTcZ6jZ9F_8rcwjVfKxHo8g64_GGWvnHfUakgXqrKoE2x9_eTV0Zunj01qbGJBj_FnPMoeCBLxgqol5JIfa-DtlxfYFFwpBm_renzzMqTzI2QfFt5VBRuN1iX1RAwoY3tiNYvgzJrIsu_ryUH_YVyKv4EMdFyl-oNmJVellLphMuXwfXCas5bSangKWZNadM0ot0so2TwIePCYrP6N292S8VMGMsWmXAC1d3_jMV' },
-    { id: '2', name: 'Organic Eggs', info: 'Dairy • 12 Count', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp_wnHGtDsfRBOiItvYlySa88ZIR97yXWpmEHprdsJRVxBDg0tYjFdOj9qou_ArD13sEhREQwPCzCJM-pJ70jWssK6pVFzrzkUpgfVJmlWr-tRj6G9SvOyxEfHHCSjBGhIe54Be9gQzZLfFEX8JHEvHtZSFQncGnJlFtM54-oNhLy2dObDTg8eMwjM96lvRnlI1SPqv_YZhXAjbJzDUcH8BtvzANA_ajjspSsC7pAf66n2UjjY4jWvQ1wTnYZmZQAIeLcEVPSHKvx1' },
-    { id: '3', name: 'Bananas', info: 'Produce • 1 Bunch', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuBs-ys-UqPUdW2AmvukfwZDIWuS4tFmFymIFXo2Vvz3V4nonVLnwlRJdtQJr3RyHuGUqARW3rtmURZanim3V05Aun7Ob7p8132aYIrEMBH47ix9etaWLM9mYTIJGyiCLpcAh6vV0A4KKM2akxVS4v-7GBok0XkdwHtUlc8jX6pnJmMlNIn6dTQ-VlILqI8TchhWiB-CwAXcjygmYvIq4loNKpDlVfd59CpQ8XY2cLgE9vfRGYDaiKTSl7qmlWApL8Ysp-5EcK2tsB' },
-    { id: '4', name: 'Sourdough Loaf', info: 'Bakery • 1 Unit', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCQPaOMH9l4NNJ9wYNV71NxV4g9wNEmHjiqXHO9xpXhBFU_wm4yECK6mO7tc_Tp6Ol4TI4sCGcPsXKnPaNmTF3XGNgBeMGGbxXmuFI1RAe2cjgrlwF2TGh1Q4y_4jVQU_PyyoGlOVkD5-vGtMuaiNFUO3FENoI2AqCzVjFaJm2bvax_i3lcdDrWH1meFL4LAnYiFJDUvIt5N1fQd7zLNuIkv4QsQ3jePw5eKrzXlhRISKiB3NTfgxmryNn6xYBcdNcpx9hl3RmZjkO2' },
-  ];
+  // Generate suggestions based on available templates, taking top 4
+  let quickStockItems: any[] = [];
+  if (categories.length > 0) {
+    const allItems = categories.flatMap(c => c.items);
+    quickStockItems = allItems.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 4);
+  }
 
   return (
     <View className="flex-1 bg-background font-body text-on-surface" style={{ paddingTop: insets.top }}>
@@ -106,11 +104,17 @@ export default function AddToPantryScreen() {
               <View key={item.id} className="flex-row items-center justify-between p-4 rounded-lg bg-surface-container-low mb-3">
                 <View className="flex-row items-center gap-4">
                   <View className="w-12 h-12 rounded-full overflow-hidden bg-surface-container">
-                    <Image source={{ uri: item.image }} className="w-full h-full" resizeMode="cover" />
+                    {item.imageUrl ? (
+                       <Image source={{ uri: item.imageUrl }} className="w-full h-full" resizeMode="cover" />
+                    ) : (
+                       <View className="w-full h-full flex items-center justify-center">
+                          <Icon name="eco" size={24} className="text-outline" />
+                       </View>
+                    )}
                   </View>
                   <View>
                     <Text className="font-semibold text-on-surface">{item.name}</Text>
-                    <Text className="text-xs font-label uppercase tracking-wider text-on-surface-variant mt-0.5">{item.info}</Text>
+                    <Text className="text-xs font-label uppercase tracking-wider text-on-surface-variant mt-0.5">Default freshness: {item.defaultDays} Days</Text>
                   </View>
                 </View>
                 <TouchableOpacity
