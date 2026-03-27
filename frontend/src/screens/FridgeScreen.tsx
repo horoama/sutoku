@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, Linking, ScrollView, Image } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, ScrollView, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFridgeStore, FridgeItem } from "../store/fridgeStore";
 import { useAppStore } from "../store/appStore";
 import { differenceInDays } from "date-fns";
 import Icon from "@expo/vector-icons/MaterialIcons";
 
-export default function FridgeScreen() {
+export default function FridgeScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
   const { family } = useAppStore();
   const { fridgeItems, fetchFridgeItems } = useFridgeStore();
@@ -17,166 +17,213 @@ export default function FridgeScreen() {
     }
   }, [family?.id]);
 
-  const searchRecipe = () => {
-    if (fridgeItems.length === 0) return;
-    const ingredients = fridgeItems.slice(0, 3).map((i) => i.itemTemplate.name).join(" ");
-    const url = `https://www.google.com/search?q=${encodeURIComponent(ingredients + " レシピ")}`;
-    Linking.openURL(url);
-  };
-
   const expiringItems = fridgeItems.filter(item => differenceInDays(new Date(item.expirationDate), new Date()) <= 3);
   const fridgeSection = fridgeItems.filter(item => item.location === "FRIDGE");
   const pantrySection = fridgeItems.filter(item => item.location === "PANTRY");
 
-  const renderUrgentItem = (item: FridgeItem) => {
+  const renderUrgentItem = (item: FridgeItem, index: number) => {
     const daysLeft = differenceInDays(new Date(item.expirationDate), new Date());
     const isCritical = daysLeft <= 1;
+    const progressPercent = Math.max(0, Math.min(100, (daysLeft / 7) * 100));
 
-    return (
-      <View key={item.id} className="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant/20 shadow-sm relative overflow-hidden mb-4">
-        <View className={`absolute top-0 left-0 w-1 h-full ${isCritical ? "bg-error" : "bg-secondary-container"}`}></View>
-        <View className="flex-row justify-between items-start mb-4">
-          <View className="flex-row items-center gap-3">
-            <View className={`w-12 h-12 rounded-full flex items-center justify-center ${isCritical ? "bg-error-container" : "bg-secondary-fixed"}`}>
-              <Icon name="restaurant" size={24} className={isCritical ? "text-on-error-container" : "text-on-secondary-fixed-variant"} />
+    if (index === 0) {
+      return (
+        <View key={item.id} className="relative overflow-hidden bg-primary p-6 rounded-lg text-on-primary shadow-lg flex flex-col justify-between aspect-[16/10] mb-4">
+          <View className="flex-row justify-between items-start">
+            <View className="space-y-1">
+              <Text className="font-headline text-2xl font-bold text-on-primary">{item.itemTemplate.name}</Text>
+              <Text className="text-sm opacity-90 font-medium text-on-primary">Shelf: {item.location === "FRIDGE" ? "Fridge" : "Pantry"}</Text>
             </View>
-            <View>
-              <Text className="font-headline font-bold text-on-surface text-base">{item.itemTemplate.name}</Text>
-              <Text className="text-xs text-on-surface-variant font-body">{item.location === "FRIDGE" ? "Fridge Section" : "Pantry Section"}</Text>
+            <View className="bg-tertiary-container px-3 py-1 rounded-full flex-row items-center gap-1">
+              <Icon name="timer" size={14} className="text-on-tertiary-container" />
+              <Text className="text-on-tertiary-container text-xs font-bold">
+                {daysLeft < 0 ? "EXPIRED" : daysLeft === 0 ? "TODAY" : `${daysLeft} DAYS LEFT`}
+              </Text>
             </View>
           </View>
-          <View className={`${isCritical ? "bg-error-container" : "bg-secondary-container"} px-2 py-1 rounded-full`}>
-            <Text className={`${isCritical ? "text-on-error-container" : "text-on-secondary-container"} text-[10px] font-bold`}>
-              {daysLeft < 0 ? "EXPIRED" : daysLeft === 0 ? "TODAY" : `${daysLeft} DAYS`}
+          <View className="space-y-3 mt-auto">
+            <View className="flex-row justify-between">
+              <Text className="text-xs font-bold tracking-wider text-on-primary">FRESHNESS LEVEL</Text>
+              <Text className="text-xs font-bold tracking-wider text-on-primary">{Math.round(progressPercent)}%</Text>
+            </View>
+            <View className="h-3 bg-white/20 rounded-full overflow-hidden">
+              <View className="h-full bg-secondary-container rounded-full" style={{ width: `${progressPercent}%` }}></View>
+            </View>
+          </View>
+          <Icon name="restaurant" size={120} className="absolute -bottom-6 -right-6 opacity-20 text-on-primary" style={{ transform: [{ rotate: "12deg" }] }} />
+        </View>
+      );
+    }
+
+    return (
+      <View key={item.id} className="bg-surface-container-lowest p-5 rounded-lg border-l-8 border-tertiary flex-row items-center gap-4 mb-4 shadow-sm">
+        <View className="w-16 h-16 rounded-2xl bg-surface-container-low overflow-hidden flex-shrink-0 flex items-center justify-center">
+           <Icon name={item.location === "FRIDGE" ? "kitchen" : "inventory-2"} size={32} className="text-tertiary" />
+        </View>
+        <View className="flex-grow">
+          <Text className="font-headline font-bold text-on-surface text-base">{item.itemTemplate.name}</Text>
+          <View className="flex-row items-center gap-2 mt-1">
+            <View className="h-1.5 w-24 bg-surface-container-high rounded-full overflow-hidden">
+              <View className="h-full bg-tertiary rounded-full" style={{ width: `${progressPercent}%` }}></View>
+            </View>
+            <Text className="text-xs font-bold text-tertiary">
+              {daysLeft < 0 ? "Expired" : daysLeft === 0 ? "Today" : `${daysLeft} Days`}
             </Text>
           </View>
         </View>
-
-        <View className="flex-row gap-2 mt-4">
-          <TouchableOpacity className="flex-1 bg-primary py-2 rounded-xl items-center transition-all active:scale-95">
-            <Text className="text-on-primary text-xs font-bold">Consume</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity>
+          <Icon name="restaurant" size={24} className="text-outline" />
+        </TouchableOpacity>
       </View>
     );
   };
 
-  const renderListItem = (item: FridgeItem) => {
+  const renderFridgeItem = (item: FridgeItem) => {
     const daysLeft = differenceInDays(new Date(item.expirationDate), new Date());
     return (
-      <View key={item.id} className="bg-surface-container-low p-4 rounded-lg flex-row items-center justify-between mb-3">
-        <View className="flex-row items-center gap-4 flex-1">
-          <View className={`w-10 h-10 bg-surface-container-lowest rounded-full flex items-center justify-center ${item.location === "FRIDGE" ? "text-primary-container" : "text-secondary"}`}>
-            <Icon name={item.location === "FRIDGE" ? "kitchen" : "shelves"} size={20} className={item.location === "FRIDGE" ? "text-primary-container" : "text-secondary"} />
+      <TouchableOpacity
+        key={item.id}
+        className="bg-surface-container-low p-4 rounded-lg flex-row items-center justify-between group mb-3"
+        onPress={() => navigation.navigate("ItemDetails", { itemId: item.id })}
+      >
+        <View className="flex-row items-center gap-4">
+          <View className="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary">
+            <Icon name="kitchen" size={24} className="text-primary" />
           </View>
-          <View className="flex-1">
-            <Text className="font-headline font-bold text-on-surface text-base">{item.itemTemplate.name}</Text>
-            <View className="flex-row items-center gap-2 mt-1">
-              <View className="flex-1 h-1 bg-outline-variant/30 rounded-full overflow-hidden">
-                <View className={`h-full ${daysLeft > 7 ? "bg-primary-fixed w-[80%]" : daysLeft > 3 ? "bg-secondary-container w-[40%]" : "bg-error w-[10%]"}`}></View>
-              </View>
-              <Text className={`text-[10px] font-bold uppercase tracking-tighter ${daysLeft > 7 ? "text-on-surface-variant" : daysLeft > 3 ? "text-secondary" : "text-error"}`}>
-                {daysLeft < 0 ? "Expired" : `${daysLeft} Days Left`}
-              </Text>
-            </View>
+          <View>
+            <Text className="font-headline font-semibold text-on-surface text-base">{item.itemTemplate.name}</Text>
+            <Text className="text-xs text-outline font-medium">Added recently</Text>
           </View>
         </View>
-        <View className="flex-row gap-2 ml-4">
-          <TouchableOpacity className="w-8 h-8 rounded-full bg-surface-container-lowest flex items-center justify-center shadow-sm">
-            <Icon name="check-circle" size={16} className="text-on-surface-variant" />
-          </TouchableOpacity>
+        <View className="items-end">
+          <Text className="font-headline font-bold text-primary text-base">{daysLeft} Days</Text>
+          <Text className="text-[10px] text-outline uppercase tracking-widest font-bold">REMAINING</Text>
         </View>
-      </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderPantryCard = (item: FridgeItem) => {
+    return (
+      <TouchableOpacity
+        key={item.id}
+        className="w-40 bg-surface-container-lowest p-5 rounded-lg shadow-sm mr-4"
+        onPress={() => navigation.navigate("ItemDetails", { itemId: item.id })}
+      >
+        <View className="w-full aspect-square bg-surface-container-low rounded-2xl overflow-hidden mb-4 items-center justify-center">
+          <Icon name="inventory-2" size={48} className="text-secondary" />
+        </View>
+        <View className="mb-2">
+          <Text className="font-headline font-bold text-sm text-on-surface" numberOfLines={1}>{item.itemTemplate.name}</Text>
+          <Text className="text-xs text-outline font-medium">In stock</Text>
+        </View>
+        <View className="bg-primary-fixed px-2 py-0.5 rounded-full self-start">
+          <Text className="text-[10px] font-bold text-primary-container">STABLE</Text>
+        </View>
+      </TouchableOpacity>
     );
   };
 
   return (
-    <View className="flex-1 bg-surface text-on-surface" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-surface text-on-surface pb-32" style={{ paddingTop: insets.top }}>
+      {/* TopAppBar */}
       <View className="w-full flex-row items-center justify-between px-6 py-4 bg-surface z-50">
         <View className="flex-row items-center gap-3">
-          <View className="w-10 h-10 rounded-full overflow-hidden bg-primary-container flex items-center justify-center">
+          <Icon name="restaurant-menu" size={24} className="text-primary" />
+          <Text className="font-headline font-extrabold tracking-tight text-2xl text-primary italic">The Living Larder</Text>
+        </View>
+        <View className="flex-row items-center gap-4">
+          <TouchableOpacity className="active:scale-95 transition-transform">
+            <Icon name="search" size={24} className="text-slate-500" />
+          </TouchableOpacity>
+          <View className="w-10 h-10 rounded-full bg-surface-container-high border-2 border-primary-fixed overflow-hidden">
             <Image
-              source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAy8DZP0G25aqYUnJmE19bNA76PgkOTsaM4_kS0tc_htL8LfVNbfzwZOZled6YyAWWDo6D_b-U4vGd0nVIfogk6AfeKPx1gexkXq9nRA3V0ZJeDtOjJ1DkxtZdVq49_G-HTh8gj7_ibBKAWfmXSn5IBHdX8WS1rslxQMZ_tdQASK9cwhHtqTBi2G0AQ4KuTnvaueAKFc72XDPsT3RyNKGEoK2LRDSFBOskfFcUEwJAu_-Q7Gatnz1Hd_su39om5qilWtygtUW13JvGs" }}
+              source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAWXxIn9vkOJkM6PINi0yWB5YnNUFN2iUe8ENrb1prTy3CywJnqQgcSyUGjHjGzRKF5FVKQzfrFCxc1LflbtW1H-7Kjz4EyBhEG2Ir5-lzht5fkn07JXndNTHy26vznKGojtw6tQeFBobHuHP3F1c34TDx8ikUeiv0UNeKkxhi38LvSIZJnNAm67ooMtjERCHnxuSF-pUZ6hFXtDrWBbz0-UDBDlJY5EVX6A5Okq8Cx7z4ei6GutfcWV5NTCRCRvrasLGGu_o0ZPcTw" }}
               className="w-full h-full"
             />
           </View>
-          <Text className="text-primary font-headline font-bold text-lg tracking-tight">The Living Larder</Text>
         </View>
-        <TouchableOpacity className="active:opacity-80 transition-opacity">
-          <Icon name="notifications" size={24} className="text-outline" />
-        </TouchableOpacity>
       </View>
 
-      <ScrollView className="px-6 pt-4" contentContainerStyle={{ paddingBottom: 160 }}>
-        <View className="mb-10 mt-4">
-          <Text className="font-headline text-primary font-extrabold text-4xl leading-tight tracking-tighter">
-            Inventory{"\n"}<Text className="text-secondary">Freshness Hub</Text>
-          </Text>
-          <Text className="text-on-surface-variant mt-2 font-body text-base">Keeping your kitchen vibrant and waste-free.</Text>
-        </View>
+      <ScrollView className="pt-4" contentContainerStyle={{ paddingBottom: 160 }}>
+        <View className="px-6 space-y-10">
+          {/* Expiring Soon Hero Section */}
+          <View>
+            <View className="flex-col gap-1 mb-6">
+              <Text className="font-label text-xs font-semibold uppercase tracking-widest text-secondary">Eat Me First</Text>
+              <Text className="font-headline text-3xl font-bold tracking-tight text-primary">Expiring Soon</Text>
+            </View>
 
-        {expiringItems.length > 0 && (
-          <View className="mb-12">
-            <View className="flex-row items-center justify-between mb-4 px-2">
-              <Text className="font-headline font-bold text-xl text-on-surface">Expiring Soon</Text>
-              <View className="bg-tertiary-container px-3 py-1 rounded-full">
-                <Text className="text-on-tertiary-container text-[10px] font-bold tracking-widest uppercase">Action Required</Text>
+            {expiringItems.length > 0 ? (
+              <View>
+                {expiringItems.map((item, index) => renderUrgentItem(item, index))}
               </View>
+            ) : (
+              <Text className="text-on-surface-variant font-body">期限切れが近いアイテムはありません</Text>
+            )}
+          </View>
+
+          {/* The Fridge Bento */}
+          <View className="mt-10">
+            <View className="flex-row justify-between items-end mb-6">
+              <Text className="font-headline text-3xl font-bold tracking-tight text-primary">The Fridge</Text>
+              <Text className="text-sm font-bold text-outline uppercase tracking-tighter">{fridgeSection.length} Items</Text>
             </View>
             <View>
-              {expiringItems.map(renderUrgentItem)}
+              {fridgeSection.length > 0 ? (
+                fridgeSection.map(renderFridgeItem)
+              ) : (
+                <Text className="text-on-surface-variant font-body">冷蔵庫は空です</Text>
+              )}
             </View>
           </View>
-        )}
 
-        <View className="space-y-12">
-          {fridgeSection.length > 0 && (
-            <View className="mb-8">
-              <View className="flex-row items-center gap-3 mb-6">
-                <View className="p-2 bg-primary-fixed rounded-xl">
-                  <Icon name="kitchen" size={24} className="text-on-primary-fixed-variant" />
-                </View>
-                <Text className="font-headline font-bold text-2xl text-primary">The Fridge</Text>
-              </View>
-              <View>
-                {fridgeSection.map(renderListItem)}
-              </View>
+          {/* The Pantry Horizontal */}
+          <View className="mt-10 mb-6">
+            <View className="flex-row justify-between items-end mb-6">
+              <Text className="font-headline text-3xl font-bold tracking-tight text-primary">The Pantry</Text>
+              <TouchableOpacity className="flex-row items-center gap-1">
+                <Text className="text-sm font-bold text-primary uppercase tracking-tighter">See All</Text>
+                <Icon name="chevron-right" size={16} className="text-primary" />
+              </TouchableOpacity>
             </View>
-          )}
+            {pantrySection.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6 pb-4">
+                {pantrySection.map(renderPantryCard)}
+              </ScrollView>
+            ) : (
+                <Text className="text-on-surface-variant font-body">食糧庫は空です</Text>
+            )}
+          </View>
 
-          {pantrySection.length > 0 && (
-            <View className="mb-8">
-              <View className="flex-row items-center gap-3 mb-6">
-                <View className="p-2 bg-secondary-fixed rounded-xl">
-                  <Icon name="shelves" size={24} className="text-on-secondary-fixed-variant" />
+          {/* Sustainable Tip Card */}
+          <View className="mt-8 mb-4">
+            <View className="bg-secondary-fixed p-8 rounded-xl relative overflow-hidden">
+              <View className="relative z-10 w-[80%] space-y-3">
+                <View className="flex-row items-center gap-2 mb-2">
+                  <Icon name="tips-and-updates" size={24} className="text-on-secondary-fixed" />
+                  <Text className="font-headline font-bold text-lg text-on-secondary-fixed">Sustainable Tip</Text>
                 </View>
-                <Text className="font-headline font-bold text-2xl text-secondary">The Pantry</Text>
+                <Text className="text-sm font-medium leading-relaxed text-on-secondary-fixed mb-4">
+                  Wrap your celery in aluminum foil before putting it in the fridge. It stays crisp for up to 4 weeks!
+                </Text>
+                <TouchableOpacity className="bg-on-secondary-fixed px-5 py-3 rounded-full self-start active:scale-95 transition-all">
+                  <Text className="text-secondary-fixed text-xs font-bold uppercase tracking-widest">Learn More</Text>
+                </TouchableOpacity>
               </View>
-              <View>
-                {pantrySection.map(renderListItem)}
-              </View>
+              <Icon name="recycling" size={180} className="absolute -bottom-10 -right-10 opacity-10 text-on-secondary-fixed" />
             </View>
-          )}
+          </View>
         </View>
-
-        <TouchableOpacity
-          className="mt-4 mb-8 bg-primary-container p-6 rounded-lg relative overflow-hidden active:scale-95 transition-all"
-          onPress={searchRecipe}
-        >
-          <View className="relative z-10">
-            <Text className="font-headline font-bold text-lg mb-2 text-on-primary-container">Recipe Suggestions</Text>
-            <Text className="text-on-primary-container text-sm leading-relaxed font-body">Tap to search Google for recipes using items in your inventory.</Text>
-          </View>
-          <Icon name="restaurant-menu" size={80} className="absolute -right-4 -bottom-4 opacity-20 text-on-primary-container" />
-        </TouchableOpacity>
       </ScrollView>
 
+      {/* FAB */}
       <TouchableOpacity
-        className="absolute bottom-32 right-6 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all z-40"
+        className="absolute bottom-28 right-6 w-16 h-16 bg-primary rounded-xl flex items-center justify-center shadow-xl active:scale-95 transition-transform z-50"
+        onPress={() => navigation.navigate("AddToPantry")}
       >
         <Icon name="add" size={28} className="text-on-primary" />
       </TouchableOpacity>
     </View>
   );
 }
-
