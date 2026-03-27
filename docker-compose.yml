@@ -16,8 +16,7 @@ services:
       - HTTPS_PROXY=${HTTPS_PROXY:-}
       - NO_PROXY=${NO_PROXY:-}
     volumes:
-      - ./backend/src:/app/src
-      - ./backend/prisma/dev.db:/app/prisma/dev.db
+      - ./backend/data:/app/data
 
   frontend:
     build:
