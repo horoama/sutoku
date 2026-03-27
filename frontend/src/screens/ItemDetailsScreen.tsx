@@ -1,17 +1,56 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
+import { useFridgeStore } from "../store/fridgeStore";
+import { useShoppingStore } from "../store/shoppingStore";
+import { differenceInDays, addDays } from "date-fns";
+
+type ParamList = {
+  ItemDetails: { itemId: string };
+};
 
 export default function ItemDetailsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<ParamList, 'ItemDetails'>>();
 
-  const [itemName, setItemName] = useState("Organic Spinach");
-  const [notes, setNotes] = useState("Triple-washed baby spinach from the local farmers market. High in iron and perfect for morning smoothies or fresh salads.");
-  const [freshness, setFreshness] = useState(8);
-  const [activePriority, setActivePriority] = useState("NORMAL");
+  const { fridgeItems, updateFridgeItem } = useFridgeStore();
+  const { addToShoppingList } = useShoppingStore();
+
+  const itemId = route.params?.itemId;
+  const initialItem = fridgeItems.find(i => i.id === itemId);
+
+  const [itemName, setItemName] = useState(initialItem?.itemTemplate?.name || "");
+  const [notes, setNotes] = useState(initialItem?.itemTemplate?.name ? `Stored in ${initialItem.location}.` : "");
+
+  const initialDaysLeft = initialItem ? Math.max(0, differenceInDays(new Date(initialItem.expirationDate), new Date())) : 7;
+  const [freshness, setFreshness] = useState(initialDaysLeft);
+  const [activePriority, setActivePriority] = useState<"URGENT" | "HIGH" | "NORMAL" | "SOMEDAY">("NORMAL");
+
+  const saveUpdates = async () => {
+    if (initialItem) {
+       const newExpDate = addDays(new Date(), freshness).toISOString();
+       await updateFridgeItem(initialItem.id, {
+         priority: activePriority,
+         expirationDate: newExpDate,
+         note: notes
+       });
+    }
+  };
+
+  useEffect(() => {
+    saveUpdates();
+  }, [freshness, activePriority]);
+
+  const handleAddToShoppingList = async () => {
+    if (initialItem) {
+      await addToShoppingList(initialItem.itemTemplateId, activePriority, notes.trim());
+      Alert.alert("Success", "Added to your shopping list!");
+      navigation.navigate("MainTabs", { screen: "Shopping" });
+    }
+  };
 
   return (
     <View className="flex-1 bg-surface font-body text-on-surface" style={{ paddingTop: insets.top }}>
@@ -67,6 +106,7 @@ export default function ItemDetailsScreen() {
                 textAlignVertical="top"
                 value={notes}
                 onChangeText={setNotes}
+                onBlur={saveUpdates}
               />
             </View>
           </View>
@@ -135,7 +175,10 @@ export default function ItemDetailsScreen() {
             </View>
             <Text className="font-headline font-bold text-xl text-on-secondary-container mb-2">Out of Stock?</Text>
             <Text className="text-on-surface-variant text-sm mb-6 max-w-xs text-center font-body">Running low on greens? Tap below to add this to your family's collaborative shopping list.</Text>
-            <TouchableOpacity className="w-full py-5 px-8 rounded-xl bg-primary flex-row items-center justify-center gap-3 shadow-lg active:scale-95 transition-transform">
+            <TouchableOpacity
+              className="w-full py-5 px-8 rounded-xl bg-primary flex-row items-center justify-center gap-3 shadow-lg active:scale-95 transition-transform"
+              onPress={handleAddToShoppingList}
+            >
               <Text className="text-on-primary font-headline font-extrabold text-lg">Add to Shopping List</Text>
               <Icon name="add-circle" size={24} className="text-on-primary" />
             </TouchableOpacity>

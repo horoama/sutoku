@@ -6,7 +6,7 @@ import Icon from "@expo/vector-icons/MaterialIcons";
 
 export default function SettingsScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
-  const { user } = useAppStore();
+  const { user, family, members } = useAppStore();
 
   return (
     <View className="flex-1 bg-surface text-on-surface pb-32" style={{ paddingTop: insets.top }}>
@@ -50,7 +50,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
 
               <View className="space-y-4">
                 <View className="bg-surface-container rounded-lg p-6 flex-row items-center justify-between border border-outline-variant/20">
-                  <Text className="font-headline text-3xl font-extrabold tracking-widest text-primary">KITCH-829</Text>
+                  <Text className="font-headline text-3xl font-extrabold tracking-widest text-primary">{family?.inviteCode || "KITCH-829"}</Text>
                   <TouchableOpacity className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm">
                     <Icon name="content-copy" size={20} className="text-primary" />
                   </TouchableOpacity>
@@ -100,64 +100,31 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
               <View className="flex-row items-center gap-2 mb-6">
                 <Text className="font-headline text-2xl font-extrabold text-primary">Active Members</Text>
                 <View className="bg-primary-fixed px-3 py-1 rounded-full">
-                  <Text className="text-on-primary-fixed text-sm font-bold">3</Text>
+                  <Text className="text-on-primary-fixed text-sm font-bold">{members.length}</Text>
                 </View>
               </View>
 
               <View className="space-y-3">
-                {/* Admin */}
-                <View className="bg-surface-container-lowest p-4 rounded-lg flex-row items-center justify-between mb-3 shadow-sm">
-                  <View className="flex-row items-center gap-4">
-                    <View className="w-14 h-14 rounded-full overflow-hidden border-4 border-primary-fixed/30">
-                      <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBlrDfLorYzduAQ-cye1gAHqIEIFhVqCiWxMdarJ-9IQzP_a5Mfl-VLzoIXcXGfeJW2WqC_JEAQTXAsljsx6-9ROi5DTytu1ZOLJbyvMSdFRGkHr4V82ugrCqGx3iCTtBgDoa5amF5RbwZuJbhh2la5iVwpdI7Sgh__rSz8ilny8qlTWdPHVyFW5gGwwD7FnxX23hUB9xEcj-v6t6NsXWexvzehSkmnDH6unJt-89gnwnlY1NBoQgdSnfMBVnVkYGYfBGPVqkNV4RLP" }} className="w-full h-full" />
-                    </View>
-                    <View>
-                      <Text className="font-bold text-on-surface text-base">Sarah Mitchell</Text>
-                      <View className="bg-primary-fixed px-2 py-0.5 rounded self-start mt-1">
-                        <Text className="font-headline text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">Admin</Text>
+                {members.map(member => (
+                  <View key={member.id} className="bg-surface-container-lowest p-4 rounded-lg flex-row items-center justify-between mb-3 shadow-sm">
+                    <View className="flex-row items-center gap-4">
+                      <View className={`w-14 h-14 rounded-full overflow-hidden ${member.role === 'admin' ? 'border-4 border-primary-fixed/30' : ''}`}>
+                        <Image source={{ uri: member.avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuBLBmGsR-kJweeqc6UJ7tFTPqnu0oh9i1NT_cdc4QrCHqzM38OL6rZzEeb_JORaDSbyD4BoBvZ5M2B3oQH0L3EHIAZGXO-ZRlAOFSzcna5YjAqVtDHtwM-lH0DAkGAO3zl4m-fMd9bM-BL9Bv3fT1EHpVnzbi_BDmIrQkYSOdK_xXrt2w1Vu5c8P9wC5_Buwe0_-unnxrPTVH2B1vQoq6lLZRjPDAd5R40L68I9IV9D4v_KPWgyT63nEMuvk5CDeO_eFgcF-GBYw4se" }} className="w-full h-full" />
+                      </View>
+                      <View>
+                        <Text className="font-bold text-on-surface text-base">{member.name}</Text>
+                        <View className={`${member.role === 'admin' ? 'bg-primary-fixed' : 'bg-secondary-fixed'} px-2 py-0.5 rounded self-start mt-1`}>
+                          <Text className={`font-headline text-[10px] font-extrabold uppercase tracking-[0.1em] ${member.role === 'admin' ? 'text-primary' : 'text-secondary'}`}>
+                            {member.role === 'admin' ? 'Admin' : 'Contributor'}
+                          </Text>
+                        </View>
                       </View>
                     </View>
+                    <TouchableOpacity className="p-2">
+                      <Icon name="more-vert" size={24} className="text-outline" />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity className="p-2">
-                    <Icon name="more-vert" size={24} className="text-outline" />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Contributor 1 */}
-                <View className="bg-surface-container-lowest p-4 rounded-lg flex-row items-center justify-between mb-3 shadow-sm">
-                  <View className="flex-row items-center gap-4">
-                    <View className="w-14 h-14 rounded-full overflow-hidden">
-                      <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuA2bpZ1DEu1a0b6NFtWpu7rKTH2xL3dX6Iq99i24nz4xE75uKCpxlzX8Zkmi2HGmcpy81SPU_vr6CREGHqPgHVQTy5FZjNEXLxVv1C4jeDYncBYjV7Mgeci0ZC0KjXr05WDMx3mV-HDlUPMFoXNs5BoxP9YvPNBIQF5-zrDcdgkj48raGnF-PFkxGdWoHnLEjqExmtmGrWvrPvu9JJIJhllMbFhRxfTaYzknv0kZdj07P0HtoN84CFliHcZANb7EWmviFnRzBcHBqSJ" }} className="w-full h-full" />
-                    </View>
-                    <View>
-                      <Text className="font-bold text-on-surface text-base">James Mitchell</Text>
-                      <View className="bg-secondary-fixed px-2 py-0.5 rounded self-start mt-1">
-                        <Text className="font-headline text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">Contributor</Text>
-                      </View>
-                    </View>
-                  </View>
-                  <TouchableOpacity className="p-2">
-                    <Icon name="more-vert" size={24} className="text-outline" />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Contributor 2 */}
-                <View className="bg-surface-container-lowest p-4 rounded-lg flex-row items-center justify-between shadow-sm">
-                  <View className="flex-row items-center gap-4">
-                    <View className="w-14 h-14 rounded-full overflow-hidden">
-                      <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBLBmGsR-kJweeqc6UJ7tFTPqnu0oh9i1NT_cdc4QrCHqzM38OL6rZzEeb_JORaDSbyD4BoBvZ5M2B3oQH0L3EHIAZGXO-ZRlAOFSzcna5YjAqVtDHtwM-lH0DAkGAO3zl4m-fMd9bM-BL9Bv3fT1EHpVnzbi_BDmIrQkYSOdK_xXrt2w1Vu5c8P9wC5_Buwe0_-unnxrPTVH2B1vQoq6lLZRjPDAd5R40L68I9IV9D4v_KPWgyT63nEMuvk5CDeO_eFgcF-GBYw4se" }} className="w-full h-full" />
-                    </View>
-                    <View>
-                      <Text className="font-bold text-on-surface text-base">Maya Mitchell</Text>
-                      <View className="bg-secondary-fixed px-2 py-0.5 rounded self-start mt-1">
-                        <Text className="font-headline text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">Contributor</Text>
-                      </View>
-                    </View>
-                  </View>
-                  <TouchableOpacity className="p-2">
-                    <Icon name="more-vert" size={24} className="text-outline" />
-                  </TouchableOpacity>
-                </View>
+                ))}
               </View>
             </View>
 

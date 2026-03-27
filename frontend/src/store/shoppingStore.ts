@@ -19,9 +19,9 @@ export interface ShoppingItem {
   id: string;
   familyId: string;
   itemTemplateId: string;
-  priority: 'TODAY' | 'SOMEDAY';
+  priority: 'URGENT' | 'HIGH' | 'NORMAL' | 'SOMEDAY';
   note: string | null;
-  isPurchased: boolean;
+  status: string;
   itemTemplate: ItemTemplate;
 }
 
@@ -33,8 +33,8 @@ interface ShoppingState {
 
   fetchCategories: () => Promise<void>;
   fetchShoppingList: () => Promise<void>;
-  addToShoppingList: (itemTemplateId: string, priority: 'TODAY' | 'SOMEDAY', note?: string) => Promise<void>;
-  purchaseItem: (id: string) => Promise<void>;
+  addToShoppingList: (itemTemplateId: string, priority: 'URGENT' | 'HIGH' | 'NORMAL' | 'SOMEDAY', note?: string) => Promise<void>;
+  purchaseItem: (id: string, price?: number) => Promise<void>;
 }
 
 export const useShoppingStore = create<ShoppingState>((set, get) => ({
@@ -58,8 +58,8 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
 
     set({ isLoading: true });
     try {
-      const { data } = await api.get(`/shopping/${familyId}`);
-      set({ shoppingList: data, isLoading: false });
+      const { data } = await api.get(`/lists/${familyId}`);
+      set({ shoppingList: data.SHOPPING || [], isLoading: false });
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
     }
@@ -67,20 +67,24 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
 
   addToShoppingList: async (itemTemplateId, priority, note) => {
     const familyId = useAppStore.getState().family?.id;
+    const userId = useAppStore.getState().user?.id;
     if (!familyId) return;
 
     try {
-      await api.post('/shopping', { familyId, itemTemplateId, priority, note });
+      await api.post('/items', { familyId, userId, itemTemplateId, priority, note, status: 'SHOPPING' });
       get().fetchShoppingList();
+      useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
       set({ error: err.message });
     }
   },
 
-  purchaseItem: async (id) => {
+  purchaseItem: async (id, price) => {
+    const userId = useAppStore.getState().user?.id;
     try {
-      await api.post(`/shopping/${id}/purchase`);
+      await api.put(`/items/${id}`, { status: 'FRIDGE', price, userId });
       get().fetchShoppingList();
+      useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
       set({ error: err.message });
     }

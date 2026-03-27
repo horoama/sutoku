@@ -59,7 +59,7 @@ func GetItems(c *gin.Context) {
 func SetupUser(c *gin.Context) {
 	var family models.Family
 	if err := database.DB.Where("name = ?", "Test Family").First(&family).Error; err != nil {
-		family = models.Family{Name: "Test Family"}
+		family = models.Family{Name: "Test Family", InviteCode: "HEARTH-2024-LARDER"}
 		database.DB.Create(&family)
 	}
 
@@ -69,8 +69,21 @@ func SetupUser(c *gin.Context) {
 			Name:     "Test User",
 			Email:    "test@example.com",
 			FamilyID: &family.ID,
+			Role:     "admin",
 		}
 		database.DB.Create(&user)
+	}
+
+	// Make sure we have family members for the UI
+	var count int64
+	database.DB.Model(&models.User{}).Where("family_id = ?", family.ID).Count(&count)
+	if count < 3 {
+		member1 := models.User{Name: "Sarah Mitchell", Email: "sarah@example.com", FamilyID: &family.ID, Role: "admin"}
+		member2 := models.User{Name: "James Mitchell", Email: "james@example.com", FamilyID: &family.ID, Role: "member"}
+		member3 := models.User{Name: "Maya Mitchell", Email: "maya@example.com", FamilyID: &family.ID, Role: "member"}
+		database.DB.FirstOrCreate(&member1, models.User{Email: "sarah@example.com"})
+		database.DB.FirstOrCreate(&member2, models.User{Email: "james@example.com"})
+		database.DB.FirstOrCreate(&member3, models.User{Email: "maya@example.com"})
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -115,10 +128,12 @@ func GetLists(c *gin.Context) {
 func AddListItem(c *gin.Context) {
 	var input struct {
 		FamilyID       string  `json:"familyId"`
+		UserID         string  `json:"userId"`
 		ItemTemplateID string  `json:"itemTemplateId"`
 		Priority       string  `json:"priority"`
 		Note           *string `json:"note"`
 		Status         string  `json:"status"`
+		Location       string  `json:"location"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -131,7 +146,11 @@ func AddListItem(c *gin.Context) {
 	}
 
 	if input.Priority == "" {
-		input.Priority = "TODAY"
+		input.Priority = "NORMAL"
+	}
+
+	if input.Location == "" {
+		input.Location = "FRIDGE"
 	}
 
 	item := models.ListItem{
@@ -140,12 +159,14 @@ func AddListItem(c *gin.Context) {
 		Status:         input.Status,
 		Priority:       input.Priority,
 		Note:           input.Note,
+		Location:       input.Location,
 	}
 
-	// Auto-calculate expiration date if directly added to fridge
+	var template models.ItemTemplate
+	database.DB.First(&template, "id = ?", input.ItemTemplateID)
+
+	// Auto-calculate expiration date if directly added to fridge/pantry
 	if input.Status == "FRIDGE" {
-		var template models.ItemTemplate
-		database.DB.First(&template, "id = ?", input.ItemTemplateID)
 		exp := time.Now().AddDate(0, 0, template.DefaultDays)
 		item.ExpirationDate = &exp
 	}
@@ -156,6 +177,24 @@ func AddListItem(c *gin.Context) {
 	}
 
 	database.DB.Preload("ItemTemplate").First(&item, "id = ?", item.ID)
+
+	// Log the activity if userID is provided
+	if input.UserID != "" {
+		action := "added"
+		if input.Status == "FRIDGE" {
+			action = "stocked"
+		}
+
+		logEntry := models.ActivityLog{
+			FamilyID: input.FamilyID,
+			UserID:   input.UserID,
+			Action:   action,
+			Entity:   template.Name,
+			Tags:     input.Status + "," + input.Priority,
+		}
+		database.DB.Create(&logEntry)
+	}
+
 	c.JSON(http.StatusOK, item)
 }
 
@@ -163,9 +202,14 @@ func AddListItem(c *gin.Context) {
 func UpdateListItem(c *gin.Context) {
 	itemID := c.Param("id")
 	var input struct {
-		Status   string   `json:"status"`
-		Price    *float64 `json:"price"`
-		Quantity *int     `json:"quantity"`
+		Status   string     `json:"status"`
+		Price    *float64   `json:"price"`
+		Quantity *int       `json:"quantity"`
+		Location string     `json:"location"`
+		Priority string     `json:"priority"`
+		Note     *string    `json:"note"`
+		UserID   string     `json:"userId"`
+		ExpDate  *time.Time `json:"expirationDate"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -180,12 +224,14 @@ func UpdateListItem(c *gin.Context) {
 	}
 
 	updates := map[string]interface{}{}
+	actionLogged := ""
 
 	if input.Status != "" && input.Status != item.Status {
 		updates["status"] = input.Status
 
 		// When moving to FRIDGE, set Expiration Date if it doesn't have one
 		if input.Status == "FRIDGE" {
+			actionLogged = "bought"
 			if item.ExpirationDate == nil {
 				exp := time.Now().AddDate(0, 0, item.ItemTemplate.DefaultDays)
 				updates["expiration_date"] = exp
@@ -194,6 +240,7 @@ func UpdateListItem(c *gin.Context) {
 
 		// When moving to CONSUMED, set quantity and price if provided
 		if input.Status == "CONSUMED" {
+			actionLogged = "consumed"
 			if input.Quantity != nil {
 				updates["quantity"] = *input.Quantity
 			}
@@ -211,13 +258,65 @@ func UpdateListItem(c *gin.Context) {
 		}
 	}
 
+	if input.Location != "" && input.Location != item.Location {
+		updates["location"] = input.Location
+		actionLogged = "moved"
+	}
+
+	if input.Priority != "" && input.Priority != item.Priority {
+		updates["priority"] = input.Priority
+	}
+
+	if input.ExpDate != nil {
+		updates["expiration_date"] = input.ExpDate
+		actionLogged = "marked_expiring"
+	}
+
 	if err := database.DB.Model(&item).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item"})
 		return
 	}
 
 	database.DB.Preload("ItemTemplate").First(&item, "id = ?", item.ID)
+
+	if actionLogged != "" && input.UserID != "" {
+		logEntry := models.ActivityLog{
+			FamilyID: item.FamilyID,
+			UserID:   input.UserID,
+			Action:   actionLogged,
+			Entity:   item.ItemTemplate.Name,
+			Amount:   input.Price,
+		}
+		database.DB.Create(&logEntry)
+	}
+
 	c.JSON(http.StatusOK, item)
+}
+
+// Get Family Members
+func GetFamilyMembers(c *gin.Context) {
+	familyID := c.Param("familyId")
+	var users []models.User
+
+	if err := database.DB.Where("family_id = ?", familyID).Find(&users).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch members"})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
+// Get Activity Logs
+func GetActivityLogs(c *gin.Context) {
+	familyID := c.Param("familyId")
+	var logs []models.ActivityLog
+
+	if err := database.DB.Preload("User").Where("family_id = ?", familyID).Order("created_at desc").Limit(100).Find(&logs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch logs"})
+		return
+	}
+
+	c.JSON(http.StatusOK, logs)
 }
 
 // Delete item

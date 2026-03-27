@@ -1,20 +1,43 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
+import { useShoppingStore } from "../store/shoppingStore";
 
 export default function RegisterItemScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const { categories, addToShoppingList } = useShoppingStore();
 
   const [itemName, setItemName] = useState("");
   const [notes, setNotes] = useState("");
   const [freshness, setFreshness] = useState(7);
-  const [activeCategory, setActiveCategory] = useState("Produce");
-  const [activePriority, setActivePriority] = useState("NORMAL");
 
-  const categories = ["Produce", "Dairy", "Meat", "Pantry", "Frozen"];
+  // Default to first category if available
+  const [activeCategoryId, setActiveCategoryId] = useState(categories.length > 0 ? categories[0].id : "");
+  const [activePriority, setActivePriority] = useState<"URGENT" | "HIGH" | "NORMAL" | "SOMEDAY">("NORMAL");
+
+  const handleRegister = async () => {
+    if (!itemName) {
+      Alert.alert("エラー", "アイテム名を入力してください");
+      return;
+    }
+
+    // In a real app, you would likely first create the ItemTemplate if it doesn't exist.
+    // For this prototype, we'll try to find an existing one or just use a default from the first category.
+    // Assumption: the API handles template creation or expects an existing template ID.
+    // Here we'll just pick a template ID from the active category to satisfy the API.
+    const selectedCategory = categories.find(c => c.id === activeCategoryId) || categories[0];
+    if (!selectedCategory || !selectedCategory.items || selectedCategory.items.length === 0) {
+       Alert.alert("エラー", "有効なカテゴリがありません");
+       return;
+    }
+    const templateId = selectedCategory.items[0].id; // Fallback to first item template in category
+
+    await addToShoppingList(templateId, activePriority, notes.trim());
+    navigation.navigate("RegistrationSuccess");
+  };
 
   return (
     <View className="flex-1 bg-surface font-body text-on-surface" style={{ paddingTop: insets.top }}>
@@ -75,11 +98,11 @@ export default function RegisterItemScreen() {
             <View className="flex-row flex-wrap gap-2">
               {categories.map(cat => (
                 <TouchableOpacity
-                  key={cat}
-                  className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all shadow-sm ${activeCategory === cat ? 'bg-primary' : 'bg-surface-container-high'}`}
-                  onPress={() => setActiveCategory(cat)}
+                  key={cat.id}
+                  className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all shadow-sm ${activeCategoryId === cat.id ? 'bg-primary' : 'bg-surface-container-high'}`}
+                  onPress={() => setActiveCategoryId(cat.id)}
                 >
-                  <Text className={`font-medium text-sm ${activeCategory === cat ? 'text-on-primary' : 'text-on-surface-variant'}`}>{cat}</Text>
+                  <Text className={`font-medium text-sm ${activeCategoryId === cat.id ? 'text-on-primary' : 'text-on-surface-variant'}`}>{cat.name}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -161,7 +184,7 @@ export default function RegisterItemScreen() {
       <View className="absolute bottom-0 w-full px-6 py-6 bg-surface/90 z-50">
         <TouchableOpacity
           className="w-full bg-primary py-5 rounded-xl shadow-lg flex-row items-center justify-center gap-3 active:scale-95 transition-transform"
-          onPress={() => navigation.navigate("RegistrationSuccess")}
+          onPress={handleRegister}
         >
           <Icon name="add-circle" size={24} className="text-on-primary" />
           <Text className="text-on-primary font-headline font-extrabold text-lg">Register & Add to Shopping List</Text>

@@ -50,7 +50,7 @@ export default function ShoppingListScreen() {
     setAddModalVisible(true);
   };
 
-  const confirmAddItem = (priority: "TODAY" | "SOMEDAY") => {
+  const confirmAddItem = (priority: "NORMAL" | "SOMEDAY") => {
     if (itemToAdd) {
       addToShoppingList(itemToAdd.id, priority, addNote.trim());
       setAddModalVisible(false);
@@ -67,7 +67,7 @@ export default function ShoppingListScreen() {
     let categoryName = "GROCERY";
     let priorityBadge = null;
 
-    if (item.priority === "TODAY") {
+    if (item.priority === "URGENT" || item.priority === "HIGH") {
       iconName = "eco";
       iconColorClass = "text-tertiary text-2xl";
       iconBgClass = "bg-tertiary-fixed";
@@ -204,7 +204,7 @@ export default function ShoppingListScreen() {
               onChangeText={setAddNote}
             />
             <View className="flex-row justify-between w-full gap-3 mb-3">
-              <TouchableOpacity className="flex-1 bg-tertiary-container py-4 rounded-xl items-center" onPress={() => confirmAddItem("TODAY")}>
+              <TouchableOpacity className="flex-1 bg-tertiary-container py-4 rounded-xl items-center" onPress={() => confirmAddItem("NORMAL")}>
                 <Text className="text-on-tertiary-container font-bold text-sm">今日買う</Text>
               </TouchableOpacity>
               <TouchableOpacity className="flex-1 bg-primary-fixed py-4 rounded-xl items-center" onPress={() => confirmAddItem("SOMEDAY")}>

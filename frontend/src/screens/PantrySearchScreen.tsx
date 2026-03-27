@@ -1,22 +1,39 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
+import { useFridgeStore } from '../store/fridgeStore';
+import { useShoppingStore } from '../store/shoppingStore';
 
 export default function PantrySearchScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const items = [
-    { id: '1', name: 'Carrots', volume: 'Bunch', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmEf1ocDbLzrqvFcRqmDJYImVFoG6qLxez3ejH-JIh0Vgpds626uOk6aHB_Q51lKEDLavremHnpZocce_zztN0IFPnof8Yu0AjAqauU1DlRIzlDHZn2C-8XJSV6MnkqArAhqcS3fLI8vpKPvA6jl9DEnSqrWqo97z3wgRaqNfGKQtermU53zBDDfhXRXFqn7i9KCr1o5P3ZTD8ZoQQy0z3-pzEB_Uk2aqBemhNprppUSzDXxCiEBYXb_ium0O5kIJjJVlOS86jv_98' },
-    { id: '2', name: 'Apples', volume: 'Lb', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBe8SAQppYSOQb4r9Nz4RbjszYL-D9x2MWT142BJbJ0YGoBmCA36JRJ6fJ8zwSOfe2SsbCss-JvP0TYUnVLl3A0OgBhlS1fAZJ1aKD0YX8V3jEGiS_12GGOdouqQExnWdq0a1H70rEGf_V4I0L6eXgTht9ZVX92X68ABJ2zBuNJQq8LiBHk8WDnEC_kgQsnB1GAx4W2fYIVx3UxAXu7ws7OAuChQrtM1FzJxzntaPagoGwt5fDFWO9dE2yWsfKhyzLEY9RTFjW5rJGN' },
-    { id: '3', name: 'Spinach', volume: 'Bag', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBqqpvCnM9jGI55k0ahSbfr2NJwlK53qp1HtcX0KLR_4Pz3NSG0V33e9HvofKiKwQu8ttPIGwl-FdR0oHQdJveFPXN5_EfmJWZP-hek-dHl_Wh-eDDFmznD-meHsoytPquhtkCk6VbTxGGZGh9ShjYzRYkMzILEAylYX7qNv-a3sh55fm69chHudom6ScZ3NoTEUSJbpy4t_VYBsiQeLqNQLwjPKZT20_X6zXJCauS9ivhv1LzJG0xdNKqOeO23jRaeDekCV3Rpk_gs' },
-    { id: '4', name: 'Tomatoes', volume: 'Pack', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBn4gOPz7THvqGBRxEueOyCP_fgogtInYxLSalHpNEa6bFxc6U2Jdm_4Ek04BO0CKRuJx9ZD-38Y8HQ8q0_QVqutDybOJLkW9oM49Wb-v5ByKHDNdyr1AxLjak-iBU9UIxn1z05jJvoczBF96Hi879BbBljwRVt6grM3czixSgLKoPxJK_K8os-atifraFZeftBDJTLu0B2B085vsv2s2UU6-nQSzl4IVjFUaeVOdg6hrxUuZbmvaDdnSoNIMQifwHZzGWLDWLDLiw-' },
-    { id: '5', name: 'Avocados', volume: 'Each', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCIRJooNZM5JMscAsEkuZWyc4a2E85IjQccqEefMIf67cQbCGcUFbxE7mfcemFdPo5FobUZcSWjJh_Ru6cBEJJMZ2UG8EcAlT8HuR8pc1MQ0YI-hv5Hlm2S76FY10aQURROao-mTkq4Lv2AKbYMq2f5I9Hq1mHw5ip2nyuPqOGpw3-DhzBAyn4Ivn2rnqEiE3sQkdS-GJfUCoUznGe0CLYZGQoLznm2mgvxDwwqrq9uSJyKqfHujMXvzpWnfTPlRGYTrvIJyAzIZmgj' },
-    { id: '6', name: 'Broccoli', volume: 'Head', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHbTKl3WbVsHVnwOAPT0WBPIlrHh-HYTnNJ7qz4D1yB4HbkJrDbXVnC2DBRdBFTWe5PVMkW5PUj7pcCXxK3UI71v127XMiwk7Ox-reugpVARihgKU8Bih5hHAi594Em8pAOsED8ZYLJaHkfAR6ZlfE0FTmfxOvdRYYoRTiJK-h6LueWTy93m7IN5pvaLBqf_pZKKXFhAROHBZyuyJ3MNkErwO1rqsJDNXxWYe2Qbaqpa-rTYfM2LPrTzP9FtwTupTzMKRVW4tdCN23' },
+  const { categories, fetchCategories } = useShoppingStore();
+  const { addToFridge } = useFridgeStore();
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const produceCategory = categories.find(c => c.name.includes("野") || c.name.toLowerCase().includes("produce"));
+  const items = produceCategory?.items || [];
+
+  const mockImages = [
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCmEf1ocDbLzrqvFcRqmDJYImVFoG6qLxez3ejH-JIh0Vgpds626uOk6aHB_Q51lKEDLavremHnpZocce_zztN0IFPnof8Yu0AjAqauU1DlRIzlDHZn2C-8XJSV6MnkqArAhqcS3fLI8vpKPvA6jl9DEnSqrWqo97z3wgRaqNfGKQtermU53zBDDfhXRXFqn7i9KCr1o5P3ZTD8ZoQQy0z3-pzEB_Uk2aqBemhNprppUSzDXxCiEBYXb_ium0O5kIJjJVlOS86jv_98',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuBe8SAQppYSOQb4r9Nz4RbjszYL-D9x2MWT142BJbJ0YGoBmCA36JRJ6fJ8zwSOfe2SsbCss-JvP0TYUnVLl3A0OgBhlS1fAZJ1aKD0YX8V3jEGiS_12GGOdouqQExnWdq0a1H70rEGf_V4I0L6eXgTht9ZVX92X68ABJ2zBuNJQq8LiBHk8WDnEC_kgQsnB1GAx4W2fYIVx3UxAXu7ws7OAuChQrtM1FzJxzntaPagoGwt5fDFWO9dE2yWsfKhyzLEY9RTFjW5rJGN',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuBqqpvCnM9jGI55k0ahSbfr2NJwlK53qp1HtcX0KLR_4Pz3NSG0V33e9HvofKiKwQu8ttPIGwl-FdR0oHQdJveFPXN5_EfmJWZP-hek-dHl_Wh-eDDFmznD-meHsoytPquhtkCk6VbTxGGZGh9ShjYzRYkMzILEAylYX7qNv-a3sh55fm69chHudom6ScZ3NoTEUSJbpy4t_VYBsiQeLqNQLwjPKZT20_X6zXJCauS9ivhv1LzJG0xdNKqOeO23jRaeDekCV3Rpk_gs',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuBn4gOPz7THvqGBRxEueOyCP_fgogtInYxLSalHpNEa6bFxc6U2Jdm_4Ek04BO0CKRuJx9ZD-38Y8HQ8q0_QVqutDybOJLkW9oM49Wb-v5ByKHDNdyr1AxLjak-iBU9UIxn1z05jJvoczBF96Hi879BbBljwRVt6grM3czixSgLKoPxJK_K8os-atifraFZeftBDJTLu0B2B085vsv2s2UU6-nQSzl4IVjFUaeVOdg6hrxUuZbmvaDdnSoNIMQifwHZzGWLDWLDLiw-',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCIRJooNZM5JMscAsEkuZWyc4a2E85IjQccqEefMIf67cQbCGcUFbxE7mfcemFdPo5FobUZcSWjJh_Ru6cBEJJMZ2UG8EcAlT8HuR8pc1MQ0YI-hv5Hlm2S76FY10aQURROao-mTkq4Lv2AKbYMq2f5I9Hq1mHw5ip2nyuPqOGpw3-DhzBAyn4Ivn2rnqEiE3sQkdS-GJfUCoUznGe0CLYZGQoLznm2mgvxDwwqrq9uSJyKqfHujMXvzpWnfTPlRGYTrvIJyAzIZmgj',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCHbTKl3WbVsHVnwOAPT0WBPIlrHh-HYTnNJ7qz4D1yB4HbkJrDbXVnC2DBRdBFTWe5PVMkW5PUj7pcCXxK3UI71v127XMiwk7Ox-reugpVARihgKU8Bih5hHAi594Em8pAOsED8ZYLJaHkfAR6ZlfE0FTmfxOvdRYYoRTiJK-h6LueWTy93m7IN5pvaLBqf_pZKKXFhAROHBZyuyJ3MNkErwO1rqsJDNXxWYe2Qbaqpa-rTYfM2LPrTzP9FtwTupTzMKRVW4tdCN23'
   ];
+
+  const handleAddItem = async (templateId: string, itemName: string) => {
+    await addToFridge(templateId, 'FRIDGE', 'NORMAL', '');
+    Alert.alert("追加完了", `${itemName} を追加しました`);
+  };
 
   return (
     <View className="flex-1 bg-surface font-body text-on-surface" style={{ paddingTop: insets.top }}>
@@ -72,22 +89,27 @@ export default function PantrySearchScreen() {
 
         {/* Items Grid */}
         <View className="flex-row flex-wrap justify-between gap-y-4">
-          {items.map((item) => (
+          {items.length > 0 ? items.map((item, index) => (
             <View key={item.id} className="w-[48%] bg-surface-container-lowest p-4 rounded-lg flex-col items-center shadow-sm">
               <View className="w-full aspect-square rounded-full overflow-hidden mb-4 bg-surface-container">
-                <Image source={{ uri: item.image }} className="w-full h-full" />
+                <Image source={{ uri: mockImages[index % mockImages.length] }} className="w-full h-full" />
               </View>
               <View className="flex-row justify-between items-end w-full">
                 <View>
                   <Text className="font-headline text-lg font-bold text-on-surface leading-tight">{item.name}</Text>
-                  <Text className="font-label text-[10px] font-bold tracking-widest text-outline uppercase">{item.volume}</Text>
+                  <Text className="font-label text-[10px] font-bold tracking-widest text-outline uppercase">{item.defaultDays} Days</Text>
                 </View>
-                <TouchableOpacity className="h-10 w-10 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center active:scale-90 transition-transform shadow-sm">
+                <TouchableOpacity
+                  className="h-10 w-10 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center active:scale-90 transition-transform shadow-sm"
+                  onPress={() => handleAddItem(item.id, item.name)}
+                >
                   <Icon name="add" size={24} className="text-on-secondary-fixed-variant" />
                 </TouchableOpacity>
               </View>
             </View>
-          ))}
+          )) : (
+            <Text className="text-center font-body text-on-surface-variant mt-10 w-full">このカテゴリにはアイテムがありません</Text>
+          )}
         </View>
 
         {/* Contextual Help */}

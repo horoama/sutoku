@@ -1,12 +1,33 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
+import { useShoppingStore, ShoppingItem } from "../store/shoppingStore";
 
 export default function ReviewListScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const { shoppingList, fetchShoppingList } = useShoppingStore();
+
+  useEffect(() => {
+    fetchShoppingList();
+  }, []);
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'URGENT': return 'text-tertiary';
+      case 'HIGH': return 'text-secondary';
+      default: return 'text-primary';
+    }
+  };
+
+  const getIconForCategory = (name: string) => {
+    const lowname = name.toLowerCase();
+    if (lowname.includes('milk') || lowname.includes('dairy') || lowname.includes('egg')) return 'egg';
+    if (lowname.includes('meat') || lowname.includes('chicken') || lowname.includes('beef')) return 'restaurant';
+    return 'local-grocery-store';
+  };
 
   return (
     <View className="flex-1 bg-surface font-body text-on-surface" style={{ paddingTop: insets.top }}>
@@ -35,56 +56,25 @@ export default function ReviewListScreen() {
 
         {/* Bento-style List Container */}
         <View className="space-y-4">
-          {/* Item 1: Organic Bananas */}
-          <View className="bg-surface-container-lowest p-5 rounded-lg flex-row items-center gap-5 transition-all mb-4 border border-transparent shadow-sm">
-            <View className="w-14 h-14 bg-surface-container-low rounded-xl flex items-center justify-center">
-              <Icon name="restaurant" size={30} className="text-primary" />
-            </View>
-            <View className="flex-1">
-              <Text className="font-headline font-bold text-lg text-on-surface">Organic Bananas</Text>
-              <Text className="font-label text-[10px] font-semibold tracking-widest uppercase text-amber-600">HIGH</Text>
-            </View>
-            <View className="flex-row items-center gap-3">
-              <View className="bg-primary-fixed px-3 py-1 rounded-full">
-                <Text className="text-on-primary-fixed-variant text-xs font-bold font-label">Fresh</Text>
+          {shoppingList.length > 0 ? shoppingList.map((item: ShoppingItem) => (
+            <View key={item.id} className="bg-surface-container-lowest p-5 rounded-lg flex-row items-center gap-5 transition-all mb-4 border border-transparent shadow-sm">
+              <View className="w-14 h-14 bg-surface-container-low rounded-xl flex items-center justify-center">
+                <Icon name={getIconForCategory(item.itemTemplate.name) as any} size={30} className="text-primary" />
               </View>
-              <Icon name="drag-indicator" size={24} className="text-outline-variant" />
-            </View>
-          </View>
-
-          {/* Item 2: Free Range Eggs */}
-          <View className="bg-surface-container-lowest p-5 rounded-lg flex-row items-center gap-5 transition-all mb-4 border border-transparent shadow-sm">
-            <View className="w-14 h-14 bg-surface-container-low rounded-xl flex items-center justify-center">
-              <Icon name="egg" size={30} className="text-primary" />
-            </View>
-            <View className="flex-1">
-              <Text className="font-headline font-bold text-lg text-on-surface">Free Range Eggs</Text>
-              <Text className="font-label text-[10px] font-semibold tracking-widest uppercase text-amber-600">HIGH</Text>
-            </View>
-            <View className="flex-row items-center gap-3">
-              <View className="bg-primary-fixed px-3 py-1 rounded-full">
-                <Text className="text-on-primary-fixed-variant text-xs font-bold font-label">Essential</Text>
+              <View className="flex-1">
+                <Text className="font-headline font-bold text-lg text-on-surface">{item.itemTemplate.name}</Text>
+                <Text className={`font-label text-[10px] font-semibold tracking-widest uppercase ${getPriorityColor(item.priority)}`}>{item.priority}</Text>
               </View>
-              <Icon name="drag-indicator" size={24} className="text-outline-variant" />
-            </View>
-          </View>
-
-          {/* Item 3: Whole Milk */}
-          <View className="bg-surface-container-lowest p-5 rounded-lg flex-row items-center gap-5 transition-all mb-4 border border-transparent shadow-sm">
-            <View className="w-14 h-14 bg-surface-container-low rounded-xl flex items-center justify-center">
-              <Icon name="local-drink" size={30} className="text-primary" />
-            </View>
-            <View className="flex-1">
-              <Text className="font-headline font-bold text-lg text-on-surface">Whole Milk</Text>
-              <Text className="font-label text-[10px] font-semibold tracking-widest uppercase text-amber-600">HIGH</Text>
-            </View>
-            <View className="flex-row items-center gap-3">
-              <View className="bg-primary-fixed px-3 py-1 rounded-full">
-                <Text className="text-on-primary-fixed-variant text-xs font-bold font-label">Daily</Text>
+              <View className="flex-row items-center gap-3">
+                <View className="bg-primary-fixed px-3 py-1 rounded-full">
+                  <Text className="text-on-primary-fixed-variant text-xs font-bold font-label">Listed</Text>
+                </View>
+                <Icon name="drag-indicator" size={24} className="text-outline-variant" />
               </View>
-              <Icon name="drag-indicator" size={24} className="text-outline-variant" />
             </View>
-          </View>
+          )) : (
+            <Text className="text-center text-on-surface-variant font-body">リストにはアイテムがありません</Text>
+          )}
         </View>
       </ScrollView>
 
@@ -93,7 +83,7 @@ export default function ReviewListScreen() {
         <View className="flex-row items-center justify-between bg-primary-container/10 border border-primary/10 px-5 py-3 rounded-full mb-4">
           <View className="flex-row items-center gap-2.5">
             <View className="w-2 h-2 rounded-full bg-primary"></View>
-            <Text className="font-headline text-sm font-semibold text-primary">3 items selected for Shopping List</Text>
+            <Text className="font-headline text-sm font-semibold text-primary">{shoppingList.length} items in Shopping List</Text>
           </View>
           <Icon name="check-circle" size={16} className="text-primary font-bold" />
         </View>

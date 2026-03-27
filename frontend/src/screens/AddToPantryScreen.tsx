@@ -4,10 +4,24 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
 
+import { useFridgeStore } from '../store/fridgeStore';
+import { useShoppingStore } from '../store/shoppingStore';
+
 export default function AddToPantryScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState("");
+
+  const { addToFridge } = useFridgeStore();
+  const { categories } = useShoppingStore();
+
+  const handleQuickStock = async (itemTemplateId: string) => {
+    // Basic mock implementation. In real app, we'd match name to templateId.
+    // Here we'll fallback to a category item if we don't have exactly matching IDs for the hardcoded quick stock.
+    const fallbackTemplate = categories.length > 0 && categories[0].items.length > 0 ? categories[0].items[0].id : "";
+    await addToFridge(fallbackTemplate, 'FRIDGE', 'NORMAL', '');
+    alert("Added to Fridge!");
+  };
 
   const quickStockItems = [
     { id: '1', name: 'Whole Milk', info: 'Dairy • 1 Gallon', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBamihkDt5vnmuw8-0pIVWD6KcszuebUUtawDkjNTcZ6jZ9F_8rcwjVfKxHo8g64_GGWvnHfUakgXqrKoE2x9_eTV0Zunj01qbGJBj_FnPMoeCBLxgqol5JIfa-DtlxfYFFwpBm_renzzMqTzI2QfFt5VBRuN1iX1RAwoY3tiNYvgzJrIsu_ryUH_YVyKv4EMdFyl-oNmJVellLphMuXwfXCas5bSangKWZNadM0ot0so2TwIePCYrP6N292S8VMGMsWmXAC1d3_jMV' },
@@ -99,7 +113,10 @@ export default function AddToPantryScreen() {
                     <Text className="text-xs font-label uppercase tracking-wider text-on-surface-variant mt-0.5">{item.info}</Text>
                   </View>
                 </View>
-                <TouchableOpacity className="flex items-center justify-center w-10 h-10 rounded-full bg-primary shadow-sm active:scale-95 transition-transform">
+                <TouchableOpacity
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-primary shadow-sm active:scale-95 transition-transform"
+                  onPress={() => handleQuickStock(item.id)}
+                >
                   <Icon name="add" size={20} className="text-on-primary" />
                 </TouchableOpacity>
               </View>

@@ -1,12 +1,39 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput, Image } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
+import { useAppStore } from "../store/appStore";
+import { format, differenceInDays } from "date-fns";
 
 export default function ActivityLogScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const { activityLogs, fetchActivityLogs } = useAppStore();
+
+  useEffect(() => {
+    fetchActivityLogs();
+  }, []);
+
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case "added": return { name: "add-shopping-cart", bg: "bg-primary-fixed", color: "text-on-primary-fixed-variant" };
+      case "bought": return { name: "payments", bg: "bg-secondary-fixed", color: "text-on-secondary-fixed-variant" };
+      case "marked_expiring": return { name: "warning", bg: "bg-tertiary-container", color: "text-on-tertiary-container" };
+      case "consumed": return { name: "restaurant", bg: "bg-outline-variant", color: "text-on-surface-variant" };
+      case "stocked": return { name: "inventory-2", bg: "bg-secondary-container", color: "text-on-secondary-container" };
+      case "moved": return { name: "swap-horiz", bg: "bg-surface-variant", color: "text-on-surface-variant" };
+      default: return { name: "history", bg: "bg-surface-container", color: "text-on-surface-variant" };
+    }
+  };
+
+  // Group logs by date
+  const logsByDate: { [key: string]: typeof activityLogs } = {};
+  activityLogs.forEach(log => {
+    const dateStr = format(new Date(log.createdAt), "yyyy-MM-dd");
+    if (!logsByDate[dateStr]) logsByDate[dateStr] = [];
+    logsByDate[dateStr].push(log);
+  });
 
   return (
     <View className="flex-1 bg-surface text-on-surface font-body" style={{ paddingTop: insets.top }}>
@@ -75,121 +102,76 @@ export default function ActivityLogScreen() {
 
         {/* Activity Timeline */}
         <View className="space-y-12 relative pb-8">
-          {/* Vertical Line for Timeline */}
           <View className="absolute left-[27px] top-4 bottom-0 w-0.5 bg-surface-container-high"></View>
 
-          {/* Date Group: Today */}
-          <View className="relative">
-            <View className="flex-row items-center gap-6 mb-8">
-              <View className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg z-10">
-                <Icon name="today" size={24} className="text-on-primary" />
-              </View>
-              <Text className="font-headline text-2xl font-bold text-on-surface">Today</Text>
-            </View>
+          {Object.keys(logsByDate).length > 0 ? (
+            Object.entries(logsByDate).map(([dateStr, logs]) => {
+              const dateObj = new Date(dateStr);
+              const daysDiff = differenceInDays(new Date(), dateObj);
 
-            <View className="space-y-4 ml-10">
-              {/* Activity Card 1 */}
-              <View className="bg-surface-container-lowest p-6 rounded-lg flex-row items-center justify-between mb-4 shadow-sm">
-                <View className="flex-row items-center gap-5 flex-1">
-                  <View className="relative">
-                    <View className="w-14 h-14 rounded-full border-4 border-surface-container-low overflow-hidden">
-                      <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAbJ7EBLUjK9eEbpmdUK9d7W5djhyY6OEdQ9bCnV8mZv2OEntQ6JQcMlZ2YFJs26c5ck8DhOc2EGMxEG4K51zDVBJ6ZycwFgCzEZZ5R_ZmphPO73kAZ5h58_9pKhd-LnH4puG5fSrRCO4GU8s-BuJr-BwM45hPhq5cPryZ4HmvMe7XPIH82CzeHNEYz8cRg0dY_XFj6OYgCtkX1rxYSNN8WSEVLLH0NtVHwxGBRmgJd0_EZzH-aoSZANQz6V8zdA14LoBjrl-gvjfbe" }} className="w-full h-full" />
-                    </View>
-                    <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary-fixed rounded-full flex items-center justify-center border-2 border-surface-container-lowest">
-                      <Icon name="add-shopping-cart" size={14} className="text-on-primary-fixed-variant" />
-                    </View>
-                  </View>
-                  <View className="flex-1 pr-2">
-                    <Text className="text-on-surface text-base">
-                      <Text className="font-bold text-primary">Sarah</Text> added <Text className="font-semibold italic">Organic Whole Milk</Text> to List
-                    </Text>
-                    <Text className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">10:45 AM • GROCERIES</Text>
-                  </View>
-                </View>
-                <View className="bg-primary-fixed px-3 py-1 rounded-full hidden sm:flex">
-                  <Text className="text-[10px] font-bold tracking-widest text-on-primary-fixed-variant uppercase">New Item</Text>
-                </View>
-              </View>
+              let displayDate = "Older";
+              let dateIcon: any = "history";
+              let dateColor = "text-on-surface-variant";
+              let bgIconColor = "bg-surface-container-high";
 
-              {/* Activity Card 2 */}
-              <View className="bg-surface-container-lowest p-6 rounded-lg flex-row items-center justify-between mb-4 shadow-sm">
-                <View className="flex-row items-center gap-5 flex-1">
-                  <View className="relative">
-                    <View className="w-14 h-14 rounded-full border-4 border-surface-container-low overflow-hidden">
-                      <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuArKSqFH7Rhv2vHftL6qeb2EF7qBf5LYhYUDPRqcuShDSlpQGuSHDWKg-aGJqGL94YTJfbKu_CrbXVrnCSXuShUQzMfcwERYqWQONURydndxkTFgOf2NcsuFVUJfZ7ffhY_akIp20lZ-VHCNCn9oX_sn5Cc4PHps05pSYLuhVKTyNQ6iz2KOHE_IoMazK4u82qbMVycnnegA8U8WpDGOTOveCwAUueB-znRQUD9imHiozmqUHVrc71e0HBNStz3sOMVspHOepvodPRp" }} className="w-full h-full" />
-                    </View>
-                    <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-secondary-fixed rounded-full flex items-center justify-center border-2 border-surface-container-lowest">
-                      <Icon name="payments" size={14} className="text-on-secondary-fixed-variant" />
-                    </View>
-                  </View>
-                  <View className="flex-1 pr-2">
-                    <Text className="text-on-surface text-base">
-                      <Text className="font-bold text-primary">James</Text> bought <Text className="font-semibold italic">Farm Fresh Eggs (12pk)</Text>
-                    </Text>
-                    <Text className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">09:12 AM • PANTRY UPDATE</Text>
-                  </View>
-                </View>
-                <View className="items-end">
-                  <Text className="text-primary font-bold text-lg">-$6.50</Text>
-                </View>
-              </View>
+              if (daysDiff === 0) {
+                displayDate = "Today";
+                dateIcon = "today";
+                dateColor = "text-on-surface";
+                bgIconColor = "bg-primary";
+              } else if (daysDiff === 1) {
+                displayDate = "Yesterday";
+              } else {
+                displayDate = format(dateObj, "MMM d, yyyy");
+              }
 
-              {/* Activity Card 3 */}
-              <View className="bg-surface-container-lowest p-6 rounded-lg flex-row items-center justify-between shadow-sm">
-                <View className="flex-row items-center gap-5 flex-1">
-                  <View className="relative">
-                    <View className="w-14 h-14 rounded-full border-4 border-surface-container-low overflow-hidden">
-                      <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuB_5LHo6KK_v2rZlBxYIHa2YrSweALBYX0HHrxpOwLXxqHZpcQA0lZ9Uy95tiUmJ-XoTqiZcRFQCamJrmdm9ybLoiTEIjajKKvNeF6kiO7bNLdtUmhoqmrZ2FWTaSt5EEgJYcabB3xdUdzkvZseojmMjime2Y6NFA8pTRuXf3ypJFy8-g925eU5RfmuWSUkNw0cOIF8eTaM-ilPlqlPRp6ZrNYDEGfxp4gnA5Tm4syGwyNmsR3ML_SacvW4EL_KVWg3xjM5-tjaUaK8" }} className="w-full h-full" />
+              return (
+                <View key={dateStr} className={`relative ${daysDiff > 0 ? "mt-8 opacity-80" : ""}`}>
+                  <View className="flex-row items-center gap-6 mb-8">
+                    <View className={`w-14 h-14 rounded-full flex items-center justify-center z-10 shadow-sm ${bgIconColor}`}>
+                      <Icon name={dateIcon as any} size={24} className={daysDiff === 0 ? "text-on-primary" : "text-on-surface-variant"} />
                     </View>
-                    <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-tertiary-container rounded-full flex items-center justify-center border-2 border-surface-container-lowest">
-                      <Icon name="warning" size={14} className="text-on-tertiary-container" />
-                    </View>
+                    <Text className={`font-headline text-2xl font-bold ${dateColor}`}>{displayDate}</Text>
                   </View>
-                  <View className="flex-1 pr-2">
-                    <Text className="text-on-surface text-base">
-                      <Text className="font-bold text-primary">Emma</Text> marked <Text className="font-semibold italic">Greek Yogurt</Text> as expiring
-                    </Text>
-                    <Text className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">08:30 AM • SHELF LIFE</Text>
-                  </View>
-                </View>
-                <View className="bg-tertiary-container px-3 py-1 rounded-full hidden sm:flex">
-                  <Text className="text-[10px] font-bold tracking-widest text-on-tertiary-container uppercase">Urgent</Text>
-                </View>
-              </View>
-            </View>
-          </View>
 
-          {/* Date Group: Yesterday */}
-          <View className="relative mt-8">
-            <View className="flex-row items-center gap-6 mb-8">
-              <View className="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center z-10">
-                <Icon name="history" size={24} className="text-on-surface-variant" />
-              </View>
-              <Text className="font-headline text-2xl font-bold text-on-surface-variant">Yesterday</Text>
-            </View>
-
-            <View className="space-y-4 ml-10 opacity-80">
-              {/* Activity Card 4 */}
-              <View className="bg-surface-container-low p-6 rounded-lg flex-row items-center justify-between mb-4 shadow-sm">
-                <View className="flex-row items-center gap-5 flex-1">
-                  <View className="relative">
-                    <View className="w-14 h-14 rounded-full border-4 border-surface-container-low overflow-hidden">
-                      <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuDzz3NUtB9-r9MvGE16B1SludBIkQ6nzGlFYtXgSTRvyy7tnesBWkLWogAlOnuCydvFUDqx0MsXEfFLHpOI8fHbLn0yw_EcCmBkGVZLulLKcwgfSeqjFXYj9yYz6FPZ9Tu-7lu0wHB2ZkWvX4I6cRlTcdlAR0-Ug5QH6K-4ofg-IaxQbv-_IuC5xZm1UaDctHarnP7sGaUO7NM1kiN-FwSF5DPY0e1EALmMX1Jq2_4sI2IcAP4_EzbifrQUZu50wcKmbMhF9muRjZOr" }} className="w-full h-full" />
-                    </View>
-                    <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-outline-variant rounded-full flex items-center justify-center border-2 border-surface-container-lowest">
-                      <Icon name="inventory-2" size={14} className="text-on-surface-variant" />
-                    </View>
-                  </View>
-                  <View className="flex-1 pr-2">
-                    <Text className="text-on-surface text-base">
-                      <Text className="font-bold text-primary">Dad</Text> cleared the <Text className="font-semibold italic">Produce Drawer</Text>
-                    </Text>
-                    <Text className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">06:45 PM • CLEANUP</Text>
+                  <View className="space-y-4 ml-10">
+                    {logs.map((log) => {
+                      const iconConfig = getActionIcon(log.action);
+                      return (
+                        <View key={log.id} className="bg-surface-container-lowest p-6 rounded-lg flex-row items-center justify-between mb-4 shadow-sm">
+                          <View className="flex-row items-center gap-5 flex-1">
+                            <View className="relative">
+                              <View className="w-14 h-14 rounded-full border-4 border-surface-container-low overflow-hidden bg-surface-container">
+                                <Image source={{ uri: log.user?.avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuAWXxIn9vkOJkM6PINi0yWB5YnNUFN2iUe8ENrb1prTy3CywJnqQgcSyUGjHjGzRKF5FVKQzfrFCxc1LflbtW1H-7Kjz4EyBhEG2Ir5-lzht5fkn07JXndNTHy26vznKGojtw6tQeFBobHuHP3F1c34TDx8ikUeiv0UNeKkxhi38LvSIZJnNAm67ooMtjERCHnxuSF-pUZ6hFXtDrWBbz0-UDBDlJY5EVX6A5Okq8Cx7z4ei6GutfcWV5NTCRCRvrasLGGu_o0ZPcTw" }} className="w-full h-full" />
+                              </View>
+                              <View className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-surface-container-lowest ${iconConfig.bg}`}>
+                                <Icon name={iconConfig.name as any} size={14} className={iconConfig.color} />
+                              </View>
+                            </View>
+                            <View className="flex-1 pr-2">
+                              <Text className="text-on-surface text-base font-body">
+                                <Text className="font-bold text-primary">{log.user?.name || "Someone"}</Text> {log.action} <Text className="font-semibold italic">{log.entity}</Text>
+                              </Text>
+                              <Text className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">
+                                {format(new Date(log.createdAt), "hh:mm a")} • {log.tags ? log.tags : "UPDATE"}
+                              </Text>
+                            </View>
+                          </View>
+                          {log.amount != null && (
+                            <View className="items-end">
+                              <Text className="text-primary font-bold text-lg">-${log.amount.toFixed(2)}</Text>
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })}
                   </View>
                 </View>
-              </View>
-            </View>
-          </View>
+              );
+            })
+          ) : (
+             <Text className="text-on-surface-variant mt-10 text-center font-body">最近のアクティビティはありません</Text>
+          )}
         </View>
 
         {/* Load More CTA */}

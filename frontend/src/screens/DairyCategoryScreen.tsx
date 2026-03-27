@@ -1,24 +1,39 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
+import { useShoppingStore } from "../store/shoppingStore";
+import { useAppStore } from "../store/appStore";
 
 export default function DairyCategoryScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [activeFilter, setActiveFilter] = useState("All Dairy");
+  const { categories, fetchCategories, addToShoppingList } = useShoppingStore();
+  const { user } = useAppStore();
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const filters = ["All Dairy", "Milk & Cream", "Cheeses", "Yogurts", "Eggs"];
 
-  const items = [
-    { id: '1', name: 'Whole Milk', volume: '1 Gallon • Organic', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCkGOc_Ap1YySmuNl3pCJUekeTLWcXTSOfVgu9or9HXIMe8oMKuoKMMC3d7YYBRDe1JnSdFUiisAe5iEzcjv1G52KlfIyTNAQ5qM47yYbzYncfrZh2w4ATZMxXVS2OtqlxzrCAeCfFOlUg24HljQx5rOZqVjKvqT5XikxmJfKAdr0uo5e6Ibs8lxfbVEiLbLs98SiDBWowlv58JkjDLIPZqP0FBHuo8_rgIf4qQRLqG87A7HqvdFgW_2GQj2FF9AKhbSwLgBxQ26ZdH', mt: false },
-    { id: '2', name: 'Greek Yogurt', volume: '32 oz • Plain High Protein', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBQzoIZZWjwL2nAxOc9m01GsuFBOG7ZSxAMJieeTtgjvLBsY8c1UXPgAaks5wKdcWtCo10Pa6NxwD-a0aKB9HxRF8AEph_Dc5dSoy9LwmruaoKEEZvYaURWpmT-h-cGhitk2JWDuKQCjZEHMIRiK--5cLFEQroQnV72JxE_JExKytMkMtx2OPmWvoHhPNgSqkpxSPaSExveFDza0PRb7Eq2DJiBKMBKQt8m2VuSbt8qsTYpT5DD-2SIZvQk-6Rcq9KLMK6vU03yfNYp', mt: true },
-    { id: '3', name: 'Sharp Cheddar', volume: '8 oz • Aged 12 Months', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD32Ez88h2btiK0pXsswkCUaufRqnNi2BN449D6L93j_ecvZi6tJbmJsT1AuVG2x7r1_fVeeIgyl362Zjipxh2z4I2id5ss3ZrFtkukbEhu3DCNy95_RESQrhPjZdWjJN7ddfSiG95-l71zb4rCCE9tDG2TSv5lFmuQpG8TMsS59-CfWRTuCsFYpHBBHBJsM4_By4ieuxlyynZsWJl1Iq9AVm1O6b9WDKWRhplGYPmFFsX6fnf3OxbDHtPg-EbV07bYrIv7helcgwoT', mt: false },
-    { id: '4', name: 'Salted Butter', volume: '4 Sticks • Grass-fed', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC5c4XfDQYmlHRDMRocrW3tJi3GPMoYEP20wVWBlo-h_81YYd-XedM58S3xLPCwgYPo-FZF2pJFpr3U6Z-wLJfB25JRTBODucpAfj90Z4xUW07PztUVhbdzhvILqoICSNy8A_xPNhU-6pF4b1IvgZxJqqsURmLkOlnqTJ4qZz9iMVxBKaXYEo8MHCIaSff_95X3HxERQbOtR7Pdi8TjqEornVr03YswfcHL13WPATv8sU_el5khXbzH1_lSoD5VpeaI3rDOodIjqGrV', mt: true },
-    { id: '5', name: 'Mozzarella', volume: '16 oz • Fresh Ball', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB4pnIggEXd7tzW92sZMZ-1qLAwT41nO-c2c5Fq1YWCf0xGkIpvNw3rAuKFD0FuUiSrG-f80nvDXP8A7Qjxb6piMKEaNgYdk_NQyvng07XcCxTMPd8ndhs-b3uNGSrPZCw4moDYKIQJPJ0cKpFLwQt4SglPWuZhKPC4Cz06d2TG0RA4WWeOXP0WS9wj1IniZN3RsOuW9HvabZblFwzGP0Gstd6Il-Y5FaISFkdlGg7I98myrL53xEa8mWdVii4-JbYtsbnEeV_zdLdx', mt: false },
-    { id: '6', name: 'Heavy Cream', volume: '1 Pint • Ultra Pasteurized', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB3GErxPmXQvwXZB6y1js8WKBJrtTipfzASJIktT3H9URulFCqGoJ1t_Pl1r0gAetmteFhXjmGN5IZim8WgsEtlcrAFKSh3ncTGIMvOqiq951flLCfOjCGtjzT4IiCN81yX9dVhDBoXjDvz1hAOIGZ4nk5TW_Dxr4_w6R4-dvxLghEPjGvOvsic2SFsD0bzRb10Z66MO1JctXS6FrkLhXMY7dxWcnkujS9degWVVA31IMRKDyWYmiJve7g3GOtAPd1PMSgjRcrwsqwx', mt: true },
+  const dairyCategory = categories.find(c => c.name.includes("乳") || c.name.toLowerCase().includes("dairy"));
+  const items = dairyCategory?.items || [];
+
+  // Use mock images based on index for aesthetic prototype purposes
+  const mockImages = [
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCkGOc_Ap1YySmuNl3pCJUekeTLWcXTSOfVgu9or9HXIMe8oMKuoKMMC3d7YYBRDe1JnSdFUiisAe5iEzcjv1G52KlfIyTNAQ5qM47yYbzYncfrZh2w4ATZMxXVS2OtqlxzrCAeCfFOlUg24HljQx5rOZqVjKvqT5XikxmJfKAdr0uo5e6Ibs8lxfbVEiLbLs98SiDBWowlv58JkjDLIPZqP0FBHuo8_rgIf4qQRLqG87A7HqvdFgW_2GQj2FF9AKhbSwLgBxQ26ZdH',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuBQzoIZZWjwL2nAxOc9m01GsuFBOG7ZSxAMJieeTtgjvLBsY8c1UXPgAaks5wKdcWtCo10Pa6NxwD-a0aKB9HxRF8AEph_Dc5dSoy9LwmruaoKEEZvYaURWpmT-h-cGhitk2JWDuKQCjZEHMIRiK--5cLFEQroQnV72JxE_JExKytMkMtx2OPmWvoHhPNgSqkpxSPaSExveFDza0PRb7Eq2DJiBKMBKQt8m2VuSbt8qsTYpT5DD-2SIZvQk-6Rcq9KLMK6vU03yfNYp',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuD32Ez88h2btiK0pXsswkCUaufRqnNi2BN449D6L93j_ecvZi6tJbmJsT1AuVG2x7r1_fVeeIgyl362Zjipxh2z4I2id5ss3ZrFtkukbEhu3DCNy95_RESQrhPjZdWjJN7ddfSiG95-l71zb4rCCE9tDG2TSv5lFmuQpG8TMsS59-CfWRTuCsFYpHBBHBJsM4_By4ieuxlyynZsWJl1Iq9AVm1O6b9WDKWRhplGYPmFFsX6fnf3OxbDHtPg-EbV07bYrIv7helcgwoT',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuC5c4XfDQYmlHRDMRocrW3tJi3GPMoYEP20wVWBlo-h_81YYd-XedM58S3xLPCwgYPo-FZF2pJFpr3U6Z-wLJfB25JRTBODucpAfj90Z4xUW07PztUVhbdzhvILqoICSNy8A_xPNhU-6pF4b1IvgZxJqqsURmLkOlnqTJ4qZz9iMVxBKaXYEo8MHCIaSff_95X3HxERQbOtR7Pdi8TjqEornVr03YswfcHL13WPATv8sU_el5khXbzH1_lSoD5VpeaI3rDOodIjqGrV',
   ];
+
+  const handleAddItem = async (templateId: string, itemName: string) => {
+    await addToShoppingList(templateId, 'NORMAL', '');
+    Alert.alert("追加完了", `${itemName} をリストに追加しました`);
+  };
 
   return (
     <View className="flex-1 bg-surface font-body text-on-surface" style={{ paddingTop: insets.top }}>
@@ -80,26 +95,28 @@ export default function DairyCategoryScreen() {
 
         {/* Asymmetric Grid of Items */}
         <View className="flex-row flex-wrap justify-between">
-          {items.map((item, index) => (
+          {items.length > 0 ? items.map((item, index) => (
             <View
               key={item.id}
-              className={`w-[48%] bg-surface-container-lowest rounded-lg p-4 flex-col gap-3 mb-6 shadow-sm ${item.mt ? 'mt-8' : ''}`}
+              className={`w-[48%] bg-surface-container-lowest rounded-lg p-4 flex-col gap-3 mb-6 shadow-sm ${index % 2 !== 0 ? 'mt-8' : ''}`}
             >
               <View className="aspect-square rounded-lg overflow-hidden bg-surface-container-low relative">
-                <Image source={{ uri: item.image }} className="w-full h-full" />
+                <Image source={{ uri: mockImages[index % mockImages.length] }} className="w-full h-full" />
                 <TouchableOpacity
                   className="absolute bottom-3 right-3 w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
-                  onPress={() => navigation.navigate("ItemDetails")}
+                  onPress={() => handleAddItem(item.id, item.name)}
                 >
                   <Icon name="add" size={24} className="text-on-primary" />
                 </TouchableOpacity>
               </View>
               <View>
                 <Text className="font-headline font-bold text-on-surface">{item.name}</Text>
-                <Text className="font-body text-xs text-on-surface-variant mt-1">{item.volume}</Text>
+                <Text className="font-body text-xs text-on-surface-variant mt-1">Default: {item.defaultDays} Days</Text>
               </View>
             </View>
-          ))}
+          )) : (
+            <Text className="text-center text-on-surface-variant font-body">アイテムが見つかりません</Text>
+          )}
         </View>
 
         {/* Secondary CTA: "Missing Something?" */}
