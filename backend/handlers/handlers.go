@@ -243,6 +243,7 @@ func AddListItem(c *gin.Context) {
 			ItemTemplateID: input.ItemTemplateID,
 			Status:         "ACTIVE",
 			StartedAt:      &now,
+			DefaultDays:    template.DefaultDays,
 		}
 
 		if err := database.DB.Create(&item).Error; err != nil {
@@ -337,6 +338,7 @@ func UpdateListItem(c *gin.Context) {
 					ItemTemplateID: shoppingItem.ItemTemplateID,
 					Status:         "ACTIVE",
 					StartedAt:      &now,
+					DefaultDays:    shoppingItem.ItemTemplate.DefaultDays,
 				}
 				database.DB.Create(&fridgeItem)
 			}
