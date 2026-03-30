@@ -38,9 +38,10 @@ type Family struct {
 	Base
 	Name       string        `json:"name"`
 	InviteCode string        `gorm:"unique" json:"inviteCode"`
-	Users      []User        `json:"users,omitempty"`
-	ListItems  []ListItem    `json:"listItems,omitempty"`
-	Messages   []ChatMessage `json:"messages,omitempty"`
+	Users         []User         `json:"users,omitempty"`
+	ShoppingItems []ShoppingItem `json:"shoppingItems,omitempty"`
+	FridgeItems   []FridgeItem   `json:"fridgeItems,omitempty"`
+	Messages      []ChatMessage  `json:"messages,omitempty"`
 	Activities []ActivityLog `json:"activities,omitempty"`
 }
 
@@ -65,8 +66,9 @@ type ItemTemplate struct {
 	DefaultDays int        `gorm:"default:7" json:"defaultDays"`
 	ImageURL    string     `json:"imageUrl"`
 	IsSystem    bool       `gorm:"default:true" json:"isSystem"`
-	FamilyID    *string    `gorm:"type:uuid" json:"familyId"`
-	ListItems   []ListItem `json:"listItems,omitempty"`
+	FamilyID      *string        `gorm:"type:uuid" json:"familyId"`
+	ShoppingItems []ShoppingItem `json:"shoppingItems,omitempty"`
+	FridgeItems   []FridgeItem   `json:"fridgeItems,omitempty"`
 }
 
 func (item *ItemTemplate) BeforeCreate(tx *gorm.DB) error {
@@ -76,31 +78,44 @@ func (item *ItemTemplate) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// ListItem represents an item card in a kanban board format.
-// Statuses: "SHOPPING", "FRIDGE", "CONSUMED"
-type ListItem struct {
+type FridgeItem struct {
 	Base
 	FamilyID       string       `gorm:"type:uuid" json:"familyId"`
 	Family         Family       `json:"family,omitempty"`
 	ItemTemplateID string       `gorm:"type:uuid" json:"itemTemplateId"`
 	ItemTemplate   ItemTemplate `json:"itemTemplate,omitempty"`
 
-	// Kanban List identifier
-	Status string `gorm:"default:'SHOPPING'" json:"status"`
+	Status      string     `gorm:"default:'ACTIVE'" json:"status"` // "ACTIVE", "CONSUMED"
+	StartedAt   *time.Time `json:"startedAt"`
+	EndDate     *time.Time `json:"endDate"`
+	DefaultDays int        `json:"defaultDays"`
+}
 
-	// Shopping Item specific fields
-	Priority string  `gorm:"default:'NORMAL'" json:"priority"` // "URGENT", "HIGH", "NORMAL", "SOMEDAY"
-	Note     *string `json:"note"`
+// BeforeCreate will set a UUID, and initialize DefaultDays from ItemTemplate if not set.
+func (f *FridgeItem) BeforeCreate(tx *gorm.DB) error {
+	if f.ID == "" {
+		f.ID = uuid.New().String()
+	}
+	if f.DefaultDays == 0 && f.ItemTemplateID != "" {
+		var template ItemTemplate
+		if err := tx.First(&template, "id = ?", f.ItemTemplateID).Error; err == nil {
+			f.DefaultDays = template.DefaultDays
+		}
+	}
+	return nil
+}
 
-	// Fridge/Pantry Location ("FRIDGE", "PANTRY", "FREEZER")
-	Location string `gorm:"default:'FRIDGE'" json:"location"`
+type ShoppingItem struct {
+	Base
+	FamilyID       string       `gorm:"type:uuid" json:"familyId"`
+	Family         Family       `json:"family,omitempty"`
+	ItemTemplateID string       `gorm:"type:uuid" json:"itemTemplateId"`
+	ItemTemplate   ItemTemplate `json:"itemTemplate,omitempty"`
 
-	// Fridge Item specific fields
-	ExpirationDate *time.Time `json:"expirationDate"`
-
-	// Purchase/Consumed History specific fields
-	Price    *float64 `json:"price"`
-	Quantity int      `gorm:"default:1" json:"quantity"`
+	Priority string     `gorm:"default:'NORMAL'" json:"priority"` // "TODAY", "URGENT", "NORMAL", "LOW"
+	Status   string     `gorm:"default:'PENDING'" json:"status"`  // "PENDING", "BOUGHT"
+	Note     *string    `json:"note"`
+	BoughtAt *time.Time `json:"boughtAt"`
 }
 
 type ActivityLog struct {
