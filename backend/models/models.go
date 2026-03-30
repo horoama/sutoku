@@ -118,6 +118,13 @@ type ShoppingItem struct {
 	BoughtAt *time.Time `json:"boughtAt"`
 }
 
+func (s *ShoppingItem) BeforeCreate(tx *gorm.DB) error {
+	if s.ID == "" {
+		s.ID = uuid.New().String()
+	}
+	return nil
+}
+
 type ActivityLog struct {
 	ID        string    `gorm:"type:uuid;primary_key;" json:"id"`
 	FamilyID  string    `gorm:"type:uuid;index" json:"familyId"`

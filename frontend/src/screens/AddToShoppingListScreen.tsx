@@ -22,7 +22,7 @@ export default function AddToShoppingListScreen() {
     });
   }, []);
 
-  const handleAddItem = async (templateId: string, itemName: string, priority: 'URGENT' | 'HIGH' | 'NORMAL' | 'SOMEDAY' = 'NORMAL') => {
+  const handleAddItem = async (templateId: string, itemName: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW' = 'NORMAL') => {
     await addToShoppingList(templateId, priority, '');
     Alert.alert("Success", `${itemName} added to shopping list.`);
   };
