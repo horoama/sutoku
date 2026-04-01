@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, ScrollView, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFridgeStore, FridgeItem } from "../store/fridgeStore";
+import { useShoppingStore } from "../store/shoppingStore";
 import { useAppStore } from "../store/appStore";
 import { differenceInDays } from "date-fns";
 import Icon from "@expo/vector-icons/MaterialIcons";
@@ -9,7 +10,7 @@ import Icon from "@expo/vector-icons/MaterialIcons";
 export default function FridgeScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
   const { family } = useAppStore();
-  const { fridgeItems, fetchFridgeItems } = useFridgeStore();
+  const { fridgeItems, fetchFridgeItems, consumeItem } = useFridgeStore();
 
   useEffect(() => {
     if (family?.id) {
@@ -17,40 +18,66 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     }
   }, [family?.id]);
 
-  const expiringItems = fridgeItems.filter(item => differenceInDays(new Date(item.expirationDate), new Date()) <= 3);
-  const fridgeSection = fridgeItems.filter(item => item.location === "FRIDGE");
-  const pantrySection = fridgeItems.filter(item => item.location === "PANTRY");
+  const activeItems = fridgeItems.filter(item => item.status === "ACTIVE");
+
+  // Calculate expiration logic
+  const getDaysLeft = (item: FridgeItem) => {
+    if (!item.startedAt) return Number(item.defaultDays);
+
+    // If we have an exact endDate, use it
+    if (item.endDate) {
+      return differenceInDays(new Date(item.endDate), new Date());
+    }
+
+    // Otherwise calculate based on startedAt + defaultDays
+    const startDate = new Date(item.startedAt);
+    const endDate = new Date(startDate.setDate(startDate.getDate() + Number(item.defaultDays)));
+    return differenceInDays(endDate, new Date());
+  };
+
+  const expiringItems = activeItems.filter(item => getDaysLeft(item) <= 3).sort((a, b) => getDaysLeft(a) - getDaysLeft(b));
+
+  // Default Days criteria for fridge vs pantry:
+  // Usually short lifespan goes to fridge, longer to pantry.
+  // Or check category name if populated, but fallback to all active items
+  const fridgeSection = activeItems.filter(item => {
+    const catName = item.itemTemplate.category?.name?.toLowerCase() || "";
+    if (catName.includes("dairy") || catName.includes("meat") || catName.includes("produce")) return true;
+    return item.defaultDays < 30; // Shorter lived items typically go to fridge
+  });
+
+  const pantrySection = activeItems.filter(item => !fridgeSection.includes(item));
 
   const renderUrgentItem = (item: FridgeItem, index: number) => {
-    const daysLeft = differenceInDays(new Date(item.expirationDate), new Date());
+    const daysLeft = getDaysLeft(item);
     const isCritical = daysLeft <= 1;
-    const progressPercent = Math.max(0, Math.min(100, (daysLeft / 7) * 100));
+    const totalDays = item.defaultDays || 7;
+    const progressPercent = Math.max(0, Math.min(100, (daysLeft / totalDays) * 100));
 
     if (index === 0) {
       return (
-        <View key={item.id} className="relative overflow-hidden bg-primary p-6 rounded-lg text-on-primary shadow-lg flex flex-col justify-between aspect-[16/10] mb-4">
-          <View className="flex-row justify-between items-start">
-            <View className="space-y-1">
-              <Text className="font-headline text-2xl font-bold text-on-primary">{item.itemTemplate.name}</Text>
-              <Text className="text-sm opacity-90 font-medium text-on-primary">Shelf: {item.location === "FRIDGE" ? "Fridge" : "Pantry"}</Text>
+        <View key={item.id} className="relative overflow-hidden bg-primary p-4 rounded-lg text-on-primary shadow-lg flex-col mb-4">
+          <View className="flex-row justify-between items-center mb-3">
+            <View>
+              <Text className="font-headline text-xl font-bold text-on-primary" numberOfLines={1}>{item.itemTemplate.name}</Text>
             </View>
-            <View className="bg-tertiary-container px-3 py-1 rounded-full flex-row items-center gap-1">
-              <Icon name="timer" size={14} className="text-on-tertiary-container" />
-              <Text className="text-on-tertiary-container text-xs font-bold">
+            <View className="bg-tertiary-container px-2 py-1 rounded-full flex-row items-center gap-1">
+              <Icon name="timer" size={12} className="text-on-tertiary-container" />
+              <Text className="text-on-tertiary-container text-[10px] font-bold">
                 {daysLeft < 0 ? "EXPIRED" : daysLeft === 0 ? "TODAY" : `${daysLeft} DAYS LEFT`}
               </Text>
             </View>
           </View>
-          <View className="space-y-3 mt-auto">
+          <View className="space-y-1">
             <View className="flex-row justify-between">
-              <Text className="text-xs font-bold tracking-wider text-on-primary">FRESHNESS LEVEL</Text>
-              <Text className="text-xs font-bold tracking-wider text-on-primary">{Math.round(progressPercent)}%</Text>
+              <Text className="text-[10px] font-bold tracking-wider text-on-primary">FRESHNESS LEVEL</Text>
+              <Text className="text-[10px] font-bold tracking-wider text-on-primary">{Math.round(progressPercent)}%</Text>
             </View>
-            <View className="h-3 bg-white/20 rounded-full overflow-hidden">
+            <View className="h-2 bg-white/20 rounded-full overflow-hidden">
               <View className="h-full bg-secondary-container rounded-full" style={{ width: `${progressPercent}%` }}></View>
             </View>
           </View>
-          <Icon name="restaurant" size={120} className="absolute -bottom-6 -right-6 opacity-20 text-on-primary" style={{ transform: [{ rotate: "12deg" }] }} />
+          <Icon name="restaurant" size={60} className="absolute -bottom-4 -right-4 opacity-10 text-on-primary" style={{ transform: [{ rotate: "12deg" }] }} />
         </View>
       );
     }
@@ -58,7 +85,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     return (
       <View key={item.id} className="bg-surface-container-lowest p-5 rounded-lg border-l-8 border-tertiary flex-row items-center gap-4 mb-4 shadow-sm">
         <View className="w-16 h-16 rounded-2xl bg-surface-container-low overflow-hidden flex-shrink-0 flex items-center justify-center">
-           <Icon name={item.location === "FRIDGE" ? "kitchen" : "inventory-2"} size={32} className="text-tertiary" />
+           <Icon name="kitchen" size={32} className="text-tertiary" />
         </View>
         <View className="flex-grow">
           <Text className="font-headline font-bold text-on-surface text-base">{item.itemTemplate.name}</Text>
@@ -71,15 +98,32 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
             </Text>
           </View>
         </View>
-        <TouchableOpacity>
-          <Icon name="restaurant" size={24} className="text-outline" />
+        <TouchableOpacity
+          className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform ml-2"
+          onPress={(e) => {
+            e.stopPropagation();
+            handleConsumePantryItem(item);
+          }}
+        >
+          <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
         </TouchableOpacity>
       </View>
     );
   };
 
+  const handleConsumePantryItem = async (item: FridgeItem) => {
+    try {
+      // Consume item from pantry
+      await consumeItem(item.id);
+      // Add to shopping list inheriting the settings (itemTemplateId, NORMAL priority)
+      await useShoppingStore.getState().addToShoppingList(item.itemTemplateId, 'NORMAL', '');
+    } catch (error) {
+      console.error("Failed to consume item:", error);
+    }
+  };
+
   const renderFridgeItem = (item: FridgeItem) => {
-    const daysLeft = differenceInDays(new Date(item.expirationDate), new Date());
+    const daysLeft = getDaysLeft(item);
     return (
       <TouchableOpacity
         key={item.id}
@@ -95,9 +139,17 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
             <Text className="text-xs text-outline font-medium">Added recently</Text>
           </View>
         </View>
-        <View className="items-end">
+        <View className="items-end gap-1">
           <Text className="font-headline font-bold text-primary text-base">{daysLeft} Days</Text>
-          <Text className="text-[10px] text-outline uppercase tracking-widest font-bold">REMAINING</Text>
+          <TouchableOpacity
+            className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform"
+            onPress={(e) => {
+              e.stopPropagation();
+              handleConsumePantryItem(item);
+            }}
+          >
+            <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
@@ -117,8 +169,16 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           <Text className="font-headline font-bold text-sm text-on-surface" numberOfLines={1}>{item.itemTemplate.name}</Text>
           <Text className="text-xs text-outline font-medium">In stock</Text>
         </View>
-        <View className="bg-primary-fixed px-2 py-0.5 rounded-full self-start">
-          <Text className="text-[10px] font-bold text-primary-container">STABLE</Text>
+        <View className="flex-row items-center justify-between mt-1">
+          <View className="bg-primary-fixed px-2 py-0.5 rounded-full self-start">
+            <Text className="text-[10px] font-bold text-primary-container">STABLE</Text>
+          </View>
+          <TouchableOpacity
+            className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform"
+            onPress={() => handleConsumePantryItem(item)}
+          >
+            <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );

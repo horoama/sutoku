@@ -20,9 +20,9 @@ export interface ShoppingItem {
   id: string;
   familyId: string;
   itemTemplateId: string;
-  priority: 'URGENT' | 'HIGH' | 'NORMAL' | 'SOMEDAY';
+  priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW';
   note: string | null;
-  status: string;
+  status: 'PENDING' | 'BOUGHT' | 'PURCHASED';
   itemTemplate: ItemTemplate;
 }
 
@@ -34,8 +34,9 @@ interface ShoppingState {
 
   fetchCategories: () => Promise<void>;
   fetchShoppingList: () => Promise<void>;
-  addToShoppingList: (itemTemplateId: string, priority: 'URGENT' | 'HIGH' | 'NORMAL' | 'SOMEDAY', note?: string) => Promise<void>;
-  purchaseItem: (id: string, price?: number) => Promise<void>;
+  addToShoppingList: (itemTemplateId: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW', note?: string) => Promise<void>;
+  purchaseItem: (id: string, price?: number, endDate?: string) => Promise<void>;
+  toggleBoughtStatus: (id: string, isBought: boolean) => Promise<void>;
   createItemTemplate: (name: string, categoryId: string, defaultDays: number) => Promise<ItemTemplate | null>;
 }
 
@@ -73,7 +74,7 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
     if (!familyId) return;
 
     try {
-      await api.post('/items', { familyId, userId, itemTemplateId, priority, note, status: 'SHOPPING' });
+      await api.post('/items', { familyId, userId, itemTemplateId, priority, note, type: 'shopping' });
       get().fetchShoppingList();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
@@ -95,10 +96,26 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
     }
   },
 
-  purchaseItem: async (id, price) => {
+  toggleBoughtStatus: async (id, isBought) => {
+    const userId = useAppStore.getState().user?.id;
+    const status = isBought ? 'BOUGHT' : 'PENDING';
+    try {
+      await api.put(`/items/${id}`, { status, userId, type: 'shopping' });
+      get().fetchShoppingList();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  purchaseItem: async (id, price, endDate) => {
     const userId = useAppStore.getState().user?.id;
     try {
-      await api.put(`/items/${id}`, { status: 'FRIDGE', price, userId });
+      // Send to fridge by marking as 'PURCHASED'
+      const payload: any = { status: 'PURCHASED', price, userId, type: 'shopping' };
+      if (endDate) {
+        payload.endDate = endDate;
+      }
+      await api.put(`/items/${id}`, payload);
       get().fetchShoppingList();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {

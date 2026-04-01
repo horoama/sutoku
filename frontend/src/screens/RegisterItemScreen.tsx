@@ -17,7 +17,7 @@ export default function RegisterItemScreen() {
 
   // Default to first category if available
   const [activeCategoryId, setActiveCategoryId] = useState(categories.length > 0 ? categories[0].id : "");
-  const [activePriority, setActivePriority] = useState<"URGENT" | "HIGH" | "NORMAL" | "SOMEDAY">("NORMAL");
+  const [activePriority, setActivePriority] = useState<"TODAY" | "URGENT" | "NORMAL" | "LOW">("NORMAL");
 
   const handleRegister = async () => {
     if (!itemName) {
@@ -171,11 +171,11 @@ export default function RegisterItemScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                className={`flex-1 flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activePriority === 'HIGH' ? 'bg-secondary-fixed border-secondary' : 'bg-surface-container border-transparent'}`}
-                onPress={() => setActivePriority('HIGH')}
+                className={`flex-1 flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activePriority === 'TODAY' ? 'bg-secondary-fixed border-secondary' : 'bg-surface-container border-transparent'}`}
+                onPress={() => setActivePriority('TODAY')}
               >
-                <Icon name="priority-high" size={24} className={`mb-1 ${activePriority === 'HIGH' ? 'text-secondary' : 'text-outline'}`} />
-                <Text className={`text-[10px] font-bold tracking-widest uppercase ${activePriority === 'HIGH' ? 'text-secondary' : 'text-outline'}`}>HIGH</Text>
+                <Icon name="priority-high" size={24} className={`mb-1 ${activePriority === 'TODAY' ? 'text-secondary' : 'text-outline'}`} />
+                <Text className={`text-[10px] font-bold tracking-widest uppercase ${activePriority === 'TODAY' ? 'text-secondary' : 'text-outline'}`}>TODAY</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

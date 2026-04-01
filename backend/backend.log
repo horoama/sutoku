@@ -1,0 +1,24 @@
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/health               --> backend/handlers.HealthCheck (4 handlers)
+[GIN-debug] POST   /api/seed                 --> backend/handlers.SeedData (4 handlers)
+[GIN-debug] GET    /api/items                --> backend/handlers.GetItems (4 handlers)
+[GIN-debug] POST   /api/item-templates       --> backend/handlers.CreateItemTemplate (4 handlers)
+[GIN-debug] POST   /api/setup-user           --> backend/handlers.SetupUser (4 handlers)
+[GIN-debug] GET    /api/family/:familyId/members --> backend/handlers.GetFamilyMembers (4 handlers)
+[GIN-debug] GET    /api/family/:familyId/logs --> backend/handlers.GetActivityLogs (4 handlers)
+[GIN-debug] GET    /api/lists/:familyId      --> backend/handlers.GetLists (4 handlers)
+[GIN-debug] POST   /api/items                --> backend/handlers.AddListItem (4 handlers)
+[GIN-debug] PUT    /api/items/:id            --> backend/handlers.UpdateListItem (4 handlers)
+[GIN-debug] DELETE /api/items/:id            --> backend/handlers.DeleteListItem (4 handlers)
+[GIN-debug] GET    /api/chat/:familyId       --> backend/handlers.GetChatMessages (4 handlers)
+[GIN-debug] POST   /api/chat                 --> backend/handlers.SendChatMessage (4 handlers)
+2026/04/01 05:11:38 Server is running on port 3000
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :3000
+[GIN-debug] [ERROR] listen tcp :3000: bind: address already in use
