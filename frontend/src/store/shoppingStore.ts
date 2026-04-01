@@ -22,7 +22,7 @@ export interface ShoppingItem {
   itemTemplateId: string;
   priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW';
   note: string | null;
-  status: 'PENDING' | 'BOUGHT';
+  status: 'PENDING' | 'BOUGHT' | 'PURCHASED';
   itemTemplate: ItemTemplate;
 }
 
@@ -110,8 +110,8 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
   purchaseItem: async (id, price) => {
     const userId = useAppStore.getState().user?.id;
     try {
-      // In the new backend flow, setting a shopping item to 'BOUGHT' automatically creates a FridgeItem.
-      await api.put(`/items/${id}`, { status: 'BOUGHT', price, userId, type: 'shopping' });
+      // Send to fridge by marking as 'PURCHASED'
+      await api.put(`/items/${id}`, { status: 'PURCHASED', price, userId, type: 'shopping' });
       get().fetchShoppingList();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {

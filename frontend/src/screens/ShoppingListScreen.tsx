@@ -167,9 +167,9 @@ export default function ShoppingListScreen() {
 
         {/* List Section */}
         <View className="space-y-4">
-          {shoppingList.filter(item => item.status !== 'BOUGHT').length > 0 ? (
+          {shoppingList.filter(item => item.status !== 'PURCHASED').length > 0 ? (
             <FlatList
-              data={shoppingList.filter(item => item.status !== 'BOUGHT')}
+              data={shoppingList.filter(item => item.status !== 'PURCHASED')}
               keyExtractor={(item) => item.id}
               renderItem={renderShoppingItem}
               scrollEnabled={false}

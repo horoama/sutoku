@@ -190,7 +190,9 @@ func GetLists(c *gin.Context) {
 	consumed := []models.FridgeItem{}
 
 	for _, item := range shoppingItems {
-		shopping = append(shopping, item) // Includes both PENDING and BOUGHT
+		if item.Status != "PURCHASED" {
+			shopping = append(shopping, item) // Includes both PENDING and BOUGHT, but hides PURCHASED
+		}
 	}
 
 	for _, item := range fridgeItems {
@@ -328,11 +330,13 @@ func UpdateListItem(c *gin.Context) {
 		if input.Status != "" && input.Status != shoppingItem.Status {
 			updates["status"] = input.Status
 			if input.Status == "BOUGHT" {
+				actionLogged = "checked"
+			} else if input.Status == "PURCHASED" {
 				now := time.Now()
 				updates["bought_at"] = &now
 				actionLogged = "bought"
 
-				// Additionally, create a FridgeItem for this bought item
+				// Create a FridgeItem when sent to fridge ("PURCHASED" or similar explicit state)
 				fridgeItem := models.FridgeItem{
 					FamilyID:       shoppingItem.FamilyID,
 					ItemTemplateID: shoppingItem.ItemTemplateID,
