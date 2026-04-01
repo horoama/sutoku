@@ -23,19 +23,35 @@ export default function ItemDetailsScreen() {
   const initialItem = fridgeItems.find(i => i.id === itemId);
 
   const [itemName, setItemName] = useState(initialItem?.itemTemplate?.name || "");
-  const [notes, setNotes] = useState(initialItem?.itemTemplate?.name ? `Stored in ${initialItem.location}.` : "");
+  const [notes, setNotes] = useState(initialItem?.itemTemplate?.name ? `Stored safely.` : "");
 
-  const initialDaysLeft = initialItem ? Math.max(0, differenceInDays(new Date(initialItem.expirationDate), new Date())) : 7;
-  const [freshness, setFreshness] = useState(initialDaysLeft);
+  let initialDaysLeft = 7;
+  if (initialItem) {
+    const itemDefaultDays = initialItem.defaultDays || initialItem.itemTemplate?.defaultDays || 7;
+    if (initialItem.endDate) {
+      initialDaysLeft = differenceInDays(new Date(initialItem.endDate), new Date());
+    } else if (initialItem.startedAt) {
+      const startDate = new Date(initialItem.startedAt);
+      const endDate = new Date(startDate.setDate(startDate.getDate() + itemDefaultDays));
+      initialDaysLeft = differenceInDays(endDate, new Date());
+    } else {
+      initialDaysLeft = itemDefaultDays;
+    }
+  }
+
+  // Guard against NaN
+  if (isNaN(initialDaysLeft)) {
+      initialDaysLeft = 7;
+  }
+
+  const [freshness, setFreshness] = useState(Math.max(0, initialDaysLeft));
   const [activePriority, setActivePriority] = useState<"URGENT" | "HIGH" | "NORMAL" | "SOMEDAY">("NORMAL");
 
   const saveUpdates = async () => {
     if (initialItem) {
-       const newExpDate = addDays(new Date(), freshness).toISOString();
+       const newEndDate = addDays(new Date(), freshness).toISOString();
        await updateFridgeItem(initialItem.id, {
-         priority: activePriority,
-         expirationDate: newExpDate,
-         note: notes
+         endDate: newEndDate,
        });
     }
   };

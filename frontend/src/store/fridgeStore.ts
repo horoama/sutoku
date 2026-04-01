@@ -7,8 +7,10 @@ export interface FridgeItem {
   id: string;
   familyId: string;
   itemTemplateId: string;
-  location: 'FRIDGE' | 'PANTRY';
-  expirationDate: string;
+  status: 'ACTIVE' | 'CONSUMED';
+  startedAt: string | null;
+  endDate: string | null;
+  defaultDays: number;
   itemTemplate: ItemTemplate;
 }
 
@@ -18,9 +20,9 @@ interface FridgeState {
   error: string | null;
 
   fetchFridgeItems: () => Promise<void>;
-  addToFridge: (itemTemplateId: string, location: 'FRIDGE' | 'PANTRY', priority: string, note?: string) => Promise<void>;
-  consumeItem: (id: string, quantity: number) => Promise<void>;
-  updateFridgeItem: (id: string, updates: { priority?: string, expirationDate?: string, note?: string }) => Promise<void>;
+  addToFridge: (itemTemplateId: string) => Promise<void>;
+  consumeItem: (id: string) => Promise<void>;
+  updateFridgeItem: (id: string, updates: { endDate?: string }) => Promise<void>;
 }
 
 export const useFridgeStore = create<FridgeState>((set, get) => ({
@@ -41,13 +43,13 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
     }
   },
 
-  addToFridge: async (itemTemplateId, location, priority, note) => {
+  addToFridge: async (itemTemplateId) => {
     const familyId = useAppStore.getState().family?.id;
     const userId = useAppStore.getState().user?.id;
     if (!familyId) return;
 
     try {
-      await api.post('/items', { familyId, userId, itemTemplateId, priority, note, status: 'FRIDGE', location });
+      await api.post('/items', { familyId, userId, itemTemplateId, status: 'ACTIVE', type: 'fridge' });
       get().fetchFridgeItems();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
@@ -55,10 +57,10 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
     }
   },
 
-  consumeItem: async (id, quantity) => {
+  consumeItem: async (id) => {
     const userId = useAppStore.getState().user?.id;
     try {
-      await api.put(`/items/${id}`, { status: 'CONSUMED', quantity, userId });
+      await api.put(`/items/${id}`, { status: 'CONSUMED', userId, type: 'fridge' });
       get().fetchFridgeItems();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
@@ -69,7 +71,7 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
   updateFridgeItem: async (id, updates) => {
     const userId = useAppStore.getState().user?.id;
     try {
-      await api.put(`/items/${id}`, { ...updates, userId });
+      await api.put(`/items/${id}`, { ...updates, userId, type: 'fridge' });
       get().fetchFridgeItems();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {

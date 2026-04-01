@@ -17,14 +17,41 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     }
   }, [family?.id]);
 
-  const expiringItems = fridgeItems.filter(item => differenceInDays(new Date(item.expirationDate), new Date()) <= 3);
-  const fridgeSection = fridgeItems.filter(item => item.location === "FRIDGE");
-  const pantrySection = fridgeItems.filter(item => item.location === "PANTRY");
+  const activeItems = fridgeItems.filter(item => item.status === "ACTIVE");
+
+  // Calculate expiration logic
+  const getDaysLeft = (item: FridgeItem) => {
+    if (!item.startedAt) return item.defaultDays;
+
+    // If we have an exact endDate, use it
+    if (item.endDate) {
+      return differenceInDays(new Date(item.endDate), new Date());
+    }
+
+    // Otherwise calculate based on startedAt + defaultDays
+    const startDate = new Date(item.startedAt);
+    const endDate = new Date(startDate.setDate(startDate.getDate() + item.defaultDays));
+    return differenceInDays(endDate, new Date());
+  };
+
+  const expiringItems = activeItems.filter(item => getDaysLeft(item) <= 3).sort((a, b) => getDaysLeft(a) - getDaysLeft(b));
+
+  // Default Days criteria for fridge vs pantry:
+  // Usually short lifespan goes to fridge, longer to pantry.
+  // Or check category name if populated, but fallback to all active items
+  const fridgeSection = activeItems.filter(item => {
+    const catName = item.itemTemplate.category?.name?.toLowerCase() || "";
+    if (catName.includes("dairy") || catName.includes("meat") || catName.includes("produce")) return true;
+    return item.defaultDays < 30; // Shorter lived items typically go to fridge
+  });
+
+  const pantrySection = activeItems.filter(item => !fridgeSection.includes(item));
 
   const renderUrgentItem = (item: FridgeItem, index: number) => {
-    const daysLeft = differenceInDays(new Date(item.expirationDate), new Date());
+    const daysLeft = getDaysLeft(item);
     const isCritical = daysLeft <= 1;
-    const progressPercent = Math.max(0, Math.min(100, (daysLeft / 7) * 100));
+    const totalDays = item.defaultDays || 7;
+    const progressPercent = Math.max(0, Math.min(100, (daysLeft / totalDays) * 100));
 
     if (index === 0) {
       return (
@@ -32,7 +59,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           <View className="flex-row justify-between items-start">
             <View className="space-y-1">
               <Text className="font-headline text-2xl font-bold text-on-primary">{item.itemTemplate.name}</Text>
-              <Text className="text-sm opacity-90 font-medium text-on-primary">Shelf: {item.location === "FRIDGE" ? "Fridge" : "Pantry"}</Text>
+              <Text className="text-sm opacity-90 font-medium text-on-primary">Active Inventory</Text>
             </View>
             <View className="bg-tertiary-container px-3 py-1 rounded-full flex-row items-center gap-1">
               <Icon name="timer" size={14} className="text-on-tertiary-container" />
@@ -58,7 +85,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     return (
       <View key={item.id} className="bg-surface-container-lowest p-5 rounded-lg border-l-8 border-tertiary flex-row items-center gap-4 mb-4 shadow-sm">
         <View className="w-16 h-16 rounded-2xl bg-surface-container-low overflow-hidden flex-shrink-0 flex items-center justify-center">
-           <Icon name={item.location === "FRIDGE" ? "kitchen" : "inventory-2"} size={32} className="text-tertiary" />
+           <Icon name="kitchen" size={32} className="text-tertiary" />
         </View>
         <View className="flex-grow">
           <Text className="font-headline font-bold text-on-surface text-base">{item.itemTemplate.name}</Text>
@@ -79,7 +106,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
   };
 
   const renderFridgeItem = (item: FridgeItem) => {
-    const daysLeft = differenceInDays(new Date(item.expirationDate), new Date());
+    const daysLeft = getDaysLeft(item);
     return (
       <TouchableOpacity
         key={item.id}
