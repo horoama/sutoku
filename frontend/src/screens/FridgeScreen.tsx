@@ -22,7 +22,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
 
   // Calculate expiration logic
   const getDaysLeft = (item: FridgeItem) => {
-    if (!item.startedAt) return item.defaultDays;
+    if (!item.startedAt) return Number(item.defaultDays);
 
     // If we have an exact endDate, use it
     if (item.endDate) {
@@ -31,7 +31,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
 
     // Otherwise calculate based on startedAt + defaultDays
     const startDate = new Date(item.startedAt);
-    const endDate = new Date(startDate.setDate(startDate.getDate() + item.defaultDays));
+    const endDate = new Date(startDate.setDate(startDate.getDate() + Number(item.defaultDays)));
     return differenceInDays(endDate, new Date());
   };
 
@@ -98,11 +98,28 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
             </Text>
           </View>
         </View>
-        <TouchableOpacity>
-          <Icon name="restaurant" size={24} className="text-outline" />
+        <TouchableOpacity
+          className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform ml-2"
+          onPress={(e) => {
+            e.stopPropagation();
+            handleConsumePantryItem(item);
+          }}
+        >
+          <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
         </TouchableOpacity>
       </View>
     );
+  };
+
+  const handleConsumePantryItem = async (item: FridgeItem) => {
+    try {
+      // Consume item from pantry
+      await consumeItem(item.id);
+      // Add to shopping list inheriting the settings (itemTemplateId, NORMAL priority)
+      await useShoppingStore.getState().addToShoppingList(item.itemTemplateId, 'NORMAL', '');
+    } catch (error) {
+      console.error("Failed to consume item:", error);
+    }
   };
 
   const renderFridgeItem = (item: FridgeItem) => {
@@ -122,23 +139,20 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
             <Text className="text-xs text-outline font-medium">Added recently</Text>
           </View>
         </View>
-        <View className="items-end">
+        <View className="items-end gap-1">
           <Text className="font-headline font-bold text-primary text-base">{daysLeft} Days</Text>
-          <Text className="text-[10px] text-outline uppercase tracking-widest font-bold">REMAINING</Text>
+          <TouchableOpacity
+            className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform"
+            onPress={(e) => {
+              e.stopPropagation();
+              handleConsumePantryItem(item);
+            }}
+          >
+            <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
-  };
-
-  const handleConsumePantryItem = async (item: FridgeItem) => {
-    try {
-      // Consume item from pantry
-      await consumeItem(item.id);
-      // Add to shopping list inheriting the settings (itemTemplateId, NORMAL priority)
-      await useShoppingStore.getState().addToShoppingList(item.itemTemplateId, 'NORMAL', '');
-    } catch (error) {
-      console.error("Failed to consume item:", error);
-    }
   };
 
   const renderPantryCard = (item: FridgeItem) => {
