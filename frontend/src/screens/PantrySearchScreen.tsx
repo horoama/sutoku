@@ -23,7 +23,7 @@ export default function PantrySearchScreen() {
   const items = allItems.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleAddItem = async (templateId: string, itemName: string) => {
-    await addToFridge(templateId, 'FRIDGE', 'NORMAL', '');
+    await addToFridge(templateId, undefined, 'fridge');
     Alert.alert("追加完了", `${itemName} を追加しました`);
   };
 

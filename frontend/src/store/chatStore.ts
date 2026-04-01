@@ -1,22 +1,20 @@
 import { create } from 'zustand';
 import { api } from '../api/client';
-import { useAppStore, User } from './appStore';
+import { useAppStore } from './appStore';
+import { ChatMessage } from '../types/store';
 
-export interface ChatMessage {
-  id: string;
-  familyId: string;
-  userId: string;
-  text: string;
-  createdAt: string;
-  user: User;
-}
-
+/**
+ * @interface ChatState
+ * チャット状態を管理するストアの型定義
+ */
 interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
   error: string | null;
 
+  /** チャットメッセージ一覧を取得 */
   fetchMessages: () => Promise<void>;
+  /** 新しいチャットメッセージを送信 */
   sendMessage: (text: string) => Promise<void>;
 }
 
@@ -29,24 +27,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const familyId = useAppStore.getState().family?.id;
     if (!familyId) return;
 
-    set({ isLoading: true });
     try {
       const { data } = await api.get(`/chat/${familyId}`);
-      set({ messages: data, isLoading: false });
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false });
-    }
-  },
-
-  sendMessage: async (text: string) => {
-    const { family, user } = useAppStore.getState();
-    if (!family?.id || !user?.id) return;
-
-    try {
-      await api.post('/chat', { familyId: family.id, userId: user.id, text });
-      get().fetchMessages();
+      set({ messages: data });
     } catch (err: any) {
       set({ error: err.message });
     }
   },
+
+  sendMessage: async (text) => {
+    const familyId = useAppStore.getState().family?.id;
+    const userId = useAppStore.getState().user?.id;
+    if (!familyId || !userId) return;
+
+    try {
+      await api.post(`/chat`, { familyId, userId, text });
+      get().fetchMessages();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  }
 }));

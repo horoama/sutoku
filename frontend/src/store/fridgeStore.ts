@@ -1,29 +1,28 @@
 import { create } from 'zustand';
 import { api } from '../api/client';
 import { useAppStore } from './appStore';
-import { ItemTemplate } from './shoppingStore';
+import { FridgeItem, ItemTemplate } from '../types/store';
 
-export interface FridgeItem {
-  id: string;
-  familyId: string;
-  itemTemplateId: string;
-  status: 'ACTIVE' | 'CONSUMED';
-  startedAt: string | null;
-  endDate: string | null;
-  defaultDays: number;
-  itemTemplate: ItemTemplate;
-}
+export { FridgeItem };
 
+/**
+ * @interface FridgeState
+ * 冷蔵庫・食糧庫の状態を管理するストアの型定義
+ */
 interface FridgeState {
   fridgeItems: FridgeItem[];
   consumedItems: FridgeItem[];
   isLoading: boolean;
   error: string | null;
 
+  /** 冷蔵庫のアイテム一覧を取得 */
   fetchFridgeItems: () => Promise<void>;
-  addToFridge: (itemTemplateId: string, type?: string, priority?: string, note?: string, endDate?: string) => Promise<void>;
+  /** アイテムを冷蔵庫に追加 */
+  addToFridge: (itemTemplateId: string, customDays?: number, type?: string, note?: string) => Promise<void>;
+  /** 冷蔵庫のアイテムを消費済みに変更 */
   consumeItem: (id: string) => Promise<void>;
-  updateFridgeItem: (id: string, updates: { endDate?: string }) => Promise<void>;
+  /** 冷蔵庫のアイテム情報を更新 */
+  updateFridgeItem: (id: string, updates: Partial<FridgeItem>) => Promise<void>;
 }
 
 export const useFridgeStore = create<FridgeState>((set, get) => ({
@@ -45,16 +44,20 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
     }
   },
 
-  addToFridge: async (itemTemplateId, type = 'fridge', priority = 'NORMAL', note = '', endDate) => {
+  addToFridge: async (itemTemplateId, customDays, type = 'fridge', note) => {
     const familyId = useAppStore.getState().family?.id;
     const userId = useAppStore.getState().user?.id;
     if (!familyId) return;
 
     try {
-      const payload: any = { familyId, userId, itemTemplateId, status: 'ACTIVE', type };
-      if (endDate) {
-        payload.endDate = endDate;
+      let payload: any = { familyId, userId, itemTemplateId, status: 'ACTIVE', type };
+
+      if (customDays) {
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + customDays);
+        payload.endDate = endDate.toISOString();
       }
+
       await api.post('/items', payload);
       get().fetchFridgeItems();
       useAppStore.getState().fetchActivityLogs();
@@ -79,7 +82,6 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
     try {
       await api.put(`/items/${id}`, { ...updates, userId, type: 'fridge' });
       get().fetchFridgeItems();
-      useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
       set({ error: err.message });
     }

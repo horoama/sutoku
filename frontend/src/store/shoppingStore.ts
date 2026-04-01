@@ -1,42 +1,31 @@
 import { create } from 'zustand';
 import { api } from '../api/client';
 import { useAppStore } from './appStore';
+import { Category, ShoppingItem, ItemTemplate } from '../types/store';
 
-export interface Category {
-  id: string;
-  name: string;
-  items: ItemTemplate[];
-}
+export { Category, ShoppingItem, ItemTemplate };
 
-export interface ItemTemplate {
-  id: string;
-  name: string;
-  categoryId: string;
-  defaultDays: number;
-  imageUrl: string;
-}
-
-export interface ShoppingItem {
-  id: string;
-  familyId: string;
-  itemTemplateId: string;
-  priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW';
-  note: string | null;
-  status: 'PENDING' | 'BOUGHT' | 'PURCHASED';
-  itemTemplate: ItemTemplate;
-}
-
+/**
+ * @interface ShoppingState
+ * 買い物リストに関する状態を管理するストアの型定義
+ */
 interface ShoppingState {
   categories: Category[];
   shoppingList: ShoppingItem[];
   isLoading: boolean;
   error: string | null;
 
+  /** カテゴリーとアイテム一覧を取得 */
   fetchCategories: () => Promise<void>;
+  /** 買い物リストのアイテム一覧を取得 */
   fetchShoppingList: () => Promise<void>;
-  addToShoppingList: (itemTemplateId: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW', note?: string) => Promise<void>;
+  /** 買い物リストに新しいアイテムを追加 */
+  addToShoppingList: (itemTemplateId: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW', note?: string, type?: string) => Promise<void>;
+  /** 買い物アイテムを購入済みに変更し、必要に応じて冷蔵庫に移動 */
   purchaseItem: (id: string, price?: number, endDate?: string) => Promise<void>;
+  /** 買い物アイテムのチェック状態を切り替える */
   toggleBoughtStatus: (id: string, isBought: boolean) => Promise<void>;
+  /** 新しいカスタムアイテムテンプレートを作成 */
   createItemTemplate: (name: string, categoryId: string, defaultDays: number) => Promise<ItemTemplate | null>;
 }
 
@@ -68,13 +57,13 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
     }
   },
 
-  addToShoppingList: async (itemTemplateId, priority, note) => {
+  addToShoppingList: async (itemTemplateId, priority, note, type = 'shopping') => {
     const familyId = useAppStore.getState().family?.id;
     const userId = useAppStore.getState().user?.id;
     if (!familyId) return;
 
     try {
-      await api.post('/items', { familyId, userId, itemTemplateId, priority, note, type: 'shopping' });
+      await api.post('/items', { familyId, userId, itemTemplateId, priority, note, type });
       get().fetchShoppingList();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
