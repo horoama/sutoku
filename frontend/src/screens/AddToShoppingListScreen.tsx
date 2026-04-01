@@ -4,11 +4,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { useShoppingStore, ItemTemplate, Category } from "../store/shoppingStore";
+import { useFridgeStore } from "../store/fridgeStore";
 
 export default function AddToShoppingListScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { categories, fetchCategories, addToShoppingList, shoppingList } = useShoppingStore();
+  const { consumedItems, fetchFridgeItems } = useFridgeStore();
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,6 +22,7 @@ export default function AddToShoppingListScreen() {
         setActiveCategoryId(storeCats[0].id);
       }
     });
+    fetchFridgeItems();
   }, []);
 
   const handleAddItem = async (templateId: string, itemName: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW' = 'NORMAL') => {
@@ -31,12 +34,20 @@ export default function AddToShoppingListScreen() {
   const allItemsToDisplay = activeCategoryData ? activeCategoryData.items : [];
   const itemsToDisplay = allItemsToDisplay.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  // Generate suggestions based on available templates, taking top 3
-  let suggestions: ItemTemplate[] = [];
-  if (categories.length > 0) {
-    const allItems = categories.flatMap(c => c.items);
-    suggestions = allItems.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 3);
-  }
+  // Get recently consumed items, removing duplicates based on itemTemplateId
+  const getRecentConsumedTemplates = () => {
+    const uniqueTemplates = new Map<string, ItemTemplate>();
+    consumedItems.forEach(item => {
+      if (!uniqueTemplates.has(item.itemTemplateId)) {
+        uniqueTemplates.set(item.itemTemplateId, item.itemTemplate);
+      }
+    });
+    return Array.from(uniqueTemplates.values());
+  };
+
+  // Generate suggestions based on recently consumed items, filtered by search query, taking top 3
+  const consumedTemplates = getRecentConsumedTemplates();
+  const suggestions = consumedTemplates.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 3);
 
   return (
     <View className="flex-1 bg-surface font-body text-on-surface" style={{ paddingTop: insets.top }}>

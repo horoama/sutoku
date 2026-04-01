@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Modal, Alert } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
@@ -12,13 +12,35 @@ export default function AddToPantryScreen() {
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [dateModalVisible, setDateModalVisible] = useState(false);
+  const [customDays, setCustomDays] = useState("7");
+  const [selectedItemToAdd, setSelectedItemToAdd] = useState<any>(null);
+
   const { addToFridge } = useFridgeStore();
   const { categories } = useShoppingStore();
 
-  const handleQuickStock = async (itemTemplateId: string) => {
-    if (!itemTemplateId) return;
-    await addToFridge(itemTemplateId, 'FRIDGE', 'NORMAL', '');
-    alert("Added to Fridge!");
+  const handleQuickStock = async (item: any) => {
+    if (!item.id) return;
+
+    if (!item.defaultDays || item.defaultDays === 0) {
+      setSelectedItemToAdd(item);
+      setDateModalVisible(true);
+    } else {
+      await addToFridge(item.id, 'fridge', 'NORMAL', '');
+      Alert.alert("完了", "冷蔵庫に追加しました！");
+    }
+  };
+
+  const confirmAddWithDate = async () => {
+    if (selectedItemToAdd) {
+      const days = parseInt(customDays, 10) || 7;
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + days);
+      await addToFridge(selectedItemToAdd.id, 'fridge', 'NORMAL', '', endDate.toISOString());
+      setDateModalVisible(false);
+      setSelectedItemToAdd(null);
+      Alert.alert("完了", "冷蔵庫に追加しました！");
+    }
   };
 
   // Generate suggestions based on available templates, taking top 4
@@ -119,7 +141,7 @@ export default function AddToPantryScreen() {
                 </View>
                 <TouchableOpacity
                   className="flex items-center justify-center w-10 h-10 rounded-full bg-primary shadow-sm active:scale-95 transition-transform"
-                  onPress={() => handleQuickStock(item.id)}
+                  onPress={() => handleQuickStock(item)}
                 >
                   <Icon name="add" size={20} className="text-on-primary" />
                 </TouchableOpacity>
@@ -139,6 +161,30 @@ export default function AddToPantryScreen() {
           <Icon name="check-circle" size={20} className="text-on-secondary" />
         </TouchableOpacity>
       </View>
+
+      <Modal visible={dateModalVisible} transparent animationType="slide">
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <View className="bg-surface-container-lowest p-6 rounded-2xl w-4/5 items-center">
+            <Text className="font-headline text-lg font-bold mb-4 text-on-surface">消費期限を設定</Text>
+            <Text className="text-sm text-on-surface-variant mb-6 text-center">
+              このアイテムにはデフォルトの消費期限が設定されていません。何日持ちますか？
+            </Text>
+            <TextInput
+              className="w-full bg-surface-container-low p-4 rounded-xl mb-6 font-body text-base text-on-surface text-center"
+              placeholder="日数 (例: 7)"
+              keyboardType="number-pad"
+              value={customDays}
+              onChangeText={setCustomDays}
+            />
+            <TouchableOpacity className="w-full bg-primary py-4 rounded-xl items-center mb-3" onPress={confirmAddWithDate}>
+              <Text className="text-on-primary font-bold text-base">決定</Text>
+            </TouchableOpacity>
+            <TouchableOpacity className="w-full bg-surface-variant py-4 rounded-xl items-center" onPress={() => setDateModalVisible(false)}>
+              <Text className="text-on-surface-variant font-bold text-base">キャンセル</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
