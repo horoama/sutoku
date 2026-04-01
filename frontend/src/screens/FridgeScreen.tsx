@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, ScrollView, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFridgeStore, FridgeItem } from "../store/fridgeStore";
+import { useShoppingStore } from "../store/shoppingStore";
 import { useAppStore } from "../store/appStore";
 import { differenceInDays } from "date-fns";
 import Icon from "@expo/vector-icons/MaterialIcons";
@@ -9,7 +10,7 @@ import Icon from "@expo/vector-icons/MaterialIcons";
 export default function FridgeScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
   const { family } = useAppStore();
-  const { fridgeItems, fetchFridgeItems } = useFridgeStore();
+  const { fridgeItems, fetchFridgeItems, consumeItem } = useFridgeStore();
 
   useEffect(() => {
     if (family?.id) {
@@ -55,29 +56,28 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
 
     if (index === 0) {
       return (
-        <View key={item.id} className="relative overflow-hidden bg-primary p-6 rounded-lg text-on-primary shadow-lg flex flex-col justify-between aspect-[16/10] mb-4">
-          <View className="flex-row justify-between items-start">
-            <View className="space-y-1">
-              <Text className="font-headline text-2xl font-bold text-on-primary">{item.itemTemplate.name}</Text>
-              <Text className="text-sm opacity-90 font-medium text-on-primary">Active Inventory</Text>
+        <View key={item.id} className="relative overflow-hidden bg-primary p-4 rounded-lg text-on-primary shadow-lg flex-col mb-4">
+          <View className="flex-row justify-between items-center mb-3">
+            <View>
+              <Text className="font-headline text-xl font-bold text-on-primary" numberOfLines={1}>{item.itemTemplate.name}</Text>
             </View>
-            <View className="bg-tertiary-container px-3 py-1 rounded-full flex-row items-center gap-1">
-              <Icon name="timer" size={14} className="text-on-tertiary-container" />
-              <Text className="text-on-tertiary-container text-xs font-bold">
+            <View className="bg-tertiary-container px-2 py-1 rounded-full flex-row items-center gap-1">
+              <Icon name="timer" size={12} className="text-on-tertiary-container" />
+              <Text className="text-on-tertiary-container text-[10px] font-bold">
                 {daysLeft < 0 ? "EXPIRED" : daysLeft === 0 ? "TODAY" : `${daysLeft} DAYS LEFT`}
               </Text>
             </View>
           </View>
-          <View className="space-y-3 mt-auto">
+          <View className="space-y-1">
             <View className="flex-row justify-between">
-              <Text className="text-xs font-bold tracking-wider text-on-primary">FRESHNESS LEVEL</Text>
-              <Text className="text-xs font-bold tracking-wider text-on-primary">{Math.round(progressPercent)}%</Text>
+              <Text className="text-[10px] font-bold tracking-wider text-on-primary">FRESHNESS LEVEL</Text>
+              <Text className="text-[10px] font-bold tracking-wider text-on-primary">{Math.round(progressPercent)}%</Text>
             </View>
-            <View className="h-3 bg-white/20 rounded-full overflow-hidden">
+            <View className="h-2 bg-white/20 rounded-full overflow-hidden">
               <View className="h-full bg-secondary-container rounded-full" style={{ width: `${progressPercent}%` }}></View>
             </View>
           </View>
-          <Icon name="restaurant" size={120} className="absolute -bottom-6 -right-6 opacity-20 text-on-primary" style={{ transform: [{ rotate: "12deg" }] }} />
+          <Icon name="restaurant" size={60} className="absolute -bottom-4 -right-4 opacity-10 text-on-primary" style={{ transform: [{ rotate: "12deg" }] }} />
         </View>
       );
     }
@@ -130,6 +130,17 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     );
   };
 
+  const handleConsumePantryItem = async (item: FridgeItem) => {
+    try {
+      // Consume item from pantry
+      await consumeItem(item.id);
+      // Add to shopping list inheriting the settings (itemTemplateId, NORMAL priority)
+      await useShoppingStore.getState().addToShoppingList(item.itemTemplateId, 'NORMAL', '');
+    } catch (error) {
+      console.error("Failed to consume item:", error);
+    }
+  };
+
   const renderPantryCard = (item: FridgeItem) => {
     return (
       <TouchableOpacity
@@ -144,8 +155,16 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           <Text className="font-headline font-bold text-sm text-on-surface" numberOfLines={1}>{item.itemTemplate.name}</Text>
           <Text className="text-xs text-outline font-medium">In stock</Text>
         </View>
-        <View className="bg-primary-fixed px-2 py-0.5 rounded-full self-start">
-          <Text className="text-[10px] font-bold text-primary-container">STABLE</Text>
+        <View className="flex-row items-center justify-between mt-1">
+          <View className="bg-primary-fixed px-2 py-0.5 rounded-full self-start">
+            <Text className="text-[10px] font-bold text-primary-container">STABLE</Text>
+          </View>
+          <TouchableOpacity
+            className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform"
+            onPress={() => handleConsumePantryItem(item)}
+          >
+            <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
