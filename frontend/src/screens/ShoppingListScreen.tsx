@@ -19,6 +19,9 @@ export default function ShoppingListScreen() {
   const [itemToAdd, setItemToAdd] = useState<ItemTemplate | null>(null);
   const [addNote, setAddNote] = useState("");
 
+  const [dateModalVisible, setDateModalVisible] = useState(false);
+  const [customDays, setCustomDays] = useState("7");
+
   useEffect(() => {
     initializeUser();
   }, []);
@@ -42,8 +45,25 @@ export default function ShoppingListScreen() {
 
   const handleMoveToFridge = async () => {
     if (selectedItem) {
-      await purchaseItem(selectedItem.id);
-      setModalVisible(false);
+      if (!selectedItem.itemTemplate.defaultDays || selectedItem.itemTemplate.defaultDays === 0) {
+        setModalVisible(false);
+        setDateModalVisible(true);
+      } else {
+        await purchaseItem(selectedItem.id);
+        setModalVisible(false);
+        setSelectedItem(null);
+        Alert.alert("完了", "冷蔵庫に追加しました！");
+      }
+    }
+  };
+
+  const confirmMoveToFridgeWithDate = async () => {
+    if (selectedItem) {
+      const days = parseInt(customDays, 10) || 7;
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + days);
+      await purchaseItem(selectedItem.id, undefined, endDate.toISOString());
+      setDateModalVisible(false);
       setSelectedItem(null);
       Alert.alert("完了", "冷蔵庫に追加しました！");
     }
@@ -230,6 +250,30 @@ export default function ShoppingListScreen() {
               </TouchableOpacity>
             </View>
             <TouchableOpacity className="w-full bg-surface-variant py-4 rounded-xl items-center mt-2" onPress={() => setAddModalVisible(false)}>
+              <Text className="text-on-surface-variant font-bold text-base">キャンセル</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={dateModalVisible} transparent animationType="slide">
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <View className="bg-surface-container-lowest p-6 rounded-2xl w-4/5 items-center">
+            <Text className="font-headline text-lg font-bold mb-4 text-on-surface">消費期限を設定</Text>
+            <Text className="text-sm text-on-surface-variant mb-6 text-center">
+              このアイテムにはデフォルトの消費期限が設定されていません。何日持ちますか？
+            </Text>
+            <TextInput
+              className="w-full bg-surface-container-low p-4 rounded-xl mb-6 font-body text-base text-on-surface text-center"
+              placeholder="日数 (例: 7)"
+              keyboardType="number-pad"
+              value={customDays}
+              onChangeText={setCustomDays}
+            />
+            <TouchableOpacity className="w-full bg-primary py-4 rounded-xl items-center mb-3" onPress={confirmMoveToFridgeWithDate}>
+              <Text className="text-on-primary font-bold text-base">決定</Text>
+            </TouchableOpacity>
+            <TouchableOpacity className="w-full bg-surface-variant py-4 rounded-xl items-center" onPress={() => setDateModalVisible(false)}>
               <Text className="text-on-surface-variant font-bold text-base">キャンセル</Text>
             </TouchableOpacity>
           </View>

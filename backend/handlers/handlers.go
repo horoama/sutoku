@@ -213,13 +213,14 @@ func GetLists(c *gin.Context) {
 // Add Item to List (Default: PENDING ShoppingItem)
 func AddListItem(c *gin.Context) {
 	var input struct {
-		FamilyID       string  `json:"familyId"`
-		UserID         string  `json:"userId"`
-		ItemTemplateID string  `json:"itemTemplateId"`
-		Priority       string  `json:"priority"`
-		Note           *string `json:"note"`
-		Status         string  `json:"status"` // legacy support, determines if Shopping or Fridge
-		Type           string  `json:"type"`   // "shopping" or "fridge"
+		FamilyID       string     `json:"familyId"`
+		UserID         string     `json:"userId"`
+		ItemTemplateID string     `json:"itemTemplateId"`
+		Priority       string     `json:"priority"`
+		Note           *string    `json:"note"`
+		Status         string     `json:"status"` // legacy support, determines if Shopping or Fridge
+		Type           string     `json:"type"`   // "shopping" or "fridge"
+		EndDate        *time.Time `json:"endDate"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -240,17 +241,36 @@ func AddListItem(c *gin.Context) {
 
 	if input.Type == "fridge" {
 		now := time.Now()
-		item := models.FridgeItem{
-			FamilyID:       input.FamilyID,
-			ItemTemplateID: input.ItemTemplateID,
-			Status:         "ACTIVE",
-			StartedAt:      &now,
-			DefaultDays:    template.DefaultDays,
-		}
+		var item models.FridgeItem
 
-		if err := database.DB.Create(&item).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add fridge item"})
-			return
+		err := database.DB.Where("family_id = ? AND item_template_id = ? AND status = ?", input.FamilyID, input.ItemTemplateID, "ACTIVE").First(&item).Error
+		if err == nil {
+			// Update existing item
+			item.StartedAt = &now
+			if input.EndDate != nil {
+				item.EndDate = input.EndDate
+			}
+			if err := database.DB.Save(&item).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update existing fridge item"})
+				return
+			}
+		} else {
+			// Create new item
+			item = models.FridgeItem{
+				FamilyID:       input.FamilyID,
+				ItemTemplateID: input.ItemTemplateID,
+				Status:         "ACTIVE",
+				StartedAt:      &now,
+				DefaultDays:    template.DefaultDays,
+			}
+			if input.EndDate != nil {
+				item.EndDate = input.EndDate
+			}
+
+			if err := database.DB.Create(&item).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add fridge item"})
+				return
+			}
 		}
 
 		database.DB.Preload("ItemTemplate").First(&item, "id = ?", item.ID)
@@ -337,14 +357,30 @@ func UpdateListItem(c *gin.Context) {
 				actionLogged = "bought"
 
 				// Create a FridgeItem when sent to fridge ("PURCHASED" or similar explicit state)
-				fridgeItem := models.FridgeItem{
-					FamilyID:       shoppingItem.FamilyID,
-					ItemTemplateID: shoppingItem.ItemTemplateID,
-					Status:         "ACTIVE",
-					StartedAt:      &now,
-					DefaultDays:    shoppingItem.ItemTemplate.DefaultDays,
+				var existingFridgeItem models.FridgeItem
+				err := database.DB.Where("family_id = ? AND item_template_id = ? AND status = ?", shoppingItem.FamilyID, shoppingItem.ItemTemplateID, "ACTIVE").First(&existingFridgeItem).Error
+
+				if err == nil {
+					// Update existing item
+					existingFridgeItem.StartedAt = &now
+					if input.EndDate != nil {
+						existingFridgeItem.EndDate = input.EndDate
+					}
+					database.DB.Save(&existingFridgeItem)
+				} else {
+					// Create new item
+					fridgeItem := models.FridgeItem{
+						FamilyID:       shoppingItem.FamilyID,
+						ItemTemplateID: shoppingItem.ItemTemplateID,
+						Status:         "ACTIVE",
+						StartedAt:      &now,
+						DefaultDays:    shoppingItem.ItemTemplate.DefaultDays,
+					}
+					if input.EndDate != nil {
+						fridgeItem.EndDate = input.EndDate
+					}
+					database.DB.Create(&fridgeItem)
 				}
-				database.DB.Create(&fridgeItem)
 			}
 		}
 

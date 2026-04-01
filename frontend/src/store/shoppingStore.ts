@@ -35,7 +35,7 @@ interface ShoppingState {
   fetchCategories: () => Promise<void>;
   fetchShoppingList: () => Promise<void>;
   addToShoppingList: (itemTemplateId: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW', note?: string) => Promise<void>;
-  purchaseItem: (id: string, price?: number) => Promise<void>;
+  purchaseItem: (id: string, price?: number, endDate?: string) => Promise<void>;
   toggleBoughtStatus: (id: string, isBought: boolean) => Promise<void>;
   createItemTemplate: (name: string, categoryId: string, defaultDays: number) => Promise<ItemTemplate | null>;
 }
@@ -107,11 +107,15 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
     }
   },
 
-  purchaseItem: async (id, price) => {
+  purchaseItem: async (id, price, endDate) => {
     const userId = useAppStore.getState().user?.id;
     try {
       // Send to fridge by marking as 'PURCHASED'
-      await api.put(`/items/${id}`, { status: 'PURCHASED', price, userId, type: 'shopping' });
+      const payload: any = { status: 'PURCHASED', price, userId, type: 'shopping' };
+      if (endDate) {
+        payload.endDate = endDate;
+      }
+      await api.put(`/items/${id}`, payload);
       get().fetchShoppingList();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
