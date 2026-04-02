@@ -31,7 +31,7 @@ export default function AddToShoppingListScreen() {
   };
 
   const activeCategoryData = categories.find(c => c.id === activeCategoryId);
-  const allItemsToDisplay = activeCategoryData ? activeCategoryData.items : [];
+  const allItemsToDisplay = activeCategoryData && activeCategoryData.items ? activeCategoryData.items : [];
   const itemsToDisplay = allItemsToDisplay.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   // Get recently consumed items, removing duplicates based on itemTemplateId
