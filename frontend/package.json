@@ -46,5 +46,9 @@
     "ts-jest": "^29.4.9",
     "typescript": "~5.9.2"
   },
+  "overrides": {
+    "react": "$react",
+    "react-test-renderer": "$react-test-renderer"
+  },
   "private": true
 }
