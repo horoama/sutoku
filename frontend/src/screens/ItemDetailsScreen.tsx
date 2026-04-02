@@ -45,7 +45,7 @@ export default function ItemDetailsScreen() {
   }
 
   const [freshness, setFreshness] = useState(Math.max(0, initialDaysLeft));
-  const [activePriority, setActivePriority] = useState<"URGENT" | "HIGH" | "NORMAL" | "SOMEDAY">("NORMAL");
+  const [activePriority, setActivePriority] = useState<"TODAY" | "URGENT" | "NORMAL" | "LOW">("NORMAL");
 
   const saveUpdates = async () => {
     if (initialItem) {
@@ -170,16 +170,16 @@ export default function ItemDetailsScreen() {
                 <Text className={`font-headline font-bold text-sm ${activePriority === 'NORMAL' ? 'text-on-primary-fixed' : 'text-on-surface-variant'}`}>NORMAL</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${activePriority === 'HIGH' ? 'bg-secondary-fixed border-2 border-secondary/20' : 'bg-surface-container-low border-2 border-transparent'}`}
-                onPress={() => setActivePriority('HIGH')}
-              >
-                <Text className={`font-headline font-bold text-sm ${activePriority === 'HIGH' ? 'text-on-secondary-fixed-variant' : 'text-on-surface-variant'}`}>HIGH</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${activePriority === 'URGENT' ? 'bg-tertiary-container border-2 border-transparent' : 'bg-surface-container-low border-2 border-transparent'}`}
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${activePriority === 'URGENT' ? 'bg-secondary-fixed border-2 border-secondary/20' : 'bg-surface-container-low border-2 border-transparent'}`}
                 onPress={() => setActivePriority('URGENT')}
               >
-                <Text className={`font-headline font-bold text-sm ${activePriority === 'URGENT' ? 'text-on-tertiary-container' : 'text-on-surface-variant'}`}>URGENT</Text>
+                <Text className={`font-headline font-bold text-sm ${activePriority === 'URGENT' ? 'text-on-secondary-fixed-variant' : 'text-on-surface-variant'}`}>URGENT</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${activePriority === 'TODAY' ? 'bg-tertiary-container border-2 border-transparent' : 'bg-surface-container-low border-2 border-transparent'}`}
+                onPress={() => setActivePriority('TODAY')}
+              >
+                <Text className={`font-headline font-bold text-sm ${activePriority === 'TODAY' ? 'text-on-tertiary-container' : 'text-on-surface-variant'}`}>TODAY</Text>
               </TouchableOpacity>
             </View>
           </View>

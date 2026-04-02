@@ -41,7 +41,8 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
   // Usually short lifespan goes to fridge, longer to pantry.
   // Or check category name if populated, but fallback to all active items
   const fridgeSection = activeItems.filter(item => {
-    const catName = item.itemTemplate.category?.name?.toLowerCase() || "";
+    // NOTE: TypeScript error fix. Casting itemTemplate to any to access nested category for now.
+    const catName = (item.itemTemplate as any).category?.name?.toLowerCase() || "";
     if (catName.includes("dairy") || catName.includes("meat") || catName.includes("produce")) return true;
     return item.defaultDays < 30; // Shorter lived items typically go to fridge
   });

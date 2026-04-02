@@ -26,7 +26,7 @@ export default function AddToPantryScreen() {
       setSelectedItemToAdd(item);
       setDateModalVisible(true);
     } else {
-      await addToFridge(item.id, 'fridge', 'NORMAL', '');
+      await addToFridge(item.id, undefined, 'fridge');
       Alert.alert("完了", "冷蔵庫に追加しました！");
     }
   };
@@ -34,9 +34,7 @@ export default function AddToPantryScreen() {
   const confirmAddWithDate = async () => {
     if (selectedItemToAdd) {
       const days = parseInt(customDays, 10) || 7;
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + days);
-      await addToFridge(selectedItemToAdd.id, 'fridge', 'NORMAL', '', endDate.toISOString());
+      await addToFridge(selectedItemToAdd.id, days, 'fridge');
       setDateModalVisible(false);
       setSelectedItemToAdd(null);
       Alert.alert("完了", "冷蔵庫に追加しました！");
