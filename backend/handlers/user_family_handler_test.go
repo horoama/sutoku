@@ -61,3 +61,32 @@ func TestSetupUser_NewUser(t *testing.T) {
 		t.Errorf("Failed to find user in db")
 	}
 }
+
+func TestGetFamilyMembers_Empty(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	testutil.SetupTestDB()
+	defer testutil.ClearTables()
+
+	router := gin.New()
+	router.GET("/family/:familyId/members", handlers.GetFamilyMembers)
+
+	// 存在しない（またはメンバーがいない）家族IDを指定
+	req, _ := http.NewRequest("GET", "/family/non-existent-family-id/members", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status code %d, but got %d", http.StatusOK, w.Code)
+	}
+
+	var users []models.User
+	if err := json.Unmarshal(w.Body.Bytes(), &users); err != nil {
+		t.Fatalf("Failed to parse response: %v", err)
+	}
+
+	// レスポンスが空の配列であることを確認する
+	if len(users) != 0 {
+		t.Errorf("Expected empty array, got %d items", len(users))
+	}
+}

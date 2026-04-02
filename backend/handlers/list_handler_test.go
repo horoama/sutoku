@@ -114,3 +114,68 @@ func TestAddListItem_Shopping(t *testing.T) {
 		t.Errorf("Expected HIGH priority, got %s", createdItem.Priority)
 	}
 }
+
+func TestAddListItem_InvalidJSON(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	testutil.SetupTestDB()
+	defer testutil.ClearTables()
+
+	router := gin.New()
+	router.POST("/list/add", handlers.AddListItem)
+
+	// 不正なJSONフォーマット
+	invalidJSON := []byte(`{"familyId": "123", "type": "shopping",`)
+
+	req, _ := http.NewRequest("POST", "/list/add", bytes.NewBuffer(invalidJSON))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("Expected status code %d, but got %d", http.StatusBadRequest, w.Code)
+	}
+}
+
+func TestUpdateListItem_NotFound(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	testutil.SetupTestDB()
+	defer testutil.ClearTables()
+
+	router := gin.New()
+	router.PUT("/list/item/:id", handlers.UpdateListItem)
+
+	payload := map[string]interface{}{
+		"status": "PURCHASED",
+	}
+	body, _ := json.Marshal(payload)
+
+	// 存在しないUUIDを指定
+	req, _ := http.NewRequest("PUT", "/list/item/non-existent-id", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("Expected status code %d, but got %d", http.StatusNotFound, w.Code)
+	}
+}
+
+func TestDeleteListItem_NotFound(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	testutil.SetupTestDB()
+	defer testutil.ClearTables()
+
+	router := gin.New()
+	router.DELETE("/list/item/:id", handlers.DeleteListItem)
+
+	req, _ := http.NewRequest("DELETE", "/list/item/non-existent-id", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("Expected status code %d, but got %d", http.StatusNotFound, w.Code)
+	}
+}
