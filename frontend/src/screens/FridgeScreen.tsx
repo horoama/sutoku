@@ -116,8 +116,6 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     try {
       // Consume item from pantry
       await consumeItem(item.id);
-      // Add to shopping list inheriting the settings (itemTemplateId, NORMAL priority)
-      await useShoppingStore.getState().addToShoppingList(item.itemTemplateId, 'NORMAL', '');
     } catch (error) {
       console.error("Failed to consume item:", error);
     }
