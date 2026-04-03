@@ -17,7 +17,7 @@ export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { user, family, initializeUser } = useAppStore();
-  const { categories, shoppingList, fetchCategories, fetchShoppingList, purchaseItem, toggleBoughtStatus } = useShoppingStore();
+  const { categories, shoppingList, fetchCategories, fetchShoppingList, purchaseItem, toggleBoughtStatus, updateItemPriority, deleteItem } = useShoppingStore();
 
   const [selectedItem, setSelectedItem] = useState<ShoppingItem | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -94,6 +94,29 @@ export default function ShoppingListScreen() {
     }
   };
 
+  const handleChangePriority = async (id: string, priority: string) => {
+    await updateItemPriority(id, priority);
+    setModalVisible(false);
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    Alert.alert(
+      "確認",
+      "このアイテムをリストから削除しますか？",
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除",
+          style: "destructive",
+          onPress: async () => {
+            await deleteItem(id);
+            setModalVisible(false);
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <View className="flex-1 bg-surface text-on-surface pb-32" style={{ paddingTop: insets.top }}>
       {/* TopAppBar */}
@@ -158,6 +181,8 @@ export default function ShoppingListScreen() {
         onClose={() => setModalVisible(false)}
         onMoveToFridge={handleMoveToFridge}
         onToggleCheck={handleModalToggleCheck}
+        onChangePriority={handleChangePriority}
+        onDelete={handleDeleteItem}
       />
 
       <DateModal
