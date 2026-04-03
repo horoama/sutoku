@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { useAppStore } from "../store/appStore";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInCalendarDays } from "date-fns";
 
 export default function ActivityLogScreen() {
   const insets = useSafeAreaInsets();
@@ -107,7 +107,7 @@ export default function ActivityLogScreen() {
           {Object.keys(logsByDate).length > 0 ? (
             Object.entries(logsByDate).map(([dateStr, logs]) => {
               const dateObj = new Date(dateStr);
-              const daysDiff = differenceInDays(new Date(), dateObj);
+              const daysDiff = differenceInCalendarDays(new Date(), dateObj);
 
               let displayDate = "Older";
               let dateIcon: any = "history";

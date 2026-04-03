@@ -5,7 +5,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { useFridgeStore } from "../store/fridgeStore";
 import { useShoppingStore } from "../store/shoppingStore";
-import { differenceInDays, addDays } from "date-fns";
+import { differenceInCalendarDays, addDays } from "date-fns";
 
 type ParamList = {
   ItemDetails: { itemId: string };
@@ -29,11 +29,11 @@ export default function ItemDetailsScreen() {
   if (initialItem) {
     const itemDefaultDays = initialItem.defaultDays || initialItem.itemTemplate?.defaultDays || 7;
     if (initialItem.endDate) {
-      initialDaysLeft = differenceInDays(new Date(initialItem.endDate), new Date());
+      initialDaysLeft = differenceInCalendarDays(new Date(initialItem.endDate), new Date());
     } else if (initialItem.startedAt) {
       const startDate = new Date(initialItem.startedAt);
       const endDate = new Date(startDate.setDate(startDate.getDate() + itemDefaultDays));
-      initialDaysLeft = differenceInDays(endDate, new Date());
+      initialDaysLeft = differenceInCalendarDays(endDate, new Date());
     } else {
       initialDaysLeft = itemDefaultDays;
     }
