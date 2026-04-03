@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFridgeStore, FridgeItem } from "../store/fridgeStore";
 import { useShoppingStore } from "../store/shoppingStore";
 import { useAppStore } from "../store/appStore";
-import { differenceInDays } from "date-fns";
+import { differenceInCalendarDays } from "date-fns";
 import Icon from "@expo/vector-icons/MaterialIcons";
 
 export default function FridgeScreen({ navigation }: { navigation: any }) {
@@ -26,13 +26,13 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
 
     // If we have an exact endDate, use it
     if (item.endDate) {
-      return differenceInDays(new Date(item.endDate), new Date());
+      return differenceInCalendarDays(new Date(item.endDate), new Date());
     }
 
     // Otherwise calculate based on startedAt + defaultDays
     const startDate = new Date(item.startedAt);
     const endDate = new Date(startDate.setDate(startDate.getDate() + Number(item.defaultDays)));
-    return differenceInDays(endDate, new Date());
+    return differenceInCalendarDays(endDate, new Date());
   };
 
   const expiringItems = activeItems.filter(item => getDaysLeft(item) <= 3).sort((a, b) => getDaysLeft(a) - getDaysLeft(b));
