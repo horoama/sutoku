@@ -16,7 +16,7 @@ export default function ItemDetailsScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<ParamList, 'ItemDetails'>>();
 
-  const { fridgeItems, updateFridgeItem } = useFridgeStore();
+  const { fridgeItems, updateFridgeItem, updateItemTemplate } = useFridgeStore();
   const { addToShoppingList } = useShoppingStore();
 
   const itemId = route.params?.itemId;
@@ -25,9 +25,12 @@ export default function ItemDetailsScreen() {
   const [itemName, setItemName] = useState(initialItem?.itemTemplate?.name || "");
   const [notes, setNotes] = useState(initialItem?.itemTemplate?.name ? `Stored safely.` : "");
 
+  const initialDefaultDays = initialItem?.defaultDays || initialItem?.itemTemplate?.defaultDays || 7;
+  const [defaultDays, setDefaultDays] = useState(initialDefaultDays);
+
   let initialDaysLeft = 7;
   if (initialItem) {
-    const itemDefaultDays = initialItem.defaultDays || initialItem.itemTemplate?.defaultDays || 7;
+    const itemDefaultDays = initialDefaultDays;
     if (initialItem.endDate) {
       initialDaysLeft = differenceInCalendarDays(new Date(initialItem.endDate), new Date());
     } else if (initialItem.startedAt) {
@@ -49,16 +52,26 @@ export default function ItemDetailsScreen() {
 
   const saveUpdates = async () => {
     if (initialItem) {
-       const newEndDate = addDays(new Date(), freshness).toISOString();
-       await updateFridgeItem(initialItem.id, {
-         endDate: newEndDate,
-       });
+       try {
+         // 1. Update or Duplicate Item Template
+         const newTemplate = await updateItemTemplate(initialItem.itemTemplateId, {
+           name: itemName,
+           defaultDays: defaultDays
+         });
+
+         // 2. Update FridgeItem with new template ID and endDate
+         const newEndDate = addDays(new Date(), freshness).toISOString();
+         await updateFridgeItem(initialItem.id, {
+           endDate: newEndDate,
+           itemTemplateId: newTemplate.id
+         });
+
+         Alert.alert("Success", "Changes saved successfully.");
+       } catch (error) {
+         Alert.alert("Error", "Failed to save changes.");
+       }
     }
   };
-
-  useEffect(() => {
-    saveUpdates();
-  }, [freshness, activePriority]);
 
   const handleAddToShoppingList = async () => {
     if (initialItem) {
@@ -122,7 +135,6 @@ export default function ItemDetailsScreen() {
                 textAlignVertical="top"
                 value={notes}
                 onChangeText={setNotes}
-                onBlur={saveUpdates}
               />
             </View>
           </View>
@@ -159,6 +171,38 @@ export default function ItemDetailsScreen() {
             </View>
           </View>
 
+          {/* Template Default Days Stepper (Compact) */}
+          <View className="space-y-3">
+            <View className="flex-row justify-between items-end px-2">
+              <View>
+                <Text className="font-label text-[10px] font-medium tracking-wide uppercase text-on-surface-variant mb-0.5">Default Shelf Life</Text>
+                <Text className="font-headline font-bold text-base text-secondary">{defaultDays} Days</Text>
+              </View>
+              <View className="bg-secondary-container px-3 py-1 rounded-full">
+                <Text className="text-on-secondary-container text-[10px] font-bold uppercase tracking-wider">Template</Text>
+              </View>
+            </View>
+            <View className="bg-surface-container-low rounded-lg p-3 mx-2">
+              <View className="flex-row items-center gap-4">
+                <TouchableOpacity
+                  className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center active:scale-90 transition-all"
+                  onPress={() => setDefaultDays(Math.max(1, defaultDays - 1))}
+                >
+                  <Icon name="remove" size={18} className="text-secondary" />
+                </TouchableOpacity>
+                <View className="flex-1 items-center justify-center">
+                  <Text className="text-on-surface-variant text-xs text-center">Applied when newly added</Text>
+                </View>
+                <TouchableOpacity
+                  className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center active:scale-90 transition-all"
+                  onPress={() => setDefaultDays(defaultDays + 1)}
+                >
+                  <Icon name="add" size={18} className="text-secondary" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
           {/* Priority Selector */}
           <View className="space-y-3">
             <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant ml-2">Usage Priority</Text>
@@ -182,6 +226,17 @@ export default function ItemDetailsScreen() {
                 <Text className={`font-headline font-bold text-sm ${activePriority === 'TODAY' ? 'text-on-tertiary-container' : 'text-on-surface-variant'}`}>TODAY</Text>
               </TouchableOpacity>
             </View>
+          </View>
+
+          {/* Save Button */}
+          <View className="mt-8 mb-4">
+            <TouchableOpacity
+              className="w-full py-4 px-8 rounded-xl bg-primary flex-row items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform"
+              onPress={saveUpdates}
+            >
+              <Icon name="save" size={20} className="text-on-primary" />
+              <Text className="text-on-primary font-headline font-bold text-lg">Save Changes</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Add to Shopping List Section */}

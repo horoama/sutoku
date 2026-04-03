@@ -23,6 +23,8 @@ interface FridgeState {
   consumeItem: (id: string) => Promise<void>;
   /** 冷蔵庫のアイテム情報を更新 */
   updateFridgeItem: (id: string, updates: Partial<FridgeItem>) => Promise<void>;
+  /** アイテムテンプレートを更新する */
+  updateItemTemplate: (templateId: string, updates: Partial<ItemTemplate>) => Promise<ItemTemplate>;
 }
 
 export const useFridgeStore = create<FridgeState>((set, get) => ({
@@ -84,6 +86,19 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
       get().fetchFridgeItems();
     } catch (err: any) {
       set({ error: err.message });
+    }
+  },
+
+  updateItemTemplate: async (templateId, updates) => {
+    const familyId = useAppStore.getState().family?.id;
+    if (!familyId) throw new Error("Family ID is missing");
+
+    try {
+      const { data } = await api.put(`/item-templates/${templateId}`, { ...updates, familyId });
+      return data;
+    } catch (err: any) {
+      set({ error: err.message });
+      throw err;
     }
   }
 }));
