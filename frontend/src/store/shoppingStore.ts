@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api } from '../api/client';
 import { useAppStore } from './appStore';
+import { useFridgeStore } from './fridgeStore';
 import { Category, ShoppingItem, ItemTemplate } from '../types/store';
 
 export { Category, ShoppingItem, ItemTemplate };
@@ -64,7 +65,7 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
 
     try {
       await api.post('/items', { familyId, userId, itemTemplateId, priority, note, type });
-      get().fetchShoppingList();
+      await get().fetchShoppingList();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
       set({ error: err.message });
@@ -77,7 +78,7 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
 
     try {
       const { data } = await api.post('/item-templates', { name, categoryId, defaultDays, familyId });
-      get().fetchCategories();
+      await get().fetchCategories();
       return data;
     } catch (err: any) {
       set({ error: err.message });
@@ -90,7 +91,7 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
     const status = isBought ? 'BOUGHT' : 'PENDING';
     try {
       await api.put(`/items/${id}`, { status, userId, type: 'shopping' });
-      get().fetchShoppingList();
+      await get().fetchShoppingList();
     } catch (err: any) {
       set({ error: err.message });
     }
@@ -105,8 +106,11 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
         payload.endDate = endDate;
       }
       await api.put(`/items/${id}`, payload);
-      get().fetchShoppingList();
-      useAppStore.getState().fetchActivityLogs();
+      await Promise.all([
+        get().fetchShoppingList(),
+        useFridgeStore.getState().fetchFridgeItems(),
+        useAppStore.getState().fetchActivityLogs()
+      ]);
     } catch (err: any) {
       set({ error: err.message });
     }

@@ -36,7 +36,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       // 本来は認証トークンで取得するが、モック的に/setupをコールする
       const { data } = await api.post('/setup-user');
       set({ user: data.user, family: data.family, isLoading: false });
-      get().fetchFamilyMembers();
+      await get().fetchFamilyMembers();
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
     }

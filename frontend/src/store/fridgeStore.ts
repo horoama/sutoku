@@ -61,7 +61,7 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
       }
 
       await api.post('/items', payload);
-      get().fetchFridgeItems();
+      await get().fetchFridgeItems();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
       set({ error: err.message });
@@ -72,7 +72,7 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
     const userId = useAppStore.getState().user?.id;
     try {
       await api.put(`/items/${id}`, { status: 'CONSUMED', userId, type: 'fridge' });
-      get().fetchFridgeItems();
+      await get().fetchFridgeItems();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
       set({ error: err.message });
@@ -83,7 +83,7 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
     const userId = useAppStore.getState().user?.id;
     try {
       await api.put(`/items/${id}`, { ...updates, userId, type: 'fridge' });
-      get().fetchFridgeItems();
+      await get().fetchFridgeItems();
     } catch (err: any) {
       set({ error: err.message });
     }
