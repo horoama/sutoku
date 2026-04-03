@@ -42,7 +42,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     try {
       await api.post(`/chat`, { familyId, userId, text });
-      get().fetchMessages();
+      await get().fetchMessages();
     } catch (err: any) {
       set({ error: err.message });
     }
