@@ -28,6 +28,10 @@ interface ShoppingState {
   toggleBoughtStatus: (id: string, isBought: boolean) => Promise<void>;
   /** 新しいカスタムアイテムテンプレートを作成 */
   createItemTemplate: (name: string, categoryId: string, defaultDays: number) => Promise<ItemTemplate | null>;
+  /** 買い物アイテムの優先度を変更する */
+  updateItemPriority: (id: string, priority: string) => Promise<void>;
+  /** 買い物アイテムを削除する */
+  deleteItem: (id: string) => Promise<void>;
 }
 
 export const useShoppingStore = create<ShoppingState>((set, get) => ({
@@ -111,6 +115,24 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
         useFridgeStore.getState().fetchFridgeItems(),
         useAppStore.getState().fetchActivityLogs()
       ]);
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  updateItemPriority: async (id, priority) => {
+    try {
+      await api.put(`/items/${id}`, { priority, type: 'shopping' });
+      await get().fetchShoppingList();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  deleteItem: async (id) => {
+    try {
+      await api.delete(`/items/${id}`);
+      await get().fetchShoppingList();
     } catch (err: any) {
       set({ error: err.message });
     }
