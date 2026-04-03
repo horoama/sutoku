@@ -139,38 +139,6 @@ export default function ItemDetailsScreen() {
             </View>
           </View>
 
-          {/* Template Default Days Stepper */}
-          <View className="space-y-4">
-            <View className="flex-row justify-between items-end px-2">
-              <View>
-                <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant mb-1">Default Shelf Life</Text>
-                <Text className="font-headline font-bold text-xl text-primary">{defaultDays} Days</Text>
-              </View>
-              <View className="bg-secondary-container px-4 py-1.5 rounded-full">
-                <Text className="text-on-secondary-container text-xs font-bold uppercase tracking-wider">Template</Text>
-              </View>
-            </View>
-            <View className="bg-surface-container-low rounded-lg p-6">
-              <View className="flex-row items-center gap-6">
-                <TouchableOpacity
-                  className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center active:scale-90 transition-all"
-                  onPress={() => setDefaultDays(Math.max(1, defaultDays - 1))}
-                >
-                  <Icon name="remove" size={24} className="text-primary" />
-                </TouchableOpacity>
-                <View className="flex-1 items-center justify-center">
-                  <Text className="text-on-surface-variant text-sm text-center">Settings applied when newly added</Text>
-                </View>
-                <TouchableOpacity
-                  className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center active:scale-90 transition-all"
-                  onPress={() => setDefaultDays(defaultDays + 1)}
-                >
-                  <Icon name="add" size={24} className="text-primary" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
           {/* Freshness Stepper */}
           <View className="space-y-4">
             <View className="flex-row justify-between items-end px-2">
@@ -198,6 +166,38 @@ export default function ItemDetailsScreen() {
                   onPress={() => setFreshness(freshness + 1)}
                 >
                   <Icon name="add" size={24} className="text-primary" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Template Default Days Stepper (Compact) */}
+          <View className="space-y-3">
+            <View className="flex-row justify-between items-end px-2">
+              <View>
+                <Text className="font-label text-[10px] font-medium tracking-wide uppercase text-on-surface-variant mb-0.5">Default Shelf Life</Text>
+                <Text className="font-headline font-bold text-base text-secondary">{defaultDays} Days</Text>
+              </View>
+              <View className="bg-secondary-container px-3 py-1 rounded-full">
+                <Text className="text-on-secondary-container text-[10px] font-bold uppercase tracking-wider">Template</Text>
+              </View>
+            </View>
+            <View className="bg-surface-container-low rounded-lg p-3 mx-2">
+              <View className="flex-row items-center gap-4">
+                <TouchableOpacity
+                  className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center active:scale-90 transition-all"
+                  onPress={() => setDefaultDays(Math.max(1, defaultDays - 1))}
+                >
+                  <Icon name="remove" size={18} className="text-secondary" />
+                </TouchableOpacity>
+                <View className="flex-1 items-center justify-center">
+                  <Text className="text-on-surface-variant text-xs text-center">Applied when newly added</Text>
+                </View>
+                <TouchableOpacity
+                  className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center active:scale-90 transition-all"
+                  onPress={() => setDefaultDays(defaultDays + 1)}
+                >
+                  <Icon name="add" size={18} className="text-secondary" />
                 </TouchableOpacity>
               </View>
             </View>
