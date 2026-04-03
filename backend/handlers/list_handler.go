@@ -168,12 +168,13 @@ func AddListItem(c *gin.Context) {
 func UpdateListItem(c *gin.Context) {
 	itemID := c.Param("id")
 	var input struct {
-		Status   string     `json:"status"`
-		Type     string     `json:"type"` // "shopping" or "fridge"
-		Priority string     `json:"priority"`
-		Note     *string    `json:"note"`
-		UserID   string     `json:"userId"`
-		EndDate  *time.Time `json:"endDate"`
+		Status         string     `json:"status"`
+		Type           string     `json:"type"` // "shopping" or "fridge"
+		Priority       string     `json:"priority"`
+		Note           *string    `json:"note"`
+		UserID         string     `json:"userId"`
+		EndDate        *time.Time `json:"endDate"`
+		ItemTemplateID string     `json:"itemTemplateId"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -267,6 +268,10 @@ func UpdateListItem(c *gin.Context) {
 
 		if input.EndDate != nil {
 			updates["end_date"] = input.EndDate
+		}
+
+		if input.ItemTemplateID != "" && input.ItemTemplateID != fridgeItem.ItemTemplateID {
+			updates["item_template_id"] = input.ItemTemplateID
 		}
 
 		if err := database.DB.Model(&fridgeItem).Updates(updates).Error; err != nil {
