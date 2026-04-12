@@ -31,11 +31,13 @@ export default function BottomTabNavigator() {
           shadowOffset: { width: 0, height: -8 },
           shadowOpacity: 0.06,
           shadowRadius: 24,
-          paddingBottom: insets.bottom + 10,
+          paddingBottom: insets.bottom ? insets.bottom : 20,
           paddingTop: 12,
-          flexDirection: "row",
-          justifyContent: "space-around",
+        },
+        tabBarItemStyle: {
+          justifyContent: "center",
           alignItems: "center",
+          paddingTop: 10,
         },
         tabBarShowLabel: false,
         tabBarIcon: ({ focused }) => {
@@ -57,7 +59,7 @@ export default function BottomTabNavigator() {
             return (
               <View className="flex flex-col items-center justify-center bg-[#a1f4c8] dark:bg-[#005236] rounded-full px-6 py-2">
                 <Icon name={iconName} size={24} color="#005236" />
-                <Text className="font-[Be Vietnam Pro] text-[10px] uppercase tracking-[0.05rem] font-bold mt-1 text-[#005236]">
+                <Text className="font-body text-[10px] uppercase tracking-[0.05rem] font-bold mt-1 text-[#005236]">
                   {label}
                 </Text>
               </View>
@@ -67,7 +69,7 @@ export default function BottomTabNavigator() {
           return (
             <View className="flex flex-col items-center justify-center px-6 py-2 rounded-full">
               <Icon name={iconName} size={24} color="#64748b" />
-              <Text className="font-[Be Vietnam Pro] text-[10px] uppercase tracking-[0.05rem] font-bold mt-1 text-slate-500">
+              <Text className="font-body text-[10px] uppercase tracking-[0.05rem] font-bold mt-1 text-slate-500">
                 {label}
               </Text>
             </View>
