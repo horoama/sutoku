@@ -14,6 +14,7 @@ export default function AddToShoppingListScreen() {
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPriority, setSelectedPriority] = useState<'TODAY' | 'URGENT' | 'NORMAL' | 'LOW'>('NORMAL');
 
   useEffect(() => {
     fetchCategories().then(() => {
@@ -25,8 +26,8 @@ export default function AddToShoppingListScreen() {
     fetchFridgeItems();
   }, []);
 
-  const handleAddItem = async (templateId: string, itemName: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW' = 'NORMAL') => {
-    await addToShoppingList(templateId, priority, '');
+  const handleAddItem = async (templateId: string, itemName: string) => {
+    await addToShoppingList(templateId, selectedPriority, '');
     Alert.alert("Success", `${itemName} added to shopping list.`);
   };
 
@@ -76,6 +77,22 @@ export default function AddToShoppingListScreen() {
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
+          </View>
+        </View>
+
+        {/* Priority Selector */}
+        <View className="mt-4 px-1">
+          <Text className="text-xs font-bold text-outline-variant mb-2 ml-1">追加時の優先度</Text>
+          <View className="flex-row justify-between">
+            {(['TODAY', 'URGENT', 'NORMAL', 'LOW'] as const).map((p) => (
+              <TouchableOpacity
+                key={p}
+                className={`flex-1 mx-1 py-2 rounded-lg border items-center ${selectedPriority === p ? 'bg-primary-container border-primary-container' : 'bg-surface border-outline-variant'}`}
+                onPress={() => setSelectedPriority(p)}
+              >
+                <Text className={`text-xs font-bold ${selectedPriority === p ? 'text-on-primary-container' : 'text-on-surface-variant'}`}>{p}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
