@@ -34,7 +34,12 @@ services:
       - HTTP_PROXY=${HTTP_PROXY:-}
       - HTTPS_PROXY=${HTTPS_PROXY:-}
       - NO_PROXY=${NO_PROXY:-}
+      - EXPO_PACKAGER_HOSTNAME=${EXPO_PACKAGER_HOSTNAME:-192.168.11.116}
+      - REACT_NATIVE_PACKAGER_HOSTNAME=${REACT_NATIVE_PACKAGER_HOSTNAME:-192.168.11.116}
     volumes:
       - ./frontend/src:/app/src
+    command: npx expo start --lan
+    stdin_open: true
+    tty: true
     depends_on:
       - backend
