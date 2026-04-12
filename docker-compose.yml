@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   backend:
+    image: registry.gate.home/sutoku-backend
     build:
       context: ./backend
       args:
@@ -19,6 +20,7 @@ services:
       - ./backend/data:/app/data
 
   frontend:
+    image: registry.gate.home/sutoku-frontend
     build:
       context: ./frontend
       args:
