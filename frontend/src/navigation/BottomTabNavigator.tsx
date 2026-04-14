@@ -1,5 +1,6 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useNavigationState } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { View, Text, Platform, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -46,6 +47,24 @@ const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: strin
   );
 };
 
+const CustomTabBarButton = (props: any) => {
+  const { routeName, itemStyle, ...rest } = props;
+  
+  // Use navigation state directly to guarantee 100% accurate focus tracking
+  const activeRouteName = useNavigationState((state: any) => state?.routes[state.index]?.name);
+  const focused = activeRouteName === routeName;
+  
+  return (
+    <TouchableOpacity 
+      {...rest} 
+      activeOpacity={0.8}
+      style={[itemStyle, { justifyContent: 'center', alignItems: 'center' }]}
+    >
+      <TabBarIcon focused={focused} routeName={routeName} />
+    </TouchableOpacity>
+  );
+};
+
 export default function BottomTabNavigator() {
   const insets = useSafeAreaInsets();
   
@@ -65,13 +84,11 @@ export default function BottomTabNavigator() {
         },
         tabBarShowLabel: false,
         tabBarButton: (props) => (
-          <TouchableOpacity 
-            {...(props as any)} 
-            activeOpacity={0.8}
-            style={[props.style, { justifyContent: 'center', alignItems: 'center' }]}
-          >
-            <TabBarIcon focused={!!props.accessibilityState?.selected} routeName={route.name} />
-          </TouchableOpacity>
+          <CustomTabBarButton 
+            {...props} 
+            routeName={route.name} 
+            itemStyle={props.style} 
+          />
         ),
       })}
     >
