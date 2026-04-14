@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: registry.gate.home/sutoku-backend
+    image: registry.gate.home/sutoku-backend:${BACKEND_IMAGE_TAG:-latest}
     build:
       context: ./backend
       args:
@@ -20,7 +20,7 @@ services:
       - ./backend/data:/app/data
 
   frontend:
-    image: registry.gate.home/sutoku-frontend
+    image: registry.gate.home/sutoku-frontend:${FRONTEND_IMAGE_TAG:-latest}
     build:
       context: ./frontend
       args:
