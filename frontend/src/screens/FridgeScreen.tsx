@@ -65,7 +65,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
             <View className="bg-tertiary-container px-2 py-1 rounded-full flex-row items-center gap-1">
               <Icon name="timer" size={12} className="text-on-tertiary-container" />
               <Text className="text-on-tertiary-container text-[10px] font-bold">
-                {daysLeft < 0 ? "EXPIRED" : daysLeft === 0 ? "TODAY" : `${daysLeft} DAYS LEFT`}
+                {daysLeft < 0 ? `期限切れ(${Math.abs(daysLeft)}日前)` : daysLeft === 0 ? "今日" : `あと${daysLeft}日`}
               </Text>
             </View>
           </View>
@@ -88,14 +88,14 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
         <View className="w-16 h-16 rounded-2xl bg-surface-container-low overflow-hidden flex-shrink-0 flex items-center justify-center">
            <Icon name="kitchen" size={32} className="text-tertiary" />
         </View>
-        <View className="flex-grow">
-          <Text className="font-headline font-bold text-on-surface text-base">{item.itemTemplate.name}</Text>
+        <View className="flex-1">
+          <Text className="font-headline font-bold text-on-surface text-base" numberOfLines={1}>{item.itemTemplate.name}</Text>
           <View className="flex-row items-center gap-2 mt-1">
-            <View className="h-1.5 w-24 bg-surface-container-high rounded-full overflow-hidden">
+            <View className="h-1.5 w-20 bg-surface-container-high rounded-full overflow-hidden shrink">
               <View className="h-full bg-tertiary rounded-full" style={{ width: `${progressPercent}%` }}></View>
             </View>
             <Text className="text-xs font-bold text-tertiary">
-              {daysLeft < 0 ? "Expired" : daysLeft === 0 ? "Today" : `${daysLeft} Days`}
+              {daysLeft < 0 ? `期限切れ(${Math.abs(daysLeft)}日前)` : daysLeft === 0 ? "今日" : `あと${daysLeft}日`}
             </Text>
           </View>
         </View>
@@ -129,17 +129,19 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
         className="bg-surface-container-low p-4 rounded-lg flex-row items-center justify-between group mb-3"
         onPress={() => navigation.navigate("ItemDetails", { itemId: item.id })}
       >
-        <View className="flex-row items-center gap-4">
-          <View className="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary">
+        <View className="flex-row items-center gap-4 flex-1">
+          <View className="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary shrink-0">
             <Icon name="kitchen" size={24} className="text-primary" />
           </View>
-          <View>
-            <Text className="font-headline font-semibold text-on-surface text-base">{item.itemTemplate.name}</Text>
+          <View className="flex-1 pr-2">
+            <Text className="font-headline font-semibold text-on-surface text-base" numberOfLines={1}>{item.itemTemplate.name}</Text>
             <Text className="text-xs text-outline font-medium">Added recently</Text>
           </View>
         </View>
-        <View className="items-end gap-1">
-          <Text className="font-headline font-bold text-primary text-base">{daysLeft} Days</Text>
+        <View className="items-end gap-1 shrink-0 ml-auto">
+          <Text className="font-headline font-bold text-primary text-base">
+            {daysLeft < 0 ? `期限切れ(${Math.abs(daysLeft)}日前)` : daysLeft === 0 ? "今日" : `あと${daysLeft}日`}
+          </Text>
           <TouchableOpacity
             className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform"
             onPress={(e) => {
@@ -168,15 +170,15 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           <Text className="font-headline font-bold text-sm text-on-surface" numberOfLines={1}>{item.itemTemplate.name}</Text>
           <Text className="text-xs text-outline font-medium">In stock</Text>
         </View>
-        <View className="flex-row items-center justify-between mt-1">
+        <View className="flex-col gap-2 mt-2">
           <View className="bg-primary-fixed px-2 py-0.5 rounded-full self-start">
             <Text className="text-[10px] font-bold text-primary-container">STABLE</Text>
           </View>
           <TouchableOpacity
-            className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform"
+            className="bg-secondary px-3 py-2 rounded-full active:scale-95 transition-transform w-full items-center justify-center"
             onPress={() => handleConsumePantryItem(item)}
           >
-            <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
+            <Text className="text-on-secondary text-[10px] font-bold uppercase tracking-widest">Consume</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -184,7 +186,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
   };
 
   return (
-    <View className="flex-1 bg-surface text-on-surface pb-32" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-surface text-on-surface" style={{ paddingTop: insets.top }}>
       {/* TopAppBar */}
       <View className="w-full flex-row items-center justify-between px-6 py-4 bg-surface z-50">
         <View className="flex-row items-center gap-3">
@@ -204,7 +206,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
         </View>
       </View>
 
-      <ScrollView className="pt-4" contentContainerStyle={{ paddingBottom: 160 }}>
+      <ScrollView className="pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="px-6 space-y-10">
           {/* Expiring Soon Hero Section */}
           <View>
@@ -278,7 +280,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
 
       {/* FAB */}
       <TouchableOpacity
-        className="absolute bottom-28 right-6 w-16 h-16 bg-primary rounded-xl flex items-center justify-center shadow-xl active:scale-95 transition-transform z-50"
+        className="absolute bottom-6 right-6 w-16 h-16 bg-primary rounded-xl flex items-center justify-center shadow-xl active:scale-95 transition-transform z-50"
         onPress={() => navigation.navigate("AddToPantry")}
       >
         <Icon name="add" size={28} className="text-on-primary" />

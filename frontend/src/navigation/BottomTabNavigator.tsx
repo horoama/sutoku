@@ -1,7 +1,7 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "@expo/vector-icons/MaterialIcons";
-import { View, Text, Platform, TouchableOpacity } from "react-native";
+import { View, Text, Platform, TouchableOpacity, Dimensions, PanResponder } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import ShoppingListScreen from "../screens/ShoppingListScreen";
@@ -9,6 +9,39 @@ import FridgeScreen from "../screens/FridgeScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 
 const Tab = createBottomTabNavigator();
+
+const EDGE_THRESHOLD = 40;
+const SWIPING_DISTANCE = 50;
+
+const ScreenEdgeSwipeContainer = ({ children, prevRoute, nextRoute, navigation }: any) => {
+  const panResponder = React.useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      const { dx, dy } = gestureState;
+      // Allow swiping from anywhere on the screen by removing x0 edge constraints.
+      // Strict horizontal swipe check to prevent accidental triggering during vertical scroll.
+      if (Math.abs(dx) > 20 && Math.abs(dx) > Math.abs(dy) * 2) {
+         if (dx > 0 && prevRoute) return true; // Swipe Right -> Go back
+         if (dx < 0 && nextRoute) return true; // Swipe Left -> Go forward
+      }
+      return false;
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      const { dx } = gestureState;
+      if (dx > SWIPING_DISTANCE && prevRoute) {
+        navigation.navigate(prevRoute);
+      } else if (dx < -SWIPING_DISTANCE && nextRoute) {
+        navigation.navigate(nextRoute);
+      }
+    }
+  }), [prevRoute, nextRoute, navigation]);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: '#ffffff' }} {...panResponder.panHandlers}>
+      {children}
+    </View>
+  );
+};
 
 const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: string }) => {
   let iconName: React.ComponentProps<typeof Icon>['name'] = "home";
@@ -108,11 +141,33 @@ export default function BottomTabNavigator() {
   return (
     <Tab.Navigator
       tabBar={props => <CustomTabBar {...props} insets={insets} />}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ 
+        headerShown: false,
+        animation: 'shift',
+        sceneStyle: { backgroundColor: '#ffffff' }
+      }}
     >
-      <Tab.Screen name="Shopping" component={ShoppingListScreen} />
-      <Tab.Screen name="Fridge" component={FridgeScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Shopping">
+        {(props) => (
+          <ScreenEdgeSwipeContainer nextRoute="Fridge" navigation={props.navigation}>
+            <ShoppingListScreen />
+          </ScreenEdgeSwipeContainer>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Fridge">
+        {(props) => (
+          <ScreenEdgeSwipeContainer prevRoute="Shopping" nextRoute="Settings" navigation={props.navigation}>
+            <FridgeScreen navigation={props.navigation} />
+          </ScreenEdgeSwipeContainer>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Settings">
+        {(props) => (
+          <ScreenEdgeSwipeContainer prevRoute="Fridge" navigation={props.navigation}>
+            <SettingsScreen navigation={props.navigation} />
+          </ScreenEdgeSwipeContainer>
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }

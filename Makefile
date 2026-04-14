@@ -2,6 +2,7 @@
 
 # ビルド用自動生成バージョン (例: 20260414-1234)
 VERSION := $(shell date +%Y%m%d-%H%M)
+REMOTE_DEV_HOST := "192.168.11.116"
 
 # デフォルトのターゲットをhelpに設定します
 help:
@@ -12,6 +13,7 @@ help:
 	@echo "  make build          - キャッシュを利用しつつコンテナイメージをビルドします"
 	@echo "  make push           - ビルドしたイメージをプライベートレジストリにプッシュします"
 	@echo "  make release        - build と push を連続して実行します"
+	@echo "  make release-dev-home - dev.homeにssh接続し、.envを更新してから自動デプロイします"
 	@echo "  make logs           - 全コンテナのログをリアルタイムで追跡監視します"
 	@echo "  make shell-frontend - フロントエンドコンテナのシェルに入ります"
 	@echo "  make shell-backend  - バックエンドコンテナのシェルに入ります"
@@ -46,6 +48,13 @@ push:
 	@echo "========================================"
 
 release: build push
+
+release-dev-home: release
+	@echo "========================================"
+	@echo "dev.homeへ自動デプロイを開始します (ターゲットタグ: $(VERSION))..."
+	ssh admin@${REMOTE_DEV_HOST} "sed -i 's/^FRONTEND_IMAGE_TAG=.*/FRONTEND_IMAGE_TAG=$(VERSION)/; s/^BACKEND_IMAGE_TAG=.*/BACKEND_IMAGE_TAG=$(VERSION)/' ~/workspace/sutoku/.env && cd ~/workspace/sutoku && docker compose pull && docker compose up -d"
+	@echo "dev.homeへのデプロイが完了しました！"
+	@echo "========================================"
 
 logs:
 	docker-compose logs -f
