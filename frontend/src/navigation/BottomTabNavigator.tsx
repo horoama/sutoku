@@ -1,7 +1,7 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "@expo/vector-icons/MaterialIcons";
-import { View, Text, Platform } from "react-native";
+import { View, Text, Platform, TouchableOpacity, Dimensions, PanResponder } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import ShoppingListScreen from "../screens/ShoppingListScreen";
@@ -9,6 +9,39 @@ import FridgeScreen from "../screens/FridgeScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 
 const Tab = createBottomTabNavigator();
+
+const EDGE_THRESHOLD = 40;
+const SWIPING_DISTANCE = 50;
+
+const ScreenEdgeSwipeContainer = ({ children, prevRoute, nextRoute, navigation }: any) => {
+  const panResponder = React.useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      const { dx, dy } = gestureState;
+      // Allow swiping from anywhere on the screen by removing x0 edge constraints.
+      // Strict horizontal swipe check to prevent accidental triggering during vertical scroll.
+      if (Math.abs(dx) > 20 && Math.abs(dx) > Math.abs(dy) * 2) {
+         if (dx > 0 && prevRoute) return true; // Swipe Right -> Go back
+         if (dx < 0 && nextRoute) return true; // Swipe Left -> Go forward
+      }
+      return false;
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      const { dx } = gestureState;
+      if (dx > SWIPING_DISTANCE && prevRoute) {
+        navigation.navigate(prevRoute);
+      } else if (dx < -SWIPING_DISTANCE && nextRoute) {
+        navigation.navigate(nextRoute);
+      }
+    }
+  }), [prevRoute, nextRoute, navigation]);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: '#ffffff' }} {...panResponder.panHandlers}>
+      {children}
+    </View>
+  );
+};
 
 const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: string }) => {
   let iconName: React.ComponentProps<typeof Icon>['name'] = "home";
@@ -18,7 +51,7 @@ const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: strin
     iconName = "shopping-basket";
     label = "List";
   } else if (routeName === "Fridge") {
-    iconName = "kitchen"; // changed from inventory-2 just in case missing in some expo icon versions
+    iconName = "kitchen";
     label = "Pantry";
   } else if (routeName === "Settings") {
     iconName = "group";
@@ -27,9 +60,9 @@ const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: strin
 
   if (focused) {
     return (
-      <View className="flex-col items-center justify-center bg-primary-fixed dark:bg-primary rounded-full px-5 py-2">
+      <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#a1f4c8', borderRadius: 9999, paddingHorizontal: 20, paddingVertical: 8 }}>
         <Icon name={iconName} size={24} color="#005236" />
-        <Text className="font-body text-[10px] uppercase tracking-[0.05rem] font-bold mt-1 text-primary-fixed-variant">
+        <Text style={{ color: "#005236", fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 'bold', marginTop: 4 }}>
           {label}
         </Text>
       </View>
@@ -37,36 +70,104 @@ const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: strin
   }
 
   return (
-    <View className="flex-col items-center justify-center px-5 py-2">
-      <Icon name={iconName} size={24} className="text-outline" />
-      <Text className="font-body text-[10px] uppercase tracking-[0.05rem] font-bold mt-1 text-outline">
+    <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 8 }}>
+      <Icon name={iconName} size={24} color="#707973" />
+      <Text style={{ color: "#707973", fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 'bold', marginTop: 4 }}>
         {label}
       </Text>
     </View>
   );
 };
 
+const CustomTabBar = ({ state, descriptors, navigation, insets }: any) => {
+  return (
+    <View 
+      style={{ 
+        flexDirection: 'row', 
+        backgroundColor: "#ffffff", 
+        borderTopWidth: 1, 
+        borderTopColor: "#e7e9e5", 
+        height: 70 + insets.bottom, 
+        paddingTop: 10, 
+        paddingBottom: insets.bottom > 0 ? insets.bottom : 10 
+      }}
+    >
+      {state.routes.map((route: any, index: number) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name, route.params);
+          }
+        };
+
+        const onLongPress = () => {
+          navigation.emit({
+            type: 'tabLongPress',
+            target: route.key,
+          });
+        };
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            testID={options.tabBarTestID}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+            activeOpacity={0.8}
+          >
+            <TabBarIcon focused={isFocused} routeName={route.name} />
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
+
 export default function BottomTabNavigator() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      tabBar={props => <CustomTabBar {...props} insets={insets} />}
+      screenOptions={{ 
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: "#ffffff",
-          borderTopWidth: 1,
-          borderTopColor: "#e7e9e5",
-          elevation: 0,
-          shadowOpacity: 0,
-          height: 90,
-          paddingTop: 10,
-        },
-        tabBarShowLabel: false,
-        tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} routeName={route.name} />,
-      })}
+        animation: 'shift',
+        sceneStyle: { backgroundColor: '#ffffff' }
+      }}
     >
-      <Tab.Screen name="Shopping" component={ShoppingListScreen} />
-      <Tab.Screen name="Fridge" component={FridgeScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Shopping">
+        {(props) => (
+          <ScreenEdgeSwipeContainer nextRoute="Fridge" navigation={props.navigation}>
+            <ShoppingListScreen />
+          </ScreenEdgeSwipeContainer>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Fridge">
+        {(props) => (
+          <ScreenEdgeSwipeContainer prevRoute="Shopping" nextRoute="Settings" navigation={props.navigation}>
+            <FridgeScreen navigation={props.navigation} />
+          </ScreenEdgeSwipeContainer>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Settings">
+        {(props) => (
+          <ScreenEdgeSwipeContainer prevRoute="Fridge" navigation={props.navigation}>
+            <SettingsScreen navigation={props.navigation} />
+          </ScreenEdgeSwipeContainer>
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }

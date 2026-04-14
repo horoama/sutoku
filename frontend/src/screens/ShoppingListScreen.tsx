@@ -5,6 +5,7 @@ import { useAppStore } from "../store/appStore";
 import { useShoppingStore, ItemTemplate, ShoppingItem } from "../store/shoppingStore";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
+import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 
 import { ShoppingItemCard } from "../components/ShoppingItemCard";
 import { ActionModal } from "../components/modals/ActionModal";
@@ -117,8 +118,23 @@ export default function ShoppingListScreen() {
     );
   };
 
+  const handleMoveAllCheckedToPantry = async () => {
+    const checkedItems = shoppingList.filter(item => item.status === "BOUGHT");
+    if (checkedItems.length === 0) return;
+    
+    // Concurrently process all purchases
+    try {
+      // Create a loading state or just execute
+      await Promise.all(checkedItems.map(item => purchaseItem(item.id)));
+      Alert.alert("完了", `${checkedItems.length}件のアイテムをTHE PANTRYに追加しました！`);
+    } catch (e) {
+      console.error(e);
+      Alert.alert("エラー", "一部のアイテムの移動に失敗しました。");
+    }
+  };
+
   return (
-    <View className="flex-1 bg-surface text-on-surface pb-32" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-surface text-on-surface" style={{ paddingTop: insets.top }}>
       {/* TopAppBar */}
       <View className="w-full flex-row items-center justify-between px-6 py-4 bg-surface z-50">
         <View className="flex-row items-center gap-3">
@@ -138,7 +154,7 @@ export default function ShoppingListScreen() {
         </View>
       </View>
 
-      <ScrollView className="px-6 pt-8" contentContainerStyle={{ paddingBottom: 160 }}>
+      <ScrollView className="px-6 pt-8" contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Editorial Header Section */}
         <View className="mb-12 ml-4">
           <Text className="font-headline font-extrabold text-primary leading-tight tracking-tighter text-4xl mb-2">Shopping List</Text>
@@ -147,19 +163,48 @@ export default function ShoppingListScreen() {
 
         {/* List Section */}
         <View className="space-y-4">
-          {shoppingList.filter(item => item.status !== 'PURCHASED').length > 0 ? (
-            <FlatList
-              data={shoppingList.filter(item => item.status !== 'PURCHASED')}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <ShoppingItemCard
-                  item={item}
-                  onLongPress={handleLongPress}
-                  onToggleCheck={handleToggleCheck}
-                />
+          {shoppingList.filter((item) => item.status !== "PURCHASED").length > 0 ? (
+            <>
+              {shoppingList
+                .filter((item) => item.status === "PENDING")
+                .map((item) => (
+                  <ShoppingItemCard
+                    key={item.id}
+                    item={item}
+                    onLongPress={handleLongPress}
+                    onToggleCheck={handleToggleCheck}
+                  />
+                ))}
+
+              {shoppingList.filter((item) => item.status === "BOUGHT").length > 0 && (
+                <Animated.View
+                  layout={LinearTransition.springify().damping(16).mass(0.6).stiffness(120)}
+                  entering={FadeIn.duration(300)}
+                  className="mt-6 mb-4 border-t border-surface-container pt-6"
+                >
+                  <View className="flex-row items-center justify-between mb-4 px-2">
+                    <Text className="font-headline text-lg font-bold text-on-surface-variant">チェック済み</Text>
+                    <TouchableOpacity 
+                      className="bg-primary/10 px-4 py-2 rounded-full flex-row items-center gap-1 active:scale-95 transition-transform"
+                      onPress={handleMoveAllCheckedToPantry}
+                    >
+                      <Icon name="input" size={14} className="text-primary" />
+                      <Text className="text-primary text-[10px] font-bold uppercase tracking-widest">全て送る</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {shoppingList
+                    .filter((item) => item.status === "BOUGHT")
+                    .map((item) => (
+                      <ShoppingItemCard
+                        key={item.id}
+                        item={item}
+                        onLongPress={handleLongPress}
+                        onToggleCheck={handleToggleCheck}
+                      />
+                    ))}
+                </Animated.View>
               )}
-              scrollEnabled={false}
-            />
+            </>
           ) : (
             <Text className="text-center text-outline mt-10 font-body">買い物リストは空です</Text>
           )}
@@ -168,7 +213,7 @@ export default function ShoppingListScreen() {
 
       {/* Contextual FAB */}
       <TouchableOpacity
-        className="absolute bottom-28 right-6 w-16 h-16 bg-primary rounded-xl flex items-center justify-center shadow-xl active:scale-90 transition-all z-50"
+        className="absolute bottom-6 right-6 w-16 h-16 bg-primary rounded-xl flex items-center justify-center shadow-xl active:scale-90 transition-all z-50"
         onPress={() => navigation.navigate("AddToShoppingList")}
       >
         <Icon name="add" size={28} className="text-on-primary" />

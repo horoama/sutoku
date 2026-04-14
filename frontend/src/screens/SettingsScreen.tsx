@@ -9,7 +9,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
   const { user, family, members } = useAppStore();
 
   return (
-    <View className="flex-1 bg-surface text-on-surface pb-32" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-surface text-on-surface" style={{ paddingTop: insets.top }}>
       {/* TopAppBar */}
       <View className="w-full flex-row items-center justify-between px-6 py-4 bg-surface z-40">
         <View className="flex-row items-center gap-3">
@@ -24,7 +24,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
         </View>
       </View>
 
-      <ScrollView className="px-6 pt-4" contentContainerStyle={{ paddingBottom: 160 }}>
+      <ScrollView className="px-6 pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Hero Section */}
         <View className="relative mb-12 rounded-xl overflow-hidden min-h-[280px] justify-end p-8 bg-primary">
           <View className="absolute inset-0 z-0">

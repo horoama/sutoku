@@ -1,9 +1,8 @@
-.PHONY: help up down build restart logs shell-frontend shell-backend sync-deps
+.PHONY: help up down build push release restart logs shell-frontend shell-backend sync-deps
 
-# ビルド用自動生成バージョン (例: 20260413-df26)
-DATE_NUM := $(shell date +%Y%m%d)
-GIT_HASH := $(shell git rev-parse --short=4 HEAD 2>/dev/null || echo "none")
-VERSION  := $(DATE_NUM)-$(GIT_HASH)
+# ビルド用自動生成バージョン (例: 20260414-1234)
+VERSION := $(shell date +%Y%m%d-%H%M)
+REMOTE_DEV_HOST := "192.168.11.116"
 
 # デフォルトのターゲットをhelpに設定します
 help:
@@ -12,6 +11,9 @@ help:
 	@echo "  make down           - コンテナ群を停止・削除します"
 	@echo "  make restart        - コンテナ群を再起動します"
 	@echo "  make build          - キャッシュを利用しつつコンテナイメージをビルドします"
+	@echo "  make push           - ビルドしたイメージをプライベートレジストリにプッシュします"
+	@echo "  make release        - build と push を連続して実行します"
+	@echo "  make release-dev-home - dev.homeにssh接続し、.envを更新してから自動デプロイします"
 	@echo "  make logs           - 全コンテナのログをリアルタイムで追跡監視します"
 	@echo "  make shell-frontend - フロントエンドコンテナのシェルに入ります"
 	@echo "  make shell-backend  - バックエンドコンテナのシェルに入ります"
@@ -34,6 +36,24 @@ build:
 	docker tag registry.gate.home/sutoku-frontend:latest registry.gate.home/sutoku-frontend:$(VERSION)
 	docker tag registry.gate.home/sutoku-backend:latest registry.gate.home/sutoku-backend:$(VERSION)
 	@echo "ビルド完了！"
+	@echo "========================================"
+
+push:
+	@echo "イメージをプッシュしています..."
+	docker push registry.gate.home/sutoku-frontend:latest
+	docker push registry.gate.home/sutoku-frontend:$(VERSION)
+	docker push registry.gate.home/sutoku-backend:latest
+	docker push registry.gate.home/sutoku-backend:$(VERSION)
+	@echo "プッシュ完了！"
+	@echo "========================================"
+
+release: build push
+
+release-dev-home: release
+	@echo "========================================"
+	@echo "dev.homeへ自動デプロイを開始します (ターゲットタグ: $(VERSION))..."
+	ssh admin@${REMOTE_DEV_HOST} "sed -i 's/^FRONTEND_IMAGE_TAG=.*/FRONTEND_IMAGE_TAG=$(VERSION)/; s/^BACKEND_IMAGE_TAG=.*/BACKEND_IMAGE_TAG=$(VERSION)/' ~/workspace/sutoku/.env && cd ~/workspace/sutoku && docker compose pull && docker compose up -d"
+	@echo "dev.homeへのデプロイが完了しました！"
 	@echo "========================================"
 
 logs:
