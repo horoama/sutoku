@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { ShoppingItem } from '../store/shoppingStore';
 
 /**
@@ -48,44 +49,51 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
   const isChecked = item.status === 'BOUGHT';
 
   return (
-    <TouchableOpacity
-      className={`group relative rounded-lg p-5 flex-row items-center gap-4 transition-all active:scale-[0.98] mb-4 shadow-sm ${isChecked ? 'bg-surface-container-low opacity-60' : 'bg-surface-container-lowest'}`}
-      onLongPress={() => onLongPress(item)}
-      onPress={() => onLongPress(item)} // タップでも長押しと同じモーダルを開くか、トグルにするか（元のコードを維持）
-      activeOpacity={0.8}
-      style={{
-        shadowColor: "#191c1a",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.04,
-        shadowRadius: 24,
-        elevation: 2,
-      }}
+    <Animated.View
+      layout={LinearTransition.springify().damping(16).mass(0.6).stiffness(120)}
+      entering={FadeIn.duration(300)}
+      exiting={FadeOut.duration(200)}
+      className="mb-4"
     >
-      <TouchableOpacity onPress={() => onToggleCheck(item)} className="mr-1">
-        <Icon name={isChecked ? "check-circle" : "radio-button-unchecked"} size={32} className={isChecked ? "text-primary" : "text-outline-variant"} />
+      <TouchableOpacity
+        className={`group relative rounded-lg p-5 flex-row items-center gap-4 transition-all active:scale-[0.98] shadow-sm ${isChecked ? 'bg-surface-container-low opacity-60' : 'bg-surface-container-lowest'}`}
+        onLongPress={() => onLongPress(item)}
+        onPress={() => onLongPress(item)}
+        activeOpacity={0.8}
+        style={{
+          shadowColor: "#191c1a",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.04,
+          shadowRadius: 24,
+          elevation: 2,
+        }}
+      >
+        <TouchableOpacity onPress={() => onToggleCheck(item)} className="mr-1">
+          <Icon name={isChecked ? "check-circle" : "radio-button-unchecked"} size={32} className={isChecked ? "text-primary" : "text-outline-variant"} />
+        </TouchableOpacity>
+
+        <View className={`w-14 h-14 rounded-full flex items-center justify-center ${iconBgClass} ${isChecked ? 'opacity-50' : ''}`}>
+          <Icon name={iconName} size={24} className={iconColorClass} />
+        </View>
+        <View className="flex-1">
+          <View className="flex-row items-center gap-2 mb-1">
+            <Text className={`font-headline font-bold text-xl ${isChecked ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>{item.itemTemplate.name}</Text>
+            {!isChecked && priorityBadge}
+          </View>
+          <View className="flex-row items-center gap-3">
+            <Text className="text-sm font-semibold text-on-surface-variant font-body">{item.note || "1 unit"}</Text>
+            <View className="w-1 h-1 rounded-full bg-outline-variant"></View>
+            <Text className="text-xs font-bold text-primary font-label tracking-widest uppercase">{categoryName}</Text>
+          </View>
+        </View>
+
+        {/* 家族メンバーのアバター（プレースホルダー） */}
+        <View className="flex-row -space-x-3">
+          <View className="w-8 h-8 rounded-full border-2 border-surface-container-lowest overflow-hidden bg-surface-container">
+            <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAWXxIn9vkOJkM6PINi0yWB5YnNUFN2iUe8ENrb1prTy3CywJnqQgcSyUGjHjGzRKF5FVKQzfrFCxc1LflbtW1H-7Kjz4EyBhEG2Ir5-lzht5fkn07JXndNTHy26vznKGojtw6tQeFBobHuHP3F1c34TDx8ikUeiv0UNeKkxhi38LvSIZJnNAm67ooMtjERCHnxuSF-pUZ6hFXtDrWBbz0-UDBDlJY5EVX6A5Okq8Cx7z4ei6GutfcWV5NTCRCRvrasLGGu_o0ZPcTw" }} className="w-full h-full" />
+          </View>
+        </View>
       </TouchableOpacity>
-
-      <View className={`w-14 h-14 rounded-full flex items-center justify-center ${iconBgClass} ${isChecked ? 'opacity-50' : ''}`}>
-        <Icon name={iconName} size={24} className={iconColorClass} />
-      </View>
-      <View className="flex-1">
-        <View className="flex-row items-center gap-2 mb-1">
-          <Text className={`font-headline font-bold text-xl ${isChecked ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>{item.itemTemplate.name}</Text>
-          {!isChecked && priorityBadge}
-        </View>
-        <View className="flex-row items-center gap-3">
-          <Text className="text-sm font-semibold text-on-surface-variant font-body">{item.note || "1 unit"}</Text>
-          <View className="w-1 h-1 rounded-full bg-outline-variant"></View>
-          <Text className="text-xs font-bold text-primary font-label tracking-widest uppercase">{categoryName}</Text>
-        </View>
-      </View>
-
-      {/* 家族メンバーのアバター（プレースホルダー） */}
-      <View className="flex-row -space-x-3">
-        <View className="w-8 h-8 rounded-full border-2 border-surface-container-lowest overflow-hidden bg-surface-container">
-          <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAWXxIn9vkOJkM6PINi0yWB5YnNUFN2iUe8ENrb1prTy3CywJnqQgcSyUGjHjGzRKF5FVKQzfrFCxc1LflbtW1H-7Kjz4EyBhEG2Ir5-lzht5fkn07JXndNTHy26vznKGojtw6tQeFBobHuHP3F1c34TDx8ikUeiv0UNeKkxhi38LvSIZJnNAm67ooMtjERCHnxuSF-pUZ6hFXtDrWBbz0-UDBDlJY5EVX6A5Okq8Cx7z4ei6GutfcWV5NTCRCRvrasLGGu_o0ZPcTw" }} className="w-full h-full" />
-        </View>
-      </View>
-    </TouchableOpacity>
+    </Animated.View>
   );
 };

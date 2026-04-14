@@ -1,6 +1,5 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useNavigationState } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { View, Text, Platform, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,21 +46,59 @@ const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: strin
   );
 };
 
-const CustomTabBarButton = (props: any) => {
-  const { routeName, itemStyle, ...rest } = props;
-  
-  // Use navigation state directly to guarantee 100% accurate focus tracking
-  const activeRouteName = useNavigationState((state: any) => state?.routes[state.index]?.name);
-  const focused = activeRouteName === routeName;
-  
+const CustomTabBar = ({ state, descriptors, navigation, insets }: any) => {
   return (
-    <TouchableOpacity 
-      {...rest} 
-      activeOpacity={0.8}
-      style={[itemStyle, { justifyContent: 'center', alignItems: 'center' }]}
+    <View 
+      style={{ 
+        flexDirection: 'row', 
+        backgroundColor: "#ffffff", 
+        borderTopWidth: 1, 
+        borderTopColor: "#e7e9e5", 
+        height: 70 + insets.bottom, 
+        paddingTop: 10, 
+        paddingBottom: insets.bottom > 0 ? insets.bottom : 10 
+      }}
     >
-      <TabBarIcon focused={focused} routeName={routeName} />
-    </TouchableOpacity>
+      {state.routes.map((route: any, index: number) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name, route.params);
+          }
+        };
+
+        const onLongPress = () => {
+          navigation.emit({
+            type: 'tabLongPress',
+            target: route.key,
+          });
+        };
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            testID={options.tabBarTestID}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+            activeOpacity={0.8}
+          >
+            <TabBarIcon focused={isFocused} routeName={route.name} />
+          </TouchableOpacity>
+        );
+      })}
+    </View>
   );
 };
 
@@ -70,27 +107,8 @@ export default function BottomTabNavigator() {
   
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: "#ffffff",
-          borderTopWidth: 1,
-          borderTopColor: "#e7e9e5",
-          elevation: 0,
-          shadowOpacity: 0,
-          height: 70 + insets.bottom,
-          paddingTop: 10,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
-        },
-        tabBarShowLabel: false,
-        tabBarButton: (props) => (
-          <CustomTabBarButton 
-            {...props} 
-            routeName={route.name} 
-            itemStyle={props.style} 
-          />
-        ),
-      })}
+      tabBar={props => <CustomTabBar {...props} insets={insets} />}
+      screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="Shopping" component={ShoppingListScreen} />
       <Tab.Screen name="Fridge" component={FridgeScreen} />

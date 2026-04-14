@@ -5,6 +5,7 @@ import { useAppStore } from "../store/appStore";
 import { useShoppingStore, ItemTemplate, ShoppingItem } from "../store/shoppingStore";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
+import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 
 import { ShoppingItemCard } from "../components/ShoppingItemCard";
 import { ActionModal } from "../components/modals/ActionModal";
@@ -147,19 +148,39 @@ export default function ShoppingListScreen() {
 
         {/* List Section */}
         <View className="space-y-4">
-          {shoppingList.filter(item => item.status !== 'PURCHASED').length > 0 ? (
-            <FlatList
-              data={shoppingList.filter(item => item.status !== 'PURCHASED')}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <ShoppingItemCard
-                  item={item}
-                  onLongPress={handleLongPress}
-                  onToggleCheck={handleToggleCheck}
-                />
+          {shoppingList.filter((item) => item.status !== "PURCHASED").length > 0 ? (
+            <>
+              {shoppingList
+                .filter((item) => item.status === "PENDING")
+                .map((item) => (
+                  <ShoppingItemCard
+                    key={item.id}
+                    item={item}
+                    onLongPress={handleLongPress}
+                    onToggleCheck={handleToggleCheck}
+                  />
+                ))}
+
+              {shoppingList.filter((item) => item.status === "BOUGHT").length > 0 && (
+                <Animated.View
+                  layout={LinearTransition.springify().damping(16).mass(0.6).stiffness(120)}
+                  entering={FadeIn.duration(300)}
+                  className="mt-6 mb-4 border-t border-surface-container pt-6"
+                >
+                  <Text className="font-headline text-lg font-bold text-on-surface-variant mb-4 ml-2">チェック済み</Text>
+                  {shoppingList
+                    .filter((item) => item.status === "BOUGHT")
+                    .map((item) => (
+                      <ShoppingItemCard
+                        key={item.id}
+                        item={item}
+                        onLongPress={handleLongPress}
+                        onToggleCheck={handleToggleCheck}
+                      />
+                    ))}
+                </Animated.View>
               )}
-              scrollEnabled={false}
-            />
+            </>
           ) : (
             <Text className="text-center text-outline mt-10 font-body">買い物リストは空です</Text>
           )}
