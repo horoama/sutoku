@@ -1,7 +1,7 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "@expo/vector-icons/MaterialIcons";
-import { View, Text, Platform } from "react-native";
+import { View, Text, Platform, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import ShoppingListScreen from "../screens/ShoppingListScreen";
@@ -18,7 +18,7 @@ const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: strin
     iconName = "shopping-basket";
     label = "List";
   } else if (routeName === "Fridge") {
-    iconName = "kitchen"; // changed from inventory-2 just in case missing in some expo icon versions
+    iconName = "kitchen";
     label = "Pantry";
   } else if (routeName === "Settings") {
     iconName = "group";
@@ -27,9 +27,9 @@ const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: strin
 
   if (focused) {
     return (
-      <View className="flex-col items-center justify-center bg-primary-fixed dark:bg-primary rounded-full px-5 py-2">
+      <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#a1f4c8', borderRadius: 9999, paddingHorizontal: 20, paddingVertical: 8 }}>
         <Icon name={iconName} size={24} color="#005236" />
-        <Text className="font-body text-[10px] uppercase tracking-[0.05rem] font-bold mt-1 text-primary-fixed-variant">
+        <Text style={{ color: "#005236", fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 'bold', marginTop: 4 }}>
           {label}
         </Text>
       </View>
@@ -37,9 +37,9 @@ const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: strin
   }
 
   return (
-    <View className="flex-col items-center justify-center px-5 py-2">
-      <Icon name={iconName} size={24} className="text-outline" />
-      <Text className="font-body text-[10px] uppercase tracking-[0.05rem] font-bold mt-1 text-outline">
+    <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 8 }}>
+      <Icon name={iconName} size={24} color="#707973" />
+      <Text style={{ color: "#707973", fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 'bold', marginTop: 4 }}>
         {label}
       </Text>
     </View>
@@ -47,6 +47,8 @@ const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: strin
 };
 
 export default function BottomTabNavigator() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -57,11 +59,20 @@ export default function BottomTabNavigator() {
           borderTopColor: "#e7e9e5",
           elevation: 0,
           shadowOpacity: 0,
-          height: 90,
+          height: 70 + insets.bottom,
           paddingTop: 10,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
         },
         tabBarShowLabel: false,
-        tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} routeName={route.name} />,
+        tabBarButton: (props) => (
+          <TouchableOpacity 
+            {...(props as any)} 
+            activeOpacity={0.8}
+            style={[props.style, { justifyContent: 'center', alignItems: 'center' }]}
+          >
+            <TabBarIcon focused={!!props.accessibilityState?.selected} routeName={route.name} />
+          </TouchableOpacity>
+        ),
       })}
     >
       <Tab.Screen name="Shopping" component={ShoppingListScreen} />

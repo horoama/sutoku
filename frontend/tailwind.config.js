@@ -54,9 +54,9 @@ module.exports = {
         "tertiary-fixed": "#ffdad2"
       },
       fontFamily: {
-        "headline": ["Plus Jakarta Sans", "sans-serif"],
-        "body": ["Be Vietnam Pro", "sans-serif"],
-        "label": ["Plus Jakarta Sans", "sans-serif"]
+        "headline": ["Plus Jakarta Sans", "System", "sans-serif"],
+        "body": ["Be Vietnam Pro", "System", "sans-serif"],
+        "label": ["Plus Jakarta Sans", "System", "sans-serif"]
       },
       borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
     },
