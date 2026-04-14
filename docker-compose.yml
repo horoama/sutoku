@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: registry.gate.home/sutoku-backend
+    image: registry.gate.home/sutoku-backend:${BACKEND_IMAGE_TAG:-latest}
     build:
       context: ./backend
       args:
@@ -20,7 +20,7 @@ services:
       - ./backend/data:/app/data
 
   frontend:
-    image: registry.gate.home/sutoku-frontend
+    image: registry.gate.home/sutoku-frontend:${FRONTEND_IMAGE_TAG:-latest}
     build:
       context: ./frontend
       args:
@@ -29,6 +29,7 @@ services:
         - no_proxy=${NO_PROXY:-}
     ports:
       - "8081:8081"
+      - "19000-19002:19000-19002"
     environment:
       - EXPO_WEB_PORT=8081
       - HTTP_PROXY=${HTTP_PROXY:-}
@@ -36,6 +37,8 @@ services:
       - NO_PROXY=${NO_PROXY:-}
       - EXPO_PACKAGER_HOSTNAME=${EXPO_PACKAGER_HOSTNAME:-192.168.11.116}
       - REACT_NATIVE_PACKAGER_HOSTNAME=${REACT_NATIVE_PACKAGER_HOSTNAME:-192.168.11.116}
+      - EXPO_DEBUG=true
+      - CI=1
     volumes:
       - ./frontend/src:/app/src
     command: npx expo start --lan
