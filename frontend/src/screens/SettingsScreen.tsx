@@ -24,7 +24,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
       <View className="w-full flex-row items-center justify-between px-6 py-4 bg-surface z-40">
         <View className="flex-row items-center gap-3">
           <Icon name="restaurant-menu" size={24} className="text-primary" />
-          <Text className="font-headline font-extrabold tracking-tight text-2xl text-primary italic">{t('settings.title', 'The Living Larder')}</Text>
+          <Text className="font-headline font-extrabold tracking-tight text-2xl text-primary italic">{t('settings.title', 'Moteri')}</Text>
         </View>
         <View className="w-10 h-10 rounded-full bg-surface-container-highest border-2 border-primary-fixed overflow-hidden">
           <Image
