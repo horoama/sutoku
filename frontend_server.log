@@ -1,0 +1,69 @@
+
+> frontend@1.0.0 start
+> expo start
+
+Starting project at /app/frontend
+Starting Metro Bundler
+The following packages should be updated for best compatibility with the installed expo version:
+  @react-native-async-storage/async-storage@3.0.2 - expected version: 2.2.0
+  expo-localization@55.0.13 - expected version: ~17.0.8
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web ./index.ts ▓▓▓░░░░░░░░░░░░░ 19.1% (21/48)
+Web ./index.ts ▓▓▓▓▓▓▓░░░░░░░░░ 47.5% (193/297)
+Web ./index.ts ▓▓▓▓▓▓▓░░░░░░░░░ 49.6% (359/761)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 78.4% (809/971)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 85.8% (1054/1138)
+Web Bundling failed 19752ms index.ts (1315 modules)
+Unable to resolve "./locales/en.json" from "src/i18n/index.ts"
+[0m [90m 4 |[39m [36mimport[39m [33mAsyncStorage[39m [36mfrom[39m [32m'@react-native-async-storage/async-storage'[39m[33m;[39m
+ [90m 5 |[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mconst[39m en [33m=[39m require([32m'./locales/en.json'[39m)[33m;[39m
+ [90m   |[39m                     [31m[1m^[22m[39m
+ [90m 7 |[39m [36mconst[39m ja [33m=[39m require([32m'./locales/ja.json'[39m)[33m;[39m
+ [90m 8 |[39m
+ [90m 9 |[39m [36mconst[39m resources [33m=[39m {[0m
+
+Import stack:
+
+ src/i18n/index.ts
+ | import "./locales/en.json"
+
+ App.tsx
+ | import "./src/i18n"
+
+ index.ts
+ | import "./App"
+
+
+ | import "./index.ts"
+
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 2291ms index.ts (1362 modules)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 72ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 85ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 66ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 71ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 70ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 65ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 243ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 205ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
