@@ -15,7 +15,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
   const toggleLanguage = async () => {
     const newLang = i18n.language === "en" ? "ja" : "en";
     await i18n.changeLanguage(newLang);
-    await AsyncStorage.setItem("user-language", newLang);
+    await AsyncStorage.setItem("@app_language", newLang);
   };
 
   return (
