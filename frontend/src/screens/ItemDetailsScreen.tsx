@@ -122,9 +122,9 @@ export default function ItemDetailsScreen() {
         </View>
 
         {/* Details Form */}
-        <View className="space-y-8 mt-12">
+        <View className="gap-y-8 mt-12">
           {/* Description */}
-          <View className="space-y-3">
+          <View className="gap-y-3">
             <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant ml-2">Notes & Origin</Text>
             <View className="bg-surface-container-low rounded-lg p-4">
               <TextInput
@@ -140,7 +140,7 @@ export default function ItemDetailsScreen() {
           </View>
 
           {/* Freshness Stepper */}
-          <View className="space-y-4">
+          <View className="gap-y-4">
             <View className="flex-row justify-between items-end px-2">
               <View>
                 <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant mb-1">Vitality Gauge</Text>
@@ -172,7 +172,7 @@ export default function ItemDetailsScreen() {
           </View>
 
           {/* Template Default Days Stepper (Compact) */}
-          <View className="space-y-3">
+          <View className="gap-y-3">
             <View className="flex-row justify-between items-end px-2">
               <View>
                 <Text className="font-label text-[10px] font-medium tracking-wide uppercase text-on-surface-variant mb-0.5">Default Shelf Life</Text>
@@ -204,7 +204,7 @@ export default function ItemDetailsScreen() {
           </View>
 
           {/* Priority Selector */}
-          <View className="space-y-3">
+          <View className="gap-y-3">
             <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant ml-2">Usage Priority</Text>
             <View className="flex-row justify-between gap-3">
               <TouchableOpacity

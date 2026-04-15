@@ -162,7 +162,7 @@ export default function ShoppingListScreen() {
         </View>
 
         {/* List Section */}
-        <View className="space-y-4">
+        <View className="gap-y-4">
           {shoppingList.filter((item) => item.status !== "PURCHASED").length > 0 ? (
             <>
               {shoppingList

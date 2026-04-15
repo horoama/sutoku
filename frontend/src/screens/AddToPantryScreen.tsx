@@ -119,7 +119,7 @@ export default function AddToPantryScreen() {
             <Icon name="bolt" size={24} className="text-secondary" />
             <Text className="font-headline text-lg font-bold text-on-surface">Quick Stock</Text>
           </View>
-          <View className="px-6 space-y-3">
+          <View className="px-6 gap-y-3">
             {quickStockItems.map((item) => (
               <View key={item.id} className="flex-row items-center justify-between p-4 rounded-lg bg-surface-container-low mb-3">
                 <View className="flex-row items-center gap-4">

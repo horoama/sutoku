@@ -65,13 +65,13 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
 
         <View className="flex-col md:flex-row gap-8">
           {/* Left Column Equivalent */}
-          <View className="space-y-8">
+          <View className="gap-y-8">
             {/* Invite Code */}
             <View className="bg-surface-container-lowest rounded-lg p-8 shadow-sm relative overflow-hidden mb-8">
               <View className="absolute top-0 right-0 w-32 h-32 bg-secondary-container/10 rounded-full -mr-16 -mt-16"></View>
               <Text className="font-headline text-xs font-bold uppercase tracking-widest text-secondary mb-4">{t('settings.inviteCodeTitle', 'Household Invite Code')}</Text>
 
-              <View className="space-y-4">
+              <View className="gap-y-4">
                 <View className="bg-surface-container rounded-lg p-6 flex-row items-center justify-between border border-outline-variant/20">
                   <Text className="font-headline text-3xl font-extrabold tracking-widest text-primary">{family?.inviteCode || "KITCH-829"}</Text>
                   <TouchableOpacity className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm">
@@ -89,7 +89,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
             {/* Kitchen Settings */}
             <View className="bg-surface-container-low rounded-lg p-8 mb-10">
               <Text className="font-headline text-xl font-bold text-on-surface mb-6">{t('settings.kitchenSettingsTitle', 'Kitchen Settings')}</Text>
-              <View className="space-y-4">
+              <View className="gap-y-4">
                 <TouchableOpacity className="flex-row items-center justify-between p-4 bg-surface-container-lowest rounded-full mb-3">
                   <View className="flex-row items-center gap-4">
                     <View className="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center">
@@ -134,7 +134,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
           </View>
 
           {/* Right Column Equivalent */}
-          <View className="space-y-10">
+          <View className="gap-y-10">
             {/* Active Members */}
             <View className="mb-10">
               <View className="flex-row items-center gap-2 mb-6">
@@ -144,7 +144,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
                 </View>
               </View>
 
-              <View className="space-y-3">
+              <View className="gap-y-3">
                 {members.map(member => (
                   <View key={member.id} className="bg-surface-container-lowest p-4 rounded-lg flex-row items-center justify-between mb-3 shadow-sm">
                     <View className="flex-row items-center gap-4">
@@ -202,7 +202,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
             <Text className="font-headline font-extrabold text-xl text-primary mb-4 tracking-tight">
               {t('settings.selectLanguage', 'Select Language')}
             </Text>
-            <View className="space-y-4">
+            <View className="gap-y-4">
               {langOptions.map(opt => (
                 <TouchableOpacity
                   key={opt.value}

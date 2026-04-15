@@ -101,7 +101,7 @@ export default function ActivityLogScreen() {
         </View>
 
         {/* Activity Timeline */}
-        <View className="space-y-12 relative pb-8">
+        <View className="gap-y-12 relative pb-8">
           <View className="absolute left-[27px] top-4 bottom-0 w-0.5 bg-surface-container-high"></View>
 
           {Object.keys(logsByDate).length > 0 ? (
@@ -134,7 +134,7 @@ export default function ActivityLogScreen() {
                     <Text className={`font-headline text-2xl font-bold ${dateColor}`}>{displayDate}</Text>
                   </View>
 
-                  <View className="space-y-4 ml-10">
+                  <View className="gap-y-4 ml-10">
                     {logs.map((log) => {
                       const iconConfig = getActionIcon(log.action);
                       return (
