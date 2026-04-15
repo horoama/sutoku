@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Image, Modal, Pressable } from "react-native";
+import React from "react";
+import { View, Text, TouchableOpacity, ScrollView, Image, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppStore } from "../store/appStore";
 import Icon from "@expo/vector-icons/MaterialIcons";
@@ -11,12 +11,16 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
   const { user, family, members } = useAppStore();
   const { t } = useTranslation();
-  const [langModalVisible, setLangModalVisible] = useState(false);
+  const [isLangVisible, setIsLangVisible] = React.useState(false);
+
+  const langOptions = [
+    { value: 'en', label: 'English' },
+    { value: 'ja', label: '日本語' }
+  ];
 
   const changeLanguage = async (newLang: string) => {
     await i18n.changeLanguage(newLang);
     await AsyncStorage.setItem("@app_language", newLang);
-    setLangModalVisible(false);
   };
 
   const getLanguageLabel = (langCode: string) => {
@@ -109,10 +113,10 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
                   <Icon name="chevron-right" size={24} className="text-outline" />
                 </TouchableOpacity>
 
-                {/* Language Dropdown */}
+                {/* Language Menu */}
                 <TouchableOpacity
-                  className="flex-row items-center justify-between p-4 bg-surface-container-lowest rounded-full"
-                  onPress={() => setLangModalVisible(true)}
+                  className="flex-row items-center justify-between p-4 bg-surface-container-lowest rounded-full mb-3"
+                  onPress={() => setIsLangVisible(true)}
                 >
                   <View className="flex-row items-center gap-4">
                     <View className="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center">
@@ -120,9 +124,9 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
                     </View>
                     <Text className="font-bold text-on-surface">{t('settings.language', 'Language')}</Text>
                   </View>
-                  <View className="flex-row items-center gap-2 bg-surface-container px-3 py-1.5 rounded-lg border border-outline-variant/30">
-                    <Text className="text-on-surface font-medium">{getLanguageLabel(i18n.language)}</Text>
-                    <Icon name="arrow-drop-down" size={24} className="text-outline" />
+                  <View className="flex-row items-center gap-2">
+                    <Text className="text-on-surface-variant font-medium">{getLanguageLabel(i18n.language)}</Text>
+                    <Icon name="chevron-right" size={24} className="text-outline" />
                   </View>
                 </TouchableOpacity>
               </View>
@@ -187,54 +191,38 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
       </ScrollView>
 
       {/* Language Selection Modal */}
-      <Modal
-        visible={langModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setLangModalVisible(false)}
-      >
-        <Pressable
-          className="flex-1 bg-black/40 justify-center items-center p-6"
-          onPress={() => setLangModalVisible(false)}
-        >
-          <View className="bg-surface w-full max-w-sm rounded-2xl overflow-hidden shadow-lg p-2">
-            <View className="p-4 border-b border-outline-variant/20">
-              <Text className="font-headline text-xl font-bold text-on-surface text-center">
-                {t('settings.language', 'Language')}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              className={`p-4 flex-row items-center justify-between ${i18n.language === 'en' ? 'bg-primary-container rounded-lg' : ''}`}
-              onPress={() => changeLanguage('en')}
-            >
-              <Text className={`text-base ${i18n.language === 'en' ? 'text-on-primary-container font-bold' : 'text-on-surface'}`}>
-                English
-              </Text>
-              {i18n.language === 'en' && <Icon name="check" size={20} className="text-primary" />}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className={`p-4 flex-row items-center justify-between ${i18n.language === 'ja' ? 'bg-primary-container rounded-lg' : ''}`}
-              onPress={() => changeLanguage('ja')}
-            >
-              <Text className={`text-base ${i18n.language === 'ja' ? 'text-on-primary-container font-bold' : 'text-on-surface'}`}>
-                日本語
-              </Text>
-              {i18n.language === 'ja' && <Icon name="check" size={20} className="text-primary" />}
-            </TouchableOpacity>
-
-            <View className="p-2 mt-2">
-              <TouchableOpacity
-                className="py-3 items-center justify-center bg-surface-container rounded-lg"
-                onPress={() => setLangModalVisible(false)}
-              >
-                <Text className="font-bold text-primary">{t('common.cancel', 'Cancel')}</Text>
-              </TouchableOpacity>
+      <Modal visible={isLangVisible} transparent animationType="fade">
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <TouchableOpacity
+            className="absolute inset-0"
+            activeOpacity={1}
+            onPress={() => setIsLangVisible(false)}
+          />
+          <View className="bg-surface w-4/5 rounded-2xl overflow-hidden p-6 shadow-lg">
+            <Text className="font-headline font-extrabold text-xl text-primary mb-4 tracking-tight">
+              {t('settings.selectLanguage', 'Select Language')}
+            </Text>
+            <View className="space-y-4">
+              {langOptions.map(opt => (
+                <TouchableOpacity
+                  key={opt.value}
+                  className={`px-5 py-5 rounded-xl flex-row items-center justify-between ${i18n.language === opt.value ? 'bg-secondary-container' : 'bg-surface-container-lowest'}`}
+                  onPress={() => {
+                    changeLanguage(opt.value);
+                    setIsLangVisible(false);
+                  }}
+                >
+                  <Text className={`font-bold text-base ${i18n.language === opt.value ? 'text-on-secondary-container' : 'text-on-surface'}`}>
+                    {opt.label}
+                  </Text>
+                  {i18n.language === opt.value && <Icon name="check" size={20} className="text-on-secondary-container" />}
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
-        </Pressable>
+        </View>
       </Modal>
+
     </View>
   );
 }
