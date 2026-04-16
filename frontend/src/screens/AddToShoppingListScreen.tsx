@@ -63,7 +63,7 @@ export default function AddToShoppingListScreen() {
         <Text className="font-headline font-bold text-2xl tracking-tight text-emerald-900">Add to Shopping List</Text>
       </View>
 
-      <ScrollView className="px-6 space-y-8" contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView className="px-6 gap-y-8" contentContainerStyle={{ paddingBottom: 120 }}>
         {/* Search Bar Section */}
         <View className="mt-4">
           <View className="relative justify-center">
@@ -132,7 +132,7 @@ export default function AddToShoppingListScreen() {
                      </View>
                   )}
                 </View>
-                <View className="p-4 space-y-3">
+                <View className="p-4 gap-y-3">
                   <Text className="font-headline font-semibold text-sm" numberOfLines={1}>{item.name}</Text>
                   <TouchableOpacity
                     className="w-full bg-secondary-fixed py-2 rounded-xl flex-row items-center justify-center gap-2 active:bg-secondary-container"
@@ -163,7 +163,7 @@ export default function AddToShoppingListScreen() {
         </View>
 
         {/* Item List Grid */}
-        <View className="space-y-4 pb-12">
+        <View className="gap-y-4 pb-12">
           {itemsToDisplay.length > 0 ? itemsToDisplay.map((item, index) => (
              <View key={item.id} className="bg-surface-container-low rounded-lg p-4 flex-row items-center gap-4 mb-3">
                <View className="w-16 h-16 rounded-xl overflow-hidden bg-surface-container-highest">

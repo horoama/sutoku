@@ -23,7 +23,7 @@ export default function RegistrationSuccessScreen() {
     <View className="flex-1 bg-surface font-body text-on-surface flex-col" style={{ paddingTop: insets.top }}>
       <View className="flex-grow flex-col items-center justify-center px-6 py-12">
         {/* Main Content Canvas */}
-        <View className="w-full max-w-md flex-col items-center justify-center space-y-10">
+        <View className="w-full max-w-md flex-col items-center justify-center gap-y-10">
 
           {/* Hero Illustration/Icon Section */}
           <View className="relative w-64 h-64 flex items-center justify-center mb-10">
@@ -43,7 +43,7 @@ export default function RegistrationSuccessScreen() {
           </View>
 
           {/* Message Block */}
-          <View className="space-y-4 mb-8">
+          <View className="gap-y-4 mb-8">
             <Text className="font-headline font-extrabold text-4xl tracking-tight text-primary leading-tight text-center">
               Item Registered Successfully!
             </Text>

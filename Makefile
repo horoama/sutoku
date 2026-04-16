@@ -18,6 +18,7 @@ help:
 	@echo "  make shell-frontend - フロントエンドコンテナのシェルに入ります"
 	@echo "  make shell-backend  - バックエンドコンテナのシェルに入ります"
 	@echo "  make sync-deps      - フロントエンドの node_modules をコンテナから抽出しローカルに同期します（IDEエラー対策）"
+	@echo "  make npm-install    - ローカル環境(frontend)のパッケージを更新・インストールします (例: make npm-install pkg=axios)"
 
 up:
 	docker-compose up -d
@@ -52,7 +53,7 @@ release: build push
 release-dev-home: release
 	@echo "========================================"
 	@echo "dev.homeへ自動デプロイを開始します (ターゲットタグ: $(VERSION))..."
-	ssh admin@${REMOTE_DEV_HOST} "sed -i 's/^FRONTEND_IMAGE_TAG=.*/FRONTEND_IMAGE_TAG=$(VERSION)/; s/^BACKEND_IMAGE_TAG=.*/BACKEND_IMAGE_TAG=$(VERSION)/' ~/workspace/sutoku/.env && cd ~/workspace/sutoku && docker compose pull && docker compose up -d"
+	ssh -J admin@192.168.11.110 admin@${REMOTE_DEV_HOST} "sed -i 's/^FRONTEND_IMAGE_TAG=.*/FRONTEND_IMAGE_TAG=$(VERSION)/; s/^BACKEND_IMAGE_TAG=.*/BACKEND_IMAGE_TAG=$(VERSION)/' ~/workspace/sutoku/.env && cd ~/workspace/sutoku && docker compose pull && docker compose up -d"
 	@echo "dev.homeへのデプロイが完了しました！"
 	@echo "========================================"
 
@@ -75,3 +76,8 @@ sync-deps:
 	@echo "==== 完了 ===="
 	@echo "エディタのエラー表示が消えない場合は、VSCodeのコマンドパレットから"
 	@echo "「TypeScript: Restart TS server」を実行してください。"
+
+npm-install:
+	@echo "ローカルの frontend/ にて npm install $(pkg) を実行します..."
+	docker run --rm -v "$$(pwd)/frontend:/app" -w /app -u "$$(id -u):$$(id -g)" node:20-alpine npm install $(pkg)
+

@@ -55,7 +55,7 @@ export default function ReviewListScreen() {
         </View>
 
         {/* Bento-style List Container */}
-        <View className="space-y-4">
+        <View className="gap-y-4">
           {shoppingList.length > 0 ? shoppingList.map((item: ShoppingItem) => (
             <View key={item.id} className="bg-surface-container-lowest p-5 rounded-lg flex-row items-center gap-5 transition-all mb-4 border border-transparent shadow-sm">
               <View className="w-14 h-14 bg-surface-container-low rounded-xl flex items-center justify-center">

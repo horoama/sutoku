@@ -67,7 +67,7 @@ export default function RegisterItemScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="px-6 space-y-6" contentContainerStyle={{ paddingBottom: 150 }}>
+      <ScrollView className="px-6 gap-y-6" contentContainerStyle={{ paddingBottom: 150 }}>
         {/* Hero Image Upload Section */}
         <View className="mt-4 mb-2">
           <TouchableOpacity className="relative w-full aspect-[16/10] bg-surface-container-high rounded-xl overflow-hidden flex items-center justify-center border-2 border-dashed border-outline-variant/30 active:border-primary/40 transition-all">
@@ -86,9 +86,9 @@ export default function RegisterItemScreen() {
         </View>
 
         {/* Form Fields */}
-        <View className="space-y-6">
+        <View className="gap-y-6">
           {/* Item Name */}
-          <View className="space-y-2">
+          <View className="gap-y-2">
             <Text className="font-headline font-bold text-primary ml-1">Item Name</Text>
             <View className="bg-surface-container-low rounded-full px-6 py-4 flex-row items-center shadow-sm">
               <Icon name="shopping-basket" size={20} className="text-outline mr-3" />
@@ -103,7 +103,7 @@ export default function RegisterItemScreen() {
           </View>
 
           {/* Category Selection */}
-          <View className="space-y-2">
+          <View className="gap-y-2">
             <Text className="font-headline font-bold text-primary ml-1">Category</Text>
             <View className="flex-row flex-wrap gap-2">
               {categories.map(cat => (
@@ -119,7 +119,7 @@ export default function RegisterItemScreen() {
           </View>
 
           {/* Notes & Origin */}
-          <View className="space-y-2">
+          <View className="gap-y-2">
             <Text className="font-headline font-bold text-primary ml-1">Notes & Origin</Text>
             <View className="bg-surface-container-low rounded-lg px-6 py-4 shadow-sm min-h-[120px]">
               <TextInput
@@ -136,7 +136,7 @@ export default function RegisterItemScreen() {
           </View>
 
           {/* Default Freshness Controls */}
-          <View className="space-y-2">
+          <View className="gap-y-2">
             <Text className="font-headline font-bold text-primary ml-1">Average Freshness (Days)</Text>
             <View className="bg-surface-container-low rounded-full px-4 py-3 flex-row items-center justify-between shadow-sm">
               <TouchableOpacity
@@ -159,7 +159,7 @@ export default function RegisterItemScreen() {
           </View>
 
           {/* Priority Level */}
-          <View className="space-y-3 mb-8">
+          <View className="gap-y-3 mb-8">
             <Text className="font-headline font-bold text-primary ml-1">Priority Level</Text>
             <View className="flex-row justify-between gap-3">
               <TouchableOpacity

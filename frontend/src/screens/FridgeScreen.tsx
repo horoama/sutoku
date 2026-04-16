@@ -69,7 +69,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
               </Text>
             </View>
           </View>
-          <View className="space-y-1">
+          <View className="gap-y-1">
             <View className="flex-row justify-between">
               <Text className="text-[10px] font-bold tracking-wider text-on-primary">FRESHNESS LEVEL</Text>
               <Text className="text-[10px] font-bold tracking-wider text-on-primary">{Math.round(progressPercent)}%</Text>
@@ -207,7 +207,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
       </View>
 
       <ScrollView className="pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
-        <View className="px-6 space-y-10">
+        <View className="px-6 gap-y-10">
           {/* Expiring Soon Hero Section */}
           <View>
             <View className="flex-col gap-1 mb-6">
@@ -260,7 +260,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           {/* Sustainable Tip Card */}
           <View className="mt-8 mb-4">
             <View className="bg-secondary-fixed p-8 rounded-xl relative overflow-hidden">
-              <View className="relative z-10 w-[80%] space-y-3">
+              <View className="relative z-10 w-[80%] gap-y-3">
                 <View className="flex-row items-center gap-2 mb-2">
                   <Icon name="tips-and-updates" size={24} className="text-on-secondary-fixed" />
                   <Text className="font-headline font-bold text-lg text-on-secondary-fixed">Sustainable Tip</Text>
