@@ -148,9 +148,8 @@ export const useShoppingStore = create<ShoppingState>()(
       name: 'shopping-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        categories: state.categories,
-        shoppingList: state.shoppingList
-      }), // Only persist these fields
+        categories: state.categories
+      }), // Only persist categories (item templates)
     }
   )
 );
