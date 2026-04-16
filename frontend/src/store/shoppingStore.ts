@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../api/client';
 import { useAppStore } from './appStore';
 import { useFridgeStore } from './fridgeStore';
@@ -34,11 +36,13 @@ interface ShoppingState {
   deleteItem: (id: string) => Promise<void>;
 }
 
-export const useShoppingStore = create<ShoppingState>((set, get) => ({
-  categories: [],
-  shoppingList: [],
-  isLoading: false,
-  error: null,
+export const useShoppingStore = create<ShoppingState>()(
+  persist(
+    (set, get) => ({
+      categories: [],
+      shoppingList: [],
+      isLoading: false,
+      error: null,
 
   fetchCategories: async () => {
     const familyId = useAppStore.getState().family?.id;
@@ -139,4 +143,14 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
       set({ error: err.message });
     }
   },
-}));
+    }),
+    {
+      name: 'shopping-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        categories: state.categories,
+        shoppingList: state.shoppingList
+      }), // Only persist these fields
+    }
+  )
+);
