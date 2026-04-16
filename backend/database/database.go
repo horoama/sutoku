@@ -22,6 +22,7 @@ func Connect() {
 		&models.Family{},
 		&models.Category{},
 		&models.ItemTemplate{},
+		&models.FamilyItemOverride{},
 		&models.FridgeItem{},
 		&models.ShoppingItem{},
 		&models.ActivityLog{},

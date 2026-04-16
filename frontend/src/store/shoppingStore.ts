@@ -41,8 +41,10 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
   error: null,
 
   fetchCategories: async () => {
+    const familyId = useAppStore.getState().family?.id;
     try {
-      const { data } = await api.get('/items');
+      const url = familyId ? `/items?familyId=${familyId}` : '/items';
+      const { data } = await api.get(url);
       set({ categories: data });
     } catch (err: any) {
       set({ error: err.message });
