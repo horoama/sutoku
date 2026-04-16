@@ -1,0 +1,3 @@
+## 2025-02-24 - React Native Accessibility for Icon-only Buttons
+**Learning:** Icon-only buttons (like FABs or app bar actions using `TouchableOpacity` + `Icon`) in React Native lack semantic meaning for screen readers. Screen readers may not announce them as buttons or explain their function.
+**Action:** Always add `accessibilityRole="button"` and a descriptive `accessibilityLabel` to `TouchableOpacity` components that only contain icons.

@@ -194,7 +194,11 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           <Text className="font-headline font-extrabold tracking-tight text-2xl text-primary italic">The Living Larder</Text>
         </View>
         <View className="flex-row items-center gap-4">
-          <TouchableOpacity className="active:scale-95 transition-transform">
+          <TouchableOpacity
+            className="active:scale-95 transition-transform"
+            accessibilityRole="button"
+            accessibilityLabel="検索"
+          >
             <Icon name="search" size={24} className="text-slate-500" />
           </TouchableOpacity>
           <View className="w-10 h-10 rounded-full bg-surface-container-high border-2 border-primary-fixed overflow-hidden">
@@ -282,6 +286,8 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
       <TouchableOpacity
         className="absolute bottom-6 right-6 w-16 h-16 bg-primary rounded-xl flex items-center justify-center shadow-xl active:scale-95 transition-transform z-50"
         onPress={() => navigation.navigate("AddToPantry")}
+        accessibilityRole="button"
+        accessibilityLabel="冷蔵庫・食糧庫に追加"
       >
         <Icon name="add" size={28} className="text-on-primary" />
       </TouchableOpacity>
