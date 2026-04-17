@@ -20,6 +20,25 @@ func (category *Category) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// FamilyItemOverride はシステム提供のアイテムテンプレートに対する家族ごとの差分（上書き設定）を表す構造体です。
+type FamilyItemOverride struct {
+	ID             string       `gorm:"type:uuid;primary_key;" json:"id"`                                       // オーバーライドID
+	FamilyID       string       `gorm:"type:uuid;uniqueIndex:idx_family_item;" json:"familyId"`                 // 対象家族のID
+	ItemTemplateID string       `gorm:"type:uuid;uniqueIndex:idx_family_item;" json:"itemTemplateId"`           // 対象アイテムテンプレートのID
+	ItemTemplate   ItemTemplate `json:"itemTemplate,omitempty"`                                                 // 対象アイテムテンプレートデータ
+	CustomDays     *int         `json:"customDays"`                                                             // 上書きされた消費期限（日数）
+	DefaultNote    string       `json:"defaultNote"`                                                            // デフォルトのメモ書き
+	IsHidden       bool         `gorm:"default:false" json:"isHidden"`                                          // アイテムを非表示にするかどうか
+}
+
+// BeforeCreate はオーバーライド設定作成前にUUIDを生成して設定します。
+func (override *FamilyItemOverride) BeforeCreate(tx *gorm.DB) error {
+	if override.ID == "" {
+		override.ID = uuid.New().String()
+	}
+	return nil
+}
+
 // ItemTemplate は買い物リストや冷蔵庫に追加するアイテムの雛形（テンプレート）を表す構造体です。
 type ItemTemplate struct {
 	ID            string         `gorm:"type:uuid;primary_key;" json:"id"` // テンプレートID

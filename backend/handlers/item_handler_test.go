@@ -42,7 +42,7 @@ func TestGetItems(t *testing.T) {
 		t.Fatalf("Expected status code %d, but got %d", http.StatusOK, w.Code)
 	}
 
-	var categories []models.Category
+	var categories []handlers.CategoryResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &categories); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
