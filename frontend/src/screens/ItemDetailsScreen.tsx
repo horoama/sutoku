@@ -1,3 +1,4 @@
+import { useItemTranslation } from '../i18n/utils';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +13,7 @@ type ParamList = {
 };
 
 export default function ItemDetailsScreen() {
+  const { tItem } = useItemTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<ParamList, 'ItemDetails'>>();
@@ -22,7 +24,7 @@ export default function ItemDetailsScreen() {
   const itemId = route.params?.itemId;
   const initialItem = fridgeItems.find(i => i.id === itemId);
 
-  const [itemName, setItemName] = useState(initialItem?.itemTemplate?.name || "");
+  const [itemName, setItemName] = useState(tItem(initialItem?.itemTemplate) || "");
   const [notes, setNotes] = useState(initialItem?.itemTemplate?.name ? `Stored safely.` : "");
 
   const initialDefaultDays = initialItem?.defaultDays || initialItem?.itemTemplate?.defaultDays || 7;

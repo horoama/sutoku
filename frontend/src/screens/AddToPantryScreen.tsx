@@ -1,3 +1,4 @@
+import { useItemTranslation } from '../i18n/utils';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Modal, Alert } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,6 +9,7 @@ import { useFridgeStore } from '../store/fridgeStore';
 import { useShoppingStore } from '../store/shoppingStore';
 
 export default function AddToPantryScreen() {
+  const { tItem } = useItemTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState("");
@@ -133,7 +135,7 @@ export default function AddToPantryScreen() {
                     )}
                   </View>
                   <View>
-                    <Text className="font-semibold text-on-surface">{item.name}</Text>
+                    <Text className="font-semibold text-on-surface">{tItem(item)}</Text>
                     <Text className="text-xs font-label uppercase tracking-wider text-on-surface-variant mt-0.5">Default freshness: {item.defaultDays} Days</Text>
                   </View>
                 </View>

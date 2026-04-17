@@ -1,3 +1,4 @@
+import { useItemTranslation } from '../i18n/utils';
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -6,6 +7,7 @@ import Icon from "@expo/vector-icons/MaterialIcons";
 import { useShoppingStore, ShoppingItem } from "../store/shoppingStore";
 
 export default function ReviewListScreen() {
+  const { tItem } = useItemTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { shoppingList, fetchShoppingList } = useShoppingStore();
@@ -62,7 +64,7 @@ export default function ReviewListScreen() {
                 <Icon name={getIconForCategory(item.itemTemplate.name) as any} size={30} className="text-primary" />
               </View>
               <View className="flex-1">
-                <Text className="font-headline font-bold text-lg text-on-surface">{item.itemTemplate.name}</Text>
+                <Text className="font-headline font-bold text-lg text-on-surface">{tItem(item.itemTemplate)}</Text>
                 <Text className={`font-label text-[10px] font-semibold tracking-widest uppercase ${getPriorityColor(item.priority)}`}>{item.priority}</Text>
               </View>
               <View className="flex-row items-center gap-3">

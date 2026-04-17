@@ -1,3 +1,4 @@
+import { useItemTranslation } from '../i18n/utils';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +8,7 @@ import { useShoppingStore } from "../store/shoppingStore";
 import { useAppStore } from "../store/appStore";
 
 export default function DairyCategoryScreen() {
+  const { tItem } = useItemTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [activeFilter, setActiveFilter] = useState("All Dairy");
@@ -108,7 +110,7 @@ export default function DairyCategoryScreen() {
                 </TouchableOpacity>
               </View>
               <View>
-                <Text className="font-headline font-bold text-on-surface">{item.name}</Text>
+                <Text className="font-headline font-bold text-on-surface">{tItem(item)}</Text>
                 <Text className="font-body text-xs text-on-surface-variant mt-1">Default: {item.defaultDays} Days</Text>
               </View>
             </View>

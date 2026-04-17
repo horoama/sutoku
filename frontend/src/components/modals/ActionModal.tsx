@@ -1,3 +1,4 @@
+import { useItemTranslation } from '../../i18n/utils';
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import { ShoppingItem } from '../../store/shoppingStore';
@@ -26,6 +27,7 @@ interface ActionModalProps {
  * アイテム長押し時のアクション（冷蔵庫へ移動・チェック・優先度変更・削除）を選択するモーダル
  */
 export const ActionModal: React.FC<ActionModalProps> = ({ visible, item, onClose, onMoveToFridge, onToggleCheck, onChangePriority, onDelete }) => {
+  const { tItem } = useItemTranslation();
   if (!item) return null;
 
   const priorities = ["TODAY", "URGENT", "NORMAL", "LOW"];
@@ -35,7 +37,7 @@ export const ActionModal: React.FC<ActionModalProps> = ({ visible, item, onClose
       <View className="flex-1 bg-black/50 justify-center items-center">
         <View className="bg-surface-container-lowest p-6 rounded-2xl w-4/5 items-center">
           <Text className="font-headline text-lg font-bold mb-6 text-center text-on-surface">
-            {item.itemTemplate.name} のアクション
+            {tItem(item.itemTemplate)} のアクション
           </Text>
           {item.status === 'BOUGHT' ? (
             <TouchableOpacity className="w-full bg-primary py-4 rounded-xl items-center mb-3" onPress={onMoveToFridge}>

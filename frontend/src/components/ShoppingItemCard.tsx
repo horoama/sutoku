@@ -1,3 +1,4 @@
+import { useItemTranslation } from '../i18n/utils';
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -20,6 +21,7 @@ interface ShoppingItemCardProps {
  * 買い物リストの1アイテムを表示するコンポーネント
  */
 export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLongPress, onToggleCheck }) => {
+  const { tItem } = useItemTranslation();
   let iconName: React.ComponentProps<typeof Icon>['name'] = "local-grocery-store";
   let iconColorClass = "text-primary text-2xl";
   let iconBgClass = "bg-primary-fixed";
@@ -77,7 +79,7 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
         </View>
         <View className="flex-1">
           <View className="flex-row items-center gap-2 mb-1">
-            <Text className={`font-headline font-bold text-xl ${isChecked ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>{item.itemTemplate.name}</Text>
+            <Text className={`font-headline font-bold text-xl ${isChecked ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>{tItem(item.itemTemplate)}</Text>
             {!isChecked && priorityBadge}
           </View>
           <View className="flex-row items-center gap-3">

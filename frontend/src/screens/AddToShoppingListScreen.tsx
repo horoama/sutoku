@@ -1,3 +1,4 @@
+import { useItemTranslation } from '../i18n/utils';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +8,7 @@ import { useShoppingStore, ItemTemplate, Category } from "../store/shoppingStore
 import { useFridgeStore } from "../store/fridgeStore";
 
 export default function AddToShoppingListScreen() {
+  const { tItem, tCategory } = useItemTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { categories, fetchCategories, addToShoppingList, shoppingList } = useShoppingStore();
@@ -133,7 +135,7 @@ export default function AddToShoppingListScreen() {
                   )}
                 </View>
                 <View className="p-4 gap-y-3">
-                  <Text className="font-headline font-semibold text-sm" numberOfLines={1}>{item.name}</Text>
+                  <Text className="font-headline font-semibold text-sm" numberOfLines={1}>{tItem(item)}</Text>
                   <TouchableOpacity
                     className="w-full bg-secondary-fixed py-2 rounded-xl flex-row items-center justify-center gap-2 active:bg-secondary-container"
                     onPress={() => handleAddItem(item.id, item.name)}
@@ -156,7 +158,7 @@ export default function AddToShoppingListScreen() {
                 className={`px-6 py-3 rounded-full mr-2 ${activeCategoryId === cat.id ? 'bg-primary' : 'bg-surface-container-high'}`}
                 onPress={() => setActiveCategoryId(cat.id)}
               >
-                <Text className={`font-label text-sm font-bold ${activeCategoryId === cat.id ? 'text-on-primary' : 'text-on-surface-variant'}`}>{cat.name}</Text>
+                <Text className={`font-label text-sm font-bold ${activeCategoryId === cat.id ? 'text-on-primary' : 'text-on-surface-variant'}`}>{tCategory(cat)}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -176,7 +178,7 @@ export default function AddToShoppingListScreen() {
                  )}
                </View>
                <View className="flex-1">
-                 <Text className="font-headline font-bold text-on-surface text-base">{item.name}</Text>
+                 <Text className="font-headline font-bold text-on-surface text-base">{tItem(item)}</Text>
                  <Text className="text-xs text-outline font-medium">Default freshness: {item.defaultDays} days</Text>
                </View>
                <TouchableOpacity

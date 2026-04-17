@@ -32,6 +32,7 @@ export interface ItemTemplate {
   categoryId: string;
   defaultDays: number;
   imageUrl: string;
+  isSystem?: boolean;
   category?: {
     id: string;
     name: string;

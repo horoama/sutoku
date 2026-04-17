@@ -1,3 +1,4 @@
+import { useItemTranslation } from '../i18n/utils';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +8,7 @@ import { useFridgeStore } from '../store/fridgeStore';
 import { useShoppingStore } from '../store/shoppingStore';
 
 export default function PantrySearchScreen() {
+  const { tItem } = useItemTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,7 +96,7 @@ export default function PantrySearchScreen() {
               </View>
               <View className="flex-row justify-between items-end w-full">
                 <View>
-                  <Text className="font-headline text-lg font-bold text-on-surface leading-tight" numberOfLines={1}>{item.name}</Text>
+                  <Text className="font-headline text-lg font-bold text-on-surface leading-tight" numberOfLines={1}>{tItem(item)}</Text>
                   <Text className="font-label text-[10px] font-bold tracking-widest text-outline uppercase">{item.defaultDays} Days</Text>
                 </View>
                 <TouchableOpacity
