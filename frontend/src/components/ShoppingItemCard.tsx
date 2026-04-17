@@ -68,7 +68,12 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
           elevation: 2,
         }}
       >
-        <TouchableOpacity onPress={() => onToggleCheck(item)} className="mr-1">
+        <TouchableOpacity
+          onPress={() => onToggleCheck(item)}
+          className="mr-1"
+          accessibilityRole="button"
+          accessibilityLabel={isChecked ? "チェックを外す" : "チェックをつける"}
+        >
           <Icon name={isChecked ? "check-circle" : "radio-button-unchecked"} size={32} className={isChecked ? "text-primary" : "text-outline-variant"} />
         </TouchableOpacity>
 
