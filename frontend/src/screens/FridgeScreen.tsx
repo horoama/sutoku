@@ -60,7 +60,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
         <View key={item.id} className="relative overflow-hidden bg-primary p-4 rounded-lg text-on-primary shadow-lg flex-col mb-4">
           <View className="flex-row justify-between items-center mb-3">
             <View>
-              <Text className="font-headline text-xl font-bold text-on-primary" numberOfLines={1}>{item.itemTemplate.name}</Text>
+              <Text className="font-headline text-xl font-bold text-on-primary" numberOfLines={1}>{item.itemTemplate?.name || item.name || 'Unknown Item'}</Text>
             </View>
             <View className="bg-tertiary-container px-2 py-1 rounded-full flex-row items-center gap-1">
               <Icon name="timer" size={12} className="text-on-tertiary-container" />
@@ -89,7 +89,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
            <Icon name="kitchen" size={32} className="text-tertiary" />
         </View>
         <View className="flex-1">
-          <Text className="font-headline font-bold text-on-surface text-base" numberOfLines={1}>{item.itemTemplate.name}</Text>
+          <Text className="font-headline font-bold text-on-surface text-base" numberOfLines={1}>{item.itemTemplate?.name || item.name || 'Unknown Item'}</Text>
           <View className="flex-row items-center gap-2 mt-1">
             <View className="h-1.5 w-20 bg-surface-container-high rounded-full overflow-hidden shrink">
               <View className="h-full bg-tertiary rounded-full" style={{ width: `${progressPercent}%` }}></View>
@@ -134,7 +134,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
             <Icon name="kitchen" size={24} className="text-primary" />
           </View>
           <View className="flex-1 pr-2">
-            <Text className="font-headline font-semibold text-on-surface text-base" numberOfLines={1}>{item.itemTemplate.name}</Text>
+            <Text className="font-headline font-semibold text-on-surface text-base" numberOfLines={1}>{item.itemTemplate?.name || item.name || 'Unknown Item'}</Text>
             <Text className="text-xs text-outline font-medium">Added recently</Text>
           </View>
         </View>
@@ -167,7 +167,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           <Icon name="inventory-2" size={48} className="text-secondary" />
         </View>
         <View className="mb-2">
-          <Text className="font-headline font-bold text-sm text-on-surface" numberOfLines={1}>{item.itemTemplate.name}</Text>
+          <Text className="font-headline font-bold text-sm text-on-surface" numberOfLines={1}>{item.itemTemplate?.name || item.name || 'Unknown Item'}</Text>
           <Text className="text-xs text-outline font-medium">In stock</Text>
         </View>
         <View className="flex-col gap-2 mt-2">

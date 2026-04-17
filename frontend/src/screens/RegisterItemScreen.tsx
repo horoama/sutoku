@@ -18,6 +18,8 @@ export default function RegisterItemScreen() {
   // Default to first category if available
   const [activeCategoryId, setActiveCategoryId] = useState(categories.length > 0 ? categories[0].id : "");
   const [activePriority, setActivePriority] = useState<"TODAY" | "URGENT" | "NORMAL" | "LOW">("NORMAL");
+  const [isTemplate, setIsTemplate] = useState<boolean>(true); // Toggle between template and one-time
+  const [activeStorage, setActiveStorage] = useState<'FRIDGE' | 'FREEZER' | 'PANTRY'>('FRIDGE');
 
   const handleRegister = async () => {
     if (!itemName) {
@@ -31,16 +33,25 @@ export default function RegisterItemScreen() {
 
     setIsSubmitting(true);
     try {
-      const newTemplate = await createItemTemplate(itemName, activeCategoryId, freshness);
-      if (newTemplate && newTemplate.id) {
-        await addToShoppingList(newTemplate.id, activePriority, notes.trim());
+      if (isTemplate) {
+        const newTemplate = await createItemTemplate(itemName, activeCategoryId, freshness, activeStorage);
+        if (newTemplate && newTemplate.id) {
+          await addToShoppingList(newTemplate.id, activePriority, notes.trim());
+          navigation.navigate("RegistrationSuccess", {
+            itemName: newTemplate.name,
+            location: "Shopping List", // Adjusted location
+            expiresIn: `${freshness} Days`
+          });
+        } else {
+          Alert.alert("エラー", "アイテムの作成に失敗しました");
+        }
+      } else {
+        await addToShoppingList(null, activePriority, notes.trim(), 'shopping', itemName, activeCategoryId, freshness);
         navigation.navigate("RegistrationSuccess", {
-          itemName: newTemplate.name,
-          location: "Main Pantry", // Example location
+          itemName: itemName,
+          location: "Shopping List", // Adjusted location
           expiresIn: `${freshness} Days`
         });
-      } else {
-        Alert.alert("エラー", "アイテムの作成に失敗しました");
       }
     } catch (e) {
       Alert.alert("エラー", "アイテムの作成に失敗しました");
@@ -118,13 +129,62 @@ export default function RegisterItemScreen() {
             </View>
           </View>
 
+          {/* Save Type Toggle */}
+          <View className="gap-y-3 mt-2 mb-2">
+             <Text className="font-headline font-bold text-primary ml-1">登録方法</Text>
+             <View className="flex-row bg-surface-container-low rounded-full p-1 border border-outline-variant/30">
+               <TouchableOpacity
+                 className={`flex-1 items-center justify-center py-3 rounded-full transition-all ${isTemplate ? 'bg-primary' : 'bg-transparent'}`}
+                 onPress={() => setIsTemplate(true)}
+               >
+                 <Text className={`font-bold ${isTemplate ? 'text-on-primary' : 'text-on-surface-variant'}`}>定番として追加</Text>
+               </TouchableOpacity>
+               <TouchableOpacity
+                 className={`flex-1 items-center justify-center py-3 rounded-full transition-all ${!isTemplate ? 'bg-secondary' : 'bg-transparent'}`}
+                 onPress={() => setIsTemplate(false)}
+               >
+                 <Text className={`font-bold ${!isTemplate ? 'text-on-secondary' : 'text-on-surface-variant'}`}>今回限りとして追加</Text>
+               </TouchableOpacity>
+             </View>
+          </View>
+
+          {/* Storage Type (Only visible if isTemplate is true) */}
+          {isTemplate && (
+            <View className="gap-y-3 mt-2 mb-2">
+               <Text className="font-headline font-bold text-primary ml-1">保存先</Text>
+               <View className="flex-row bg-surface-container-low rounded-lg p-1 border border-outline-variant/30 gap-1">
+                 <TouchableOpacity
+                   className={`flex-1 items-center justify-center py-3 rounded-lg transition-all ${activeStorage === 'FRIDGE' ? 'bg-primary' : 'bg-surface-container-high'}`}
+                   onPress={() => setActiveStorage('FRIDGE')}
+                 >
+                   <Icon name="kitchen" size={20} className={activeStorage === 'FRIDGE' ? 'text-on-primary mb-1' : 'text-outline mb-1'} />
+                   <Text className={`font-bold text-xs ${activeStorage === 'FRIDGE' ? 'text-on-primary' : 'text-on-surface-variant'}`}>冷蔵庫</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity
+                   className={`flex-1 items-center justify-center py-3 rounded-lg transition-all ${activeStorage === 'FREEZER' ? 'bg-primary' : 'bg-surface-container-high'}`}
+                   onPress={() => setActiveStorage('FREEZER')}
+                 >
+                   <Icon name="ac-unit" size={20} className={activeStorage === 'FREEZER' ? 'text-on-primary mb-1' : 'text-outline mb-1'} />
+                   <Text className={`font-bold text-xs ${activeStorage === 'FREEZER' ? 'text-on-primary' : 'text-on-surface-variant'}`}>冷凍庫</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity
+                   className={`flex-1 items-center justify-center py-3 rounded-lg transition-all ${activeStorage === 'PANTRY' ? 'bg-primary' : 'bg-surface-container-high'}`}
+                   onPress={() => setActiveStorage('PANTRY')}
+                 >
+                   <Icon name="inventory-2" size={20} className={activeStorage === 'PANTRY' ? 'text-on-primary mb-1' : 'text-outline mb-1'} />
+                   <Text className={`font-bold text-xs ${activeStorage === 'PANTRY' ? 'text-on-primary' : 'text-on-surface-variant'}`}>パントリー</Text>
+                 </TouchableOpacity>
+               </View>
+            </View>
+          )}
+
           {/* Notes & Origin */}
           <View className="gap-y-2">
-            <Text className="font-headline font-bold text-primary ml-1">Notes & Origin</Text>
+            <Text className="font-headline font-bold text-primary ml-1">{isTemplate ? "我が家メモ (定番メモ)" : "今回のメモ"}</Text>
             <View className="bg-surface-container-low rounded-lg px-6 py-4 shadow-sm min-h-[120px]">
               <TextInput
                 className="flex-1 bg-transparent border-none text-on-surface font-medium"
-                placeholder="Where did you get it? Special storage instructions..."
+                placeholder={isTemplate ? "例: いつも低脂肪を買う" : "例: 特売のやつでいいよ"}
                 placeholderTextColor="#bfc9c1"
                 multiline
                 numberOfLines={3}

@@ -49,6 +49,7 @@ type ItemTemplate struct {
 	ImageURL      string         `json:"imageUrl"`                         // アイテムの画像URL
 	IsSystem      bool           `gorm:"default:true" json:"isSystem"`     // システムデフォルトのアイテムかどうか
 	FamilyID      *string        `gorm:"type:uuid" json:"familyId"`        // カスタムアイテムの場合の家族ID
+	StorageType   string         `gorm:"default:'FRIDGE'" json:"storageType"` // 保存先 ("FRIDGE", "FREEZER", "PANTRY")
 	ShoppingItems []ShoppingItem `json:"shoppingItems,omitempty"`          // このテンプレートを使用した買い物アイテム
 	FridgeItems   []FridgeItem   `json:"fridgeItems,omitempty"`            // このテンプレートを使用した冷蔵庫アイテム
 }

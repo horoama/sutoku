@@ -68,7 +68,7 @@ export default function ShoppingListScreen() {
    */
   const handleMoveToFridge = async () => {
     if (selectedItem) {
-      if (!selectedItem.itemTemplate.defaultDays || selectedItem.itemTemplate.defaultDays === 0) {
+      if (!selectedItem.itemTemplate?.defaultDays || selectedItem.itemTemplate?.defaultDays === 0) {
         setModalVisible(false);
         setDateModalVisible(true);
       } else {

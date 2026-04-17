@@ -18,7 +18,7 @@ interface FridgeState {
   /** 冷蔵庫のアイテム一覧を取得 */
   fetchFridgeItems: () => Promise<void>;
   /** アイテムを冷蔵庫に追加 */
-  addToFridge: (itemTemplateId: string, customDays?: number, type?: string, note?: string) => Promise<void>;
+  addToFridge: (itemTemplateId: string | null, customDays?: number, type?: string, note?: string, customName?: string, categoryId?: string) => Promise<void>;
   /** 冷蔵庫のアイテムを消費済みに変更 */
   consumeItem: (id: string) => Promise<void>;
   /** 冷蔵庫のアイテム情報を更新 */
@@ -46,13 +46,18 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
     }
   },
 
-  addToFridge: async (itemTemplateId, customDays, type = 'fridge', note) => {
+  addToFridge: async (itemTemplateId, customDays, type = 'fridge', note, customName, categoryId) => {
     const familyId = useAppStore.getState().family?.id;
     const userId = useAppStore.getState().user?.id;
     if (!familyId) return;
 
     try {
-      let payload: any = { familyId, userId, itemTemplateId, status: 'ACTIVE', type };
+      let payload: any = { familyId, userId, status: 'ACTIVE', type };
+
+      if (itemTemplateId) payload.itemTemplateId = itemTemplateId;
+      if (customName) payload.name = customName;
+      if (categoryId) payload.categoryId = categoryId;
+      if (note) payload.note = note;
 
       if (customDays) {
         const endDate = new Date();

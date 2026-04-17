@@ -23,13 +23,13 @@ interface ShoppingState {
   /** 買い物リストのアイテム一覧を取得 */
   fetchShoppingList: () => Promise<void>;
   /** 買い物リストに新しいアイテムを追加 */
-  addToShoppingList: (itemTemplateId: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW', note?: string, type?: string) => Promise<void>;
+  addToShoppingList: (itemTemplateId: string | null, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW', note?: string, type?: string, customName?: string, categoryId?: string, customDays?: number) => Promise<void>;
   /** 買い物アイテムを購入済みに変更し、必要に応じて冷蔵庫に移動 */
   purchaseItem: (id: string, price?: number, endDate?: string) => Promise<void>;
   /** 買い物アイテムのチェック状態を切り替える */
   toggleBoughtStatus: (id: string, isBought: boolean) => Promise<void>;
   /** 新しいカスタムアイテムテンプレートを作成 */
-  createItemTemplate: (name: string, categoryId: string, defaultDays: number) => Promise<ItemTemplate | null>;
+  createItemTemplate: (name: string, categoryId: string, defaultDays: number, storageType?: 'FRIDGE' | 'FREEZER' | 'PANTRY') => Promise<ItemTemplate | null>;
   /** 買い物アイテムの優先度を変更する */
   updateItemPriority: (id: string, priority: string) => Promise<void>;
   /** 買い物アイテムを削除する */
@@ -68,13 +68,19 @@ export const useShoppingStore = create<ShoppingState>()(
     }
   },
 
-  addToShoppingList: async (itemTemplateId, priority, note, type = 'shopping') => {
+  addToShoppingList: async (itemTemplateId, priority, note, type = 'shopping', customName, categoryId, customDays) => {
     const familyId = useAppStore.getState().family?.id;
     const userId = useAppStore.getState().user?.id;
     if (!familyId) return;
 
     try {
-      await api.post('/items', { familyId, userId, itemTemplateId, priority, note, type });
+      const payload: any = { familyId, userId, priority, note, type };
+      if (itemTemplateId) payload.itemTemplateId = itemTemplateId;
+      if (customName) payload.name = customName;
+      if (categoryId) payload.categoryId = categoryId;
+      if (customDays !== undefined) payload.customDays = customDays;
+
+      await api.post('/items', payload);
       await get().fetchShoppingList();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
@@ -82,12 +88,14 @@ export const useShoppingStore = create<ShoppingState>()(
     }
   },
 
-  createItemTemplate: async (name, categoryId, defaultDays) => {
+  createItemTemplate: async (name, categoryId, defaultDays, storageType) => {
     const familyId = useAppStore.getState().family?.id;
     if (!familyId) return null;
 
     try {
-      const { data } = await api.post('/item-templates', { name, categoryId, defaultDays, familyId });
+      const payload: any = { name, categoryId, defaultDays, familyId };
+      if (storageType) payload.storageType = storageType;
+      const { data } = await api.post('/item-templates', payload);
       await get().fetchCategories();
       return data;
     } catch (err: any) {

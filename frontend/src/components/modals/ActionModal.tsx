@@ -35,7 +35,7 @@ export const ActionModal: React.FC<ActionModalProps> = ({ visible, item, onClose
       <View className="flex-1 bg-black/50 justify-center items-center">
         <View className="bg-surface-container-lowest p-6 rounded-2xl w-4/5 items-center">
           <Text className="font-headline text-lg font-bold mb-6 text-center text-on-surface">
-            {item.itemTemplate.name} のアクション
+            {item.itemTemplate?.name || item.name || 'アイテム'} のアクション
           </Text>
           {item.status === 'BOUGHT' ? (
             <TouchableOpacity className="w-full bg-primary py-4 rounded-xl items-center mb-3" onPress={onMoveToFridge}>

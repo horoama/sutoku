@@ -36,7 +36,7 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
         <Text className="text-on-tertiary-fixed-variant text-[10px] font-bold tracking-[0.1em] uppercase font-label">{item.priority}</Text>
       </View>
     );
-  } else if (item.itemTemplate.name.toLowerCase().includes("milk") || item.itemTemplate.name.toLowerCase().includes("egg") || item.itemTemplate.name.toLowerCase().includes("yogurt")) {
+  } else if ((item.itemTemplate?.name || item.name || '').toLowerCase().includes("milk") || (item.itemTemplate?.name || item.name || '').toLowerCase().includes("egg") || (item.itemTemplate?.name || item.name || '').toLowerCase().includes("yogurt")) {
     iconName = "egg";
     categoryName = "DAIRY";
     priorityBadge = (
@@ -77,13 +77,21 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
         </View>
         <View className="flex-1">
           <View className="flex-row items-center gap-2 mb-1">
-            <Text className={`font-headline font-bold text-xl ${isChecked ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>{item.itemTemplate.name}</Text>
+            <Text className={`font-headline font-bold text-xl ${isChecked ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>{item.itemTemplate?.name || item.name || 'Unknown Item'}</Text>
             {!isChecked && priorityBadge}
           </View>
-          <View className="flex-row items-center gap-3">
-            <Text className="text-sm font-semibold text-on-surface-variant font-body">{item.note || "1 unit"}</Text>
-            <View className="w-1 h-1 rounded-full bg-outline-variant"></View>
-            <Text className="text-xs font-bold text-primary font-label tracking-widest uppercase">{categoryName}</Text>
+          <View className="flex-col gap-1">
+            {(item.itemTemplate?.defaultNote || item.itemTemplate?.isCustomized) && (
+              <View className="flex-row items-center gap-1.5">
+                <Icon name="bookmark" size={12} className="text-tertiary opacity-70" />
+                <Text className="text-xs text-tertiary font-medium">{item.itemTemplate.defaultNote || "定番設定"}</Text>
+              </View>
+            )}
+            <View className="flex-row items-center gap-2">
+              <Text className="text-sm font-semibold text-on-surface-variant font-body">{item.note || "1 unit"}</Text>
+              <View className="w-1 h-1 rounded-full bg-outline-variant"></View>
+              <Text className="text-xs font-bold text-primary font-label tracking-widest uppercase">{categoryName}</Text>
+            </View>
           </View>
         </View>
 

@@ -49,21 +49,28 @@ export default function ItemDetailsScreen() {
 
   const [freshness, setFreshness] = useState(Math.max(0, initialDaysLeft));
   const [activePriority, setActivePriority] = useState<"TODAY" | "URGENT" | "NORMAL" | "LOW">("NORMAL");
+  const [activeStorage, setActiveStorage] = useState<'FRIDGE' | 'FREEZER' | 'PANTRY'>(initialItem?.itemTemplate?.storageType || 'FRIDGE');
 
   const saveUpdates = async () => {
     if (initialItem) {
        try {
-         // 1. Update or Duplicate Item Template
-         const newTemplate = await updateItemTemplate(initialItem.itemTemplateId, {
-           name: itemName,
-           defaultDays: defaultDays
-         });
+         // 1. Update or Duplicate Item Template (if applicable)
+         let templateId = initialItem.itemTemplateId;
+         if (templateId) {
+             const newTemplate = await updateItemTemplate(templateId, {
+               name: itemName,
+               defaultDays: defaultDays,
+               storageType: activeStorage
+             });
+             templateId = newTemplate.id;
+         }
 
          // 2. Update FridgeItem with new template ID and endDate
          const newEndDate = addDays(new Date(), freshness).toISOString();
          await updateFridgeItem(initialItem.id, {
            endDate: newEndDate,
-           itemTemplateId: newTemplate.id
+           itemTemplateId: templateId,
+           note: notes.trim()
          });
 
          Alert.alert("Success", "Changes saved successfully.");
@@ -75,7 +82,11 @@ export default function ItemDetailsScreen() {
 
   const handleAddToShoppingList = async () => {
     if (initialItem) {
-      await addToShoppingList(initialItem.itemTemplateId, activePriority, notes.trim());
+      if (initialItem.itemTemplateId) {
+          await addToShoppingList(initialItem.itemTemplateId, activePriority, notes.trim());
+      } else {
+          await addToShoppingList(null, activePriority, notes.trim(), 'shopping', itemName);
+      }
       Alert.alert("Success", "Added to your shopping list!");
       navigation.navigate("MainTabs", { screen: "Shopping" });
     }
@@ -123,6 +134,34 @@ export default function ItemDetailsScreen() {
 
         {/* Details Form */}
         <View className="gap-y-8 mt-12">
+          {/* Storage Type */}
+          <View className="gap-y-3">
+             <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant ml-2">保存先</Text>
+             <View className="flex-row bg-surface-container-low rounded-lg p-1 gap-1 border border-outline-variant/30">
+               <TouchableOpacity
+                 className={`flex-1 items-center justify-center py-4 rounded-lg transition-all ${activeStorage === 'FRIDGE' ? 'bg-primary' : 'bg-transparent'}`}
+                 onPress={() => setActiveStorage('FRIDGE')}
+               >
+                 <Icon name="kitchen" size={24} className={activeStorage === 'FRIDGE' ? 'text-on-primary mb-1' : 'text-outline mb-1'} />
+                 <Text className={`font-bold text-xs ${activeStorage === 'FRIDGE' ? 'text-on-primary' : 'text-on-surface-variant'}`}>冷蔵庫</Text>
+               </TouchableOpacity>
+               <TouchableOpacity
+                 className={`flex-1 items-center justify-center py-4 rounded-lg transition-all ${activeStorage === 'FREEZER' ? 'bg-primary' : 'bg-transparent'}`}
+                 onPress={() => setActiveStorage('FREEZER')}
+               >
+                 <Icon name="ac-unit" size={24} className={activeStorage === 'FREEZER' ? 'text-on-primary mb-1' : 'text-outline mb-1'} />
+                 <Text className={`font-bold text-xs ${activeStorage === 'FREEZER' ? 'text-on-primary' : 'text-on-surface-variant'}`}>冷凍庫</Text>
+               </TouchableOpacity>
+               <TouchableOpacity
+                 className={`flex-1 items-center justify-center py-4 rounded-lg transition-all ${activeStorage === 'PANTRY' ? 'bg-primary' : 'bg-transparent'}`}
+                 onPress={() => setActiveStorage('PANTRY')}
+               >
+                 <Icon name="inventory-2" size={24} className={activeStorage === 'PANTRY' ? 'text-on-primary mb-1' : 'text-outline mb-1'} />
+                 <Text className={`font-bold text-xs ${activeStorage === 'PANTRY' ? 'text-on-primary' : 'text-on-surface-variant'}`}>パントリー</Text>
+               </TouchableOpacity>
+             </View>
+          </View>
+
           {/* Description */}
           <View className="gap-y-3">
             <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant ml-2">Notes & Origin</Text>

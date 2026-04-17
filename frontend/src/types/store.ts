@@ -47,6 +47,7 @@ export interface ItemTemplate {
   imageUrl: string;
   isSystem: boolean;
   familyId?: string;
+  storageType?: 'FRIDGE' | 'FREEZER' | 'PANTRY';
   isCustomized: boolean;
   defaultNote?: string;
   category?: {
@@ -71,11 +72,14 @@ export interface Category {
 export interface ShoppingItem {
   id: string;
   familyId: string;
-  itemTemplateId: string;
+  itemTemplateId: string | null;
+  name: string | null;
+  categoryId: string | null;
+  customDays: number | null;
   priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW';
   note: string | null;
   status: 'PENDING' | 'BOUGHT' | 'PURCHASED';
-  itemTemplate: ItemTemplate;
+  itemTemplate?: ItemTemplate;
 }
 
 /**
@@ -84,12 +88,15 @@ export interface ShoppingItem {
 export interface FridgeItem {
   id: string;
   familyId: string;
-  itemTemplateId: string;
+  itemTemplateId: string | null;
+  name: string | null;
+  categoryId: string | null;
+  note: string | null;
   status: 'ACTIVE' | 'CONSUMED';
   startedAt: string | null;
   endDate: string | null;
   defaultDays: number;
-  itemTemplate: ItemTemplate;
+  itemTemplate?: ItemTemplate;
 }
 
 /**

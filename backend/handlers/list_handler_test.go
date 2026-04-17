@@ -30,7 +30,7 @@ func TestGetLists(t *testing.T) {
 	// Shopping item (PENDING)
 	database.DB.Create(&models.ShoppingItem{
 		FamilyID:       family.ID,
-		ItemTemplateID: template.ID,
+		ItemTemplateID: &template.ID,
 		Status:         "PENDING",
 	})
 
@@ -38,7 +38,7 @@ func TestGetLists(t *testing.T) {
 	now := time.Now()
 	database.DB.Create(&models.FridgeItem{
 		FamilyID:       family.ID,
-		ItemTemplateID: template.ID,
+		ItemTemplateID: &template.ID,
 		Status:         "ACTIVE",
 		StartedAt:      &now,
 	})

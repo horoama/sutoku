@@ -39,7 +39,7 @@ export default function AddToShoppingListScreen() {
   const getRecentConsumedTemplates = () => {
     const uniqueTemplates = new Map<string, ItemTemplate>();
     consumedItems.forEach(item => {
-      if (item && item.itemTemplate && !uniqueTemplates.has(item.itemTemplateId)) {
+      if (item && item.itemTemplate && item.itemTemplateId && !uniqueTemplates.has(item.itemTemplateId)) {
         uniqueTemplates.set(item.itemTemplateId, item.itemTemplate);
       }
     });

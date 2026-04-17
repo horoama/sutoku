@@ -17,6 +17,7 @@ type ItemResponse struct {
 	ImageURL    string `json:"imageUrl"`
 	IsSystem    bool   `json:"isSystem"`
 	FamilyID    *string `json:"familyId,omitempty"`
+	StorageType string `json:"storageType"`
 	// Override specific fields
 	IsCustomized bool   `json:"isCustomized"`
 	DefaultNote  string `json:"defaultNote,omitempty"`
@@ -94,6 +95,7 @@ func GetItems(c *gin.Context) {
 			ImageURL:     item.ImageURL,
 			IsSystem:     item.IsSystem,
 			FamilyID:     item.FamilyID,
+			StorageType:  item.StorageType,
 			IsCustomized: isCustomized,
 			DefaultNote:  defaultNote,
 		}
@@ -125,6 +127,7 @@ func CreateItemTemplate(c *gin.Context) {
 		CategoryID  string `json:"categoryId"`
 		DefaultDays int    `json:"defaultDays"`
 		FamilyID    string `json:"familyId"`
+		StorageType string `json:"storageType"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -132,10 +135,15 @@ func CreateItemTemplate(c *gin.Context) {
 		return
 	}
 
+	if input.StorageType == "" {
+		input.StorageType = "FRIDGE"
+	}
+
 	template := models.ItemTemplate{
 		Name:        input.Name,
 		CategoryID:  input.CategoryID,
 		DefaultDays: input.DefaultDays,
+		StorageType: input.StorageType,
 		IsSystem:    false,
 		FamilyID:    &input.FamilyID,
 	}
@@ -157,6 +165,7 @@ func UpdateItemTemplate(c *gin.Context) {
 		Name        string `json:"name"`
 		DefaultDays int    `json:"defaultDays"`
 		FamilyID    string `json:"familyId"`
+		StorageType string `json:"storageType"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -205,6 +214,7 @@ func UpdateItemTemplate(c *gin.Context) {
 			ImageURL:     template.ImageURL,
 			IsSystem:     template.IsSystem,
 			FamilyID:     template.FamilyID,
+			StorageType:  template.StorageType,
 			IsCustomized: true,
 			DefaultNote:  override.DefaultNote,
 		}
@@ -214,10 +224,15 @@ func UpdateItemTemplate(c *gin.Context) {
 	}
 
 	// Update existing custom template
-	if err := database.DB.Model(&template).Updates(models.ItemTemplate{
-		Name:        input.Name,
-		DefaultDays: input.DefaultDays,
-	}).Error; err != nil {
+	updates := map[string]interface{}{
+		"name":         input.Name,
+		"default_days": input.DefaultDays,
+	}
+	if input.StorageType != "" {
+		updates["storage_type"] = input.StorageType
+	}
+
+	if err := database.DB.Model(&template).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item template"})
 		return
 	}

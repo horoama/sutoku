@@ -12,8 +12,12 @@ type FridgeItem struct {
 	Base
 	FamilyID       string       `gorm:"type:uuid" json:"familyId"`       // 所有する家族のID
 	Family         Family       `json:"family,omitempty"`                // 所有する家族データ
-	ItemTemplateID string       `gorm:"type:uuid" json:"itemTemplateId"` // 元となるアイテムテンプレートのID
+	ItemTemplateID *string       `gorm:"type:uuid" json:"itemTemplateId"` // 元となるアイテムテンプレートのID
 	ItemTemplate   ItemTemplate `json:"itemTemplate,omitempty"`          // 元となるアイテムテンプレートデータ
+
+	Name        *string    `json:"name"`                           // 今回限りのアイテム名
+	CategoryID  *string    `gorm:"type:uuid" json:"categoryId"`    // 今回限りのカテゴリID
+	Note        *string    `json:"note"`                           // メモ書き（ShoppingItemから引き継ぎ）
 
 	Status      string     `gorm:"default:'ACTIVE'" json:"status"` // ステータス ("ACTIVE", "CONSUMED")
 	StartedAt   *time.Time `json:"startedAt"`                      // 保管開始日時
@@ -27,7 +31,7 @@ func (f *FridgeItem) BeforeCreate(tx *gorm.DB) error {
 	if f.ID == "" {
 		f.ID = uuid.New().String()
 	}
-	if f.DefaultDays == 0 && f.ItemTemplateID != "" {
+	if f.DefaultDays == 0 && f.ItemTemplateID != nil {
 		var template ItemTemplate
 		if err := tx.First(&template, "id = ?", f.ItemTemplateID).Error; err == nil {
 			f.DefaultDays = template.DefaultDays
@@ -41,8 +45,12 @@ type ShoppingItem struct {
 	Base
 	FamilyID       string       `gorm:"type:uuid" json:"familyId"`       // 所有する家族のID
 	Family         Family       `json:"family,omitempty"`                // 所有する家族データ
-	ItemTemplateID string       `gorm:"type:uuid" json:"itemTemplateId"` // 元となるアイテムテンプレートのID
+	ItemTemplateID *string       `gorm:"type:uuid" json:"itemTemplateId"` // 元となるアイテムテンプレートのID
 	ItemTemplate   ItemTemplate `json:"itemTemplate,omitempty"`          // 元となるアイテムテンプレートデータ
+
+	Name       *string    `json:"name"`                             // 今回限りのアイテム名
+	CategoryID *string    `gorm:"type:uuid" json:"categoryId"`      // 今回限りのカテゴリID
+	CustomDays *int       `json:"customDays"`                       // 今回指定された消費日数
 
 	Priority string     `gorm:"default:'NORMAL'" json:"priority"` // 優先度 ("TODAY", "URGENT", "NORMAL", "LOW")
 	Status   string     `gorm:"default:'PENDING'" json:"status"`  // ステータス ("PENDING", "BOUGHT", "PURCHASED")
