@@ -25,7 +25,7 @@ func TestGetItems(t *testing.T) {
 
 	itemTemplate := models.ItemTemplate{
 		CategoryID:  cat.ID,
-		Name:        "Milk",
+		Name:        "milk",
 		DefaultDays: 7,
 	}
 	database.DB.Create(&itemTemplate)
@@ -42,7 +42,7 @@ func TestGetItems(t *testing.T) {
 		t.Fatalf("Expected status code %d, but got %d", http.StatusOK, w.Code)
 	}
 
-	var categories []handlers.CategoryResponse
+	var categories []models.Category
 	if err := json.Unmarshal(w.Body.Bytes(), &categories); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
@@ -59,7 +59,7 @@ func TestGetItems(t *testing.T) {
 		t.Fatalf("Expected 1 item template in category, got %d", len(categories[0].Items))
 	}
 
-	if categories[0].Items[0].Name != "Milk" {
+	if categories[0].Items[0].Name != "milk" {
 		t.Errorf("Expected item 'Milk', got '%s'", categories[0].Items[0].Name)
 	}
 }

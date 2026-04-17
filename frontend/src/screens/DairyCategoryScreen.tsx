@@ -21,7 +21,7 @@ export default function DairyCategoryScreen() {
 
   const filters = ["All Dairy", "Milk & Cream", "Cheeses", "Yogurts", "Eggs"];
 
-  const dairyCategory = categories.find(c => c.name.includes("乳") || c.name.toLowerCase().includes("dairy"));
+  const dairyCategory = categories.find(c => c.name.toLowerCase().includes("dairy"));
   const items = dairyCategory?.items || [];
 
   const handleAddItem = async (templateId: string, itemName: string) => {

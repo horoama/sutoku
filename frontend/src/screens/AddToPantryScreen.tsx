@@ -47,7 +47,7 @@ export default function AddToPantryScreen() {
   let quickStockItems: any[] = [];
   if (categories.length > 0) {
     const allItems = categories.flatMap(c => c.items || []);
-    quickStockItems = allItems.filter(i => i && i.name && i.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 4);
+    quickStockItems = allItems.filter(i => i && i.name && (i.name.toLowerCase().includes(searchQuery.toLowerCase()) || tItem(i).toLowerCase().includes(searchQuery.toLowerCase()))).slice(0, 4);
   }
 
   return (

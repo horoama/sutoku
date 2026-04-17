@@ -35,7 +35,7 @@ export default function AddToShoppingListScreen() {
 
   const activeCategoryData = categories.find(c => c.id === activeCategoryId);
   const allItemsToDisplay = activeCategoryData?.items || [];
-  const itemsToDisplay = allItemsToDisplay.filter(i => i && i.name && i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const itemsToDisplay = allItemsToDisplay.filter(i => i && i.name && (i.name.toLowerCase().includes(searchQuery.toLowerCase()) || tItem(i).toLowerCase().includes(searchQuery.toLowerCase())));
 
   // Get recently consumed items, removing duplicates based on itemTemplateId
   const getRecentConsumedTemplates = () => {
@@ -50,7 +50,7 @@ export default function AddToShoppingListScreen() {
 
   // Generate suggestions based on recently consumed items, filtered by search query, taking top 3
   const consumedTemplates = getRecentConsumedTemplates();
-  const suggestions = consumedTemplates.filter(i => i && i.name && i.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 3);
+  const suggestions = consumedTemplates.filter(i => i && i.name && (i.name.toLowerCase().includes(searchQuery.toLowerCase()) || tItem(i).toLowerCase().includes(searchQuery.toLowerCase()))).slice(0, 3);
 
   return (
     <View className="flex-1 bg-surface font-body text-on-surface" style={{ paddingTop: insets.top }}>

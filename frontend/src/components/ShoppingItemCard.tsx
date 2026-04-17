@@ -38,7 +38,7 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
         <Text className="text-on-tertiary-fixed-variant text-[10px] font-bold tracking-[0.1em] uppercase font-label">{item.priority}</Text>
       </View>
     );
-  } else if (item.itemTemplate.name.toLowerCase().includes("milk") || item.itemTemplate.name.toLowerCase().includes("egg") || item.itemTemplate.name.toLowerCase().includes("yogurt")) {
+  } else if (item.itemTemplate.name.toLowerCase().includes("milk") || item.itemTemplate.name.toLowerCase().includes("dairy") || item.itemTemplate.name.toLowerCase().includes("egg") || item.itemTemplate.name.toLowerCase().includes("yogurt")) {
     iconName = "egg";
     categoryName = "DAIRY";
     priorityBadge = (

@@ -20,9 +20,9 @@ export default function PantrySearchScreen() {
     fetchCategories();
   }, []);
 
-  const produceCategory = categories.find(c => c.name.includes("野") || c.name.toLowerCase().includes("produce"));
+  const produceCategory = categories.find(c => c.name.toLowerCase().includes("produce"));
   const allItems = produceCategory?.items || [];
-  const items = allItems.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const items = allItems.filter(i => (i.name.toLowerCase().includes(searchQuery.toLowerCase()) || tItem(i).toLowerCase().includes(searchQuery.toLowerCase())));
 
   const handleAddItem = async (templateId: string, itemName: string) => {
     await addToFridge(templateId, undefined, 'fridge');

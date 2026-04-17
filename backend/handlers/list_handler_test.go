@@ -78,7 +78,7 @@ func TestAddListItem_Shopping(t *testing.T) {
 	database.DB.Create(&family)
 	user := models.User{Name: "User 1", FamilyID: &family.ID}
 	database.DB.Create(&user)
-	template := models.ItemTemplate{Name: "Milk"}
+	template := models.ItemTemplate{Name: "milk"}
 	database.DB.Create(&template)
 
 	router := gin.New()

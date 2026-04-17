@@ -1,8 +1,5 @@
 // store間で共通利用される型定義
 
-/**
- * ユーザーの型定義
- */
 export interface User {
   id: string;
   name: string;
@@ -12,18 +9,12 @@ export interface User {
   avatarUrl: string;
 }
 
-/**
- * 家族（グループ）の型定義
- */
 export interface Family {
   id: string;
   name: string;
   inviteCode: string;
 }
 
-/**
- * アクティビティログの型定義
- */
 export interface ActivityLog {
   id: string;
   userId: string;
@@ -35,39 +26,25 @@ export interface ActivityLog {
   user?: User;
 }
 
-/**
- * アイテムテンプレートの型定義。
- * バックエンドからのオーバーライド適用後のレスポンスに合わせたプロパティを含みます。
- */
 export interface ItemTemplate {
   id: string;
   name: string;
   categoryId: string;
   defaultDays: number;
   imageUrl: string;
-  isSystem: boolean;
-  familyId?: string;
-  isCustomized: boolean;
-  defaultNote?: string;
+  isSystem?: boolean;
   category?: {
     id: string;
     name: string;
   };
 }
 
-/**
- * カテゴリーの型定義。
- * アイテム一覧を含みます。
- */
 export interface Category {
   id: string;
   name: string;
   items: ItemTemplate[];
 }
 
-/**
- * 買い物リストのアイテムの型定義
- */
 export interface ShoppingItem {
   id: string;
   familyId: string;
@@ -78,9 +55,6 @@ export interface ShoppingItem {
   itemTemplate: ItemTemplate;
 }
 
-/**
- * 冷蔵庫・パントリーのアイテムの型定義
- */
 export interface FridgeItem {
   id: string;
   familyId: string;
@@ -92,9 +66,6 @@ export interface FridgeItem {
   itemTemplate: ItemTemplate;
 }
 
-/**
- * チャットメッセージの型定義
- */
 export interface ChatMessage {
   id: string;
   userId: string;
