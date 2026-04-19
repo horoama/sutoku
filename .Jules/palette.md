@@ -1,0 +1,3 @@
+## 2024-04-19 - Icon-Only Button Accessibility in React Native
+**Learning:** In React Native apps using Expo, icon-only interactive elements (like a `TouchableOpacity` containing only a vector `<Icon />`) are entirely opaque to screen readers by default. This causes severe accessibility issues as users relying on screen readers have no context for what the button does.
+**Action:** Always add explicit accessibility properties to icon-only touchable elements. Specifically, add `accessibilityRole="button"`, a descriptive `accessibilityLabel` explaining the action (e.g., "Mark as bought"), and optionally an `accessibilityHint` for more context. This applies universally across the application's components.
