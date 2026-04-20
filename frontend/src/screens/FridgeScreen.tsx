@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { View, Text, FlatList, TouchableOpacity, ScrollView, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFridgeStore, FridgeItem } from "../store/fridgeStore";
@@ -37,17 +37,46 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
 
   const expiringItems = activeItems.filter(item => getDaysLeft(item) <= 3).sort((a, b) => getDaysLeft(a) - getDaysLeft(b));
 
+  // Group items by itemTemplateId (or name for custom items)
+  const groupedItems = useMemo(() => {
+    const map = new Map<string, FridgeItem[]>();
+    activeItems.forEach(item => {
+      const key = item.itemTemplateId || item.name || `custom_${item.id}`;
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(item);
+    });
+    return Array.from(map.values()).map(group => {
+      // Sort group so item with shortest days left is first
+      group.sort((a, b) => getDaysLeft(a) - getDaysLeft(b));
+      return group;
+    });
+  }, [activeItems]);
+
   // Default Days criteria for fridge vs pantry:
-  // Usually short lifespan goes to fridge, longer to pantry.
-  // Or check category name if populated, but fallback to all active items
-  const fridgeSection = activeItems.filter(item => {
-    // NOTE: TypeScript error fix. Casting itemTemplate to any to access nested category for now.
-    const catName = (item.itemTemplate as any).category?.name?.toLowerCase() || "";
+  const fridgeGrouped = groupedItems.filter(group => {
+    const representative = group[0];
+    const storageType = representative.itemTemplate?.storageType;
+    if (storageType) return storageType === 'FRIDGE';
+
+    const catName = (representative.itemTemplate as any)?.category?.name?.toLowerCase() || "";
     if (catName.includes("dairy") || catName.includes("meat") || catName.includes("produce")) return true;
-    return item.defaultDays < 30; // Shorter lived items typically go to fridge
+    return representative.defaultDays < 30;
   });
 
-  const pantrySection = activeItems.filter(item => !fridgeSection.includes(item));
+  const freezerGrouped = groupedItems.filter(group => {
+    return group[0].itemTemplate?.storageType === 'FREEZER';
+  });
+
+  const pantryGrouped = groupedItems.filter(group => {
+    const representative = group[0];
+    if (representative.itemTemplate?.storageType) {
+      return representative.itemTemplate.storageType === 'PANTRY';
+    }
+    // Fallback if no storage type
+    return !fridgeGrouped.includes(group) && !freezerGrouped.includes(group);
+  });
 
   const renderUrgentItem = (item: FridgeItem, index: number) => {
     const daysLeft = getDaysLeft(item);
@@ -121,17 +150,32 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     }
   };
 
-  const renderFridgeItem = (item: FridgeItem) => {
+  const handleGroupPress = (group: FridgeItem[]) => {
+    if (group.length === 1) {
+      navigation.navigate("ItemDetails", { itemId: group[0].id });
+    } else {
+      const groupName = group[0].itemTemplate?.name || group[0].name || 'Unknown Item';
+      navigation.navigate("ItemSelection", { items: group, groupName });
+    }
+  };
+
+  const renderFridgeItem = (group: FridgeItem[]) => {
+    const item = group[0];
     const daysLeft = getDaysLeft(item);
     return (
       <TouchableOpacity
         key={item.id}
         className="bg-surface-container-low p-4 rounded-lg flex-row items-center justify-between group mb-3"
-        onPress={() => navigation.navigate("ItemDetails", { itemId: item.id })}
+        onPress={() => handleGroupPress(group)}
       >
         <View className="flex-row items-center gap-4 flex-1">
-          <View className="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary shrink-0">
+          <View className="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary shrink-0 relative">
             <Icon name="kitchen" size={24} className="text-primary" />
+            {group.length > 1 && (
+              <View className="absolute -top-1 -right-1 bg-tertiary rounded-full w-5 h-5 items-center justify-center border-2 border-surface-container-low">
+                 <Text className="text-on-tertiary text-[9px] font-bold">{group.length}</Text>
+              </View>
+            )}
           </View>
           <View className="flex-1 pr-2">
             <Text className="font-headline font-semibold text-on-surface text-base" numberOfLines={1}>{item.itemTemplate?.name || item.name || 'Unknown Item'}</Text>
@@ -156,13 +200,19 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     );
   };
 
-  const renderPantryCard = (item: FridgeItem) => {
+  const renderPantryCard = (group: FridgeItem[]) => {
+    const item = group[0];
     return (
       <TouchableOpacity
         key={item.id}
-        className="w-40 bg-surface-container-lowest p-5 rounded-lg shadow-sm mr-4"
-        onPress={() => navigation.navigate("ItemDetails", { itemId: item.id })}
+        className="w-40 bg-surface-container-lowest p-5 rounded-lg shadow-sm mr-4 relative"
+        onPress={() => handleGroupPress(group)}
       >
+        {group.length > 1 && (
+          <View className="absolute top-3 right-3 bg-tertiary rounded-full w-6 h-6 items-center justify-center z-10 border-2 border-surface-container-lowest">
+             <Text className="text-on-tertiary text-[10px] font-bold">{group.length}</Text>
+          </View>
+        )}
         <View className="w-full aspect-square bg-surface-container-low rounded-2xl overflow-hidden mb-4 items-center justify-center">
           <Icon name="inventory-2" size={48} className="text-secondary" />
         </View>
@@ -176,7 +226,10 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           </View>
           <TouchableOpacity
             className="bg-secondary px-3 py-2 rounded-full active:scale-95 transition-transform w-full items-center justify-center"
-            onPress={() => handleConsumePantryItem(item)}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleConsumePantryItem(item);
+            }}
           >
             <Text className="text-on-secondary text-[10px] font-bold uppercase tracking-widest">Consume</Text>
           </TouchableOpacity>
@@ -228,11 +281,11 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           <View className="mt-10">
             <View className="flex-row justify-between items-end mb-6">
               <Text className="font-headline text-3xl font-bold tracking-tight text-primary">The Fridge</Text>
-              <Text className="text-sm font-bold text-outline uppercase tracking-tighter">{fridgeSection.length} Items</Text>
+              <Text className="text-sm font-bold text-outline uppercase tracking-tighter">{fridgeGrouped.length} Items</Text>
             </View>
             <View>
-              {fridgeSection.length > 0 ? (
-                fridgeSection.map(renderFridgeItem)
+              {fridgeGrouped.length > 0 ? (
+                fridgeGrouped.map(renderFridgeItem)
               ) : (
                 <Text className="text-on-surface-variant font-body">冷蔵庫は空です</Text>
               )}
@@ -248,12 +301,26 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
                 <Icon name="chevron-right" size={16} className="text-primary" />
               </TouchableOpacity>
             </View>
-            {pantrySection.length > 0 ? (
+            {pantryGrouped.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6 pb-4">
-                {pantrySection.map(renderPantryCard)}
+                {pantryGrouped.map(renderPantryCard)}
               </ScrollView>
             ) : (
-                <Text className="text-on-surface-variant font-body">食糧庫は空です</Text>
+                <Text className="text-on-surface-variant font-body">パントリーは空です</Text>
+            )}
+          </View>
+
+          {/* The Freezer Horizontal */}
+          <View className="mt-6 mb-6">
+            <View className="flex-row justify-between items-end mb-6">
+              <Text className="font-headline text-3xl font-bold tracking-tight text-secondary">The Freezer</Text>
+            </View>
+            {freezerGrouped.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6 pb-4">
+                {freezerGrouped.map(renderPantryCard)}
+              </ScrollView>
+            ) : (
+                <Text className="text-on-surface-variant font-body">冷凍庫は空です</Text>
             )}
           </View>
 

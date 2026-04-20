@@ -4,6 +4,7 @@ import BottomTabNavigator from "./BottomTabNavigator";
 
 import ItemDetailsScreen from "../screens/ItemDetailsScreen";
 import RegisterItemScreen from "../screens/RegisterItemScreen";
+import ItemSelectionScreen from "../screens/ItemSelectionScreen";
 import RegistrationSuccessScreen from "../screens/RegistrationSuccessScreen";
 import DairyCategoryScreen from "../screens/DairyCategoryScreen";
 import AddToShoppingListScreen from "../screens/AddToShoppingListScreen";
@@ -22,6 +23,7 @@ export default function AppNavigator() {
 
       {/* Detail & Transactional Screens */}
       <Stack.Screen name="ItemDetails" component={ItemDetailsScreen} />
+      <Stack.Screen name="ItemSelection" component={ItemSelectionScreen} />
       <Stack.Screen name="RegisterItem" component={RegisterItemScreen} />
       <Stack.Screen name="RegistrationSuccess" component={RegistrationSuccessScreen} />
       <Stack.Screen name="DairyCategory" component={DairyCategoryScreen} />
