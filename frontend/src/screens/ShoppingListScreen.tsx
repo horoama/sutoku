@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, Alert, ScrollView, Image } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppStore } from "../store/appStore";
 import { useShoppingStore, ItemTemplate, ShoppingItem } from "../store/shoppingStore";
+import { useFridgeStore } from "../store/fridgeStore";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
@@ -19,6 +20,7 @@ export default function ShoppingListScreen() {
   const navigation = useNavigation<any>();
   const { user, family, initializeUser } = useAppStore();
   const { categories, shoppingList, fetchCategories, fetchShoppingList, purchaseItem, toggleBoughtStatus, updateItemPriority, deleteItem } = useShoppingStore();
+  const { fridgeItems, fetchFridgeItems } = useFridgeStore();
 
   const [selectedItem, setSelectedItem] = useState<ShoppingItem | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -34,6 +36,7 @@ export default function ShoppingListScreen() {
     if (family?.id) {
       fetchCategories();
       fetchShoppingList();
+      fetchFridgeItems();
     }
   }, [family?.id]);
 
@@ -68,14 +71,38 @@ export default function ShoppingListScreen() {
    */
   const handleMoveToFridge = async () => {
     if (selectedItem) {
-      if (!selectedItem.itemTemplate?.defaultDays || selectedItem.itemTemplate?.defaultDays === 0) {
+      const activeItems = fridgeItems.filter(i => i.status === "ACTIVE");
+      const isAlreadyInFridge = activeItems.some(i => 
+        (i.itemTemplateId && i.itemTemplateId === selectedItem.itemTemplateId) || 
+        (!i.itemTemplateId && !selectedItem.itemTemplateId && i.name && i.name === selectedItem.name)
+      );
+
+      const proceedWithMove = async () => {
+        if (!selectedItem.itemTemplate?.defaultDays || selectedItem.itemTemplate?.defaultDays === 0) {
+          setModalVisible(false);
+          setDateModalVisible(true);
+        } else {
+          await purchaseItem(selectedItem.id);
+          setModalVisible(false);
+          setSelectedItem(null);
+          Alert.alert("完了", "冷蔵庫に追加しました！");
+        }
+      };
+
+      if (isAlreadyInFridge) {
         setModalVisible(false);
-        setDateModalVisible(true);
+        setTimeout(() => {
+          Alert.alert(
+            "確認",
+            `${selectedItem.itemTemplate?.name || selectedItem.name || 'アイテム'}はすでに冷蔵庫に入っています。\n追加して個数を増やしますか？`,
+            [
+              { text: "キャンセル", style: "cancel", onPress: () => setSelectedItem(null) },
+              { text: "追加する", onPress: proceedWithMove }
+            ]
+          );
+        }, 100);
       } else {
-        await purchaseItem(selectedItem.id);
-        setModalVisible(false);
-        setSelectedItem(null);
-        Alert.alert("完了", "冷蔵庫に追加しました！");
+        proceedWithMove();
       }
     }
   };
@@ -122,14 +149,37 @@ export default function ShoppingListScreen() {
     const checkedItems = shoppingList.filter(item => item.status === "BOUGHT");
     if (checkedItems.length === 0) return;
     
-    // Concurrently process all purchases
-    try {
-      // Create a loading state or just execute
-      await Promise.all(checkedItems.map(item => purchaseItem(item.id)));
-      Alert.alert("完了", `${checkedItems.length}件のアイテムをTHE PANTRYに追加しました！`);
-    } catch (e) {
-      console.error(e);
-      Alert.alert("エラー", "一部のアイテムの移動に失敗しました。");
+    const activeItems = fridgeItems.filter(i => i.status === "ACTIVE");
+    const alreadyInFridgeItems = checkedItems.filter(item => 
+      activeItems.some(i => 
+        (i.itemTemplateId && i.itemTemplateId === item.itemTemplateId) || 
+        (!i.itemTemplateId && !item.itemTemplateId && i.name && i.name === item.name)
+      )
+    );
+
+    const proceedWithMoveAll = async () => {
+      // Concurrently process all purchases
+      try {
+        await Promise.all(checkedItems.map(item => purchaseItem(item.id)));
+        Alert.alert("完了", `${checkedItems.length}件のアイテムをTHE PANTRYに追加しました！`);
+      } catch (e) {
+        console.error(e);
+        Alert.alert("エラー", "一部のアイテムの移動に失敗しました。");
+      }
+    };
+
+    if (alreadyInFridgeItems.length > 0) {
+      const itemNames = alreadyInFridgeItems.map(i => i.itemTemplate?.name || i.name || 'アイテム').join('、');
+      Alert.alert(
+        "確認",
+        `以下のアイテムはすでに冷蔵庫に入っています：\n${itemNames}\n\n追加して個数を増やしますか？`,
+        [
+          { text: "キャンセル", style: "cancel" },
+          { text: "追加する", onPress: proceedWithMoveAll }
+        ]
+      );
+    } else {
+      proceedWithMoveAll();
     }
   };
 

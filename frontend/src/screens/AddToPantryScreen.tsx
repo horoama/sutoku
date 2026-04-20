@@ -16,18 +16,36 @@ export default function AddToPantryScreen() {
   const [customDays, setCustomDays] = useState("7");
   const [selectedItemToAdd, setSelectedItemToAdd] = useState<any>(null);
 
-  const { addToFridge } = useFridgeStore();
+  const { addToFridge, fridgeItems } = useFridgeStore();
   const { categories } = useShoppingStore();
 
   const handleQuickStock = async (item: any) => {
     if (!item.id) return;
 
-    if (!item.defaultDays || item.defaultDays === 0) {
-      setSelectedItemToAdd(item);
-      setDateModalVisible(true);
+    const activeItems = fridgeItems.filter(i => i.status === "ACTIVE");
+    const isAlreadyInFridge = activeItems.some(i => i.itemTemplateId === item.id || (!i.itemTemplateId && i.name && i.name === item.name));
+
+    const proceedWithAdd = async () => {
+      if (!item.defaultDays || item.defaultDays === 0) {
+        setSelectedItemToAdd(item);
+        setDateModalVisible(true);
+      } else {
+        await addToFridge(item.id, undefined, 'fridge');
+        Alert.alert("完了", "冷蔵庫に追加しました！");
+      }
+    };
+
+    if (isAlreadyInFridge) {
+      Alert.alert(
+        "確認",
+        `${item.name || 'アイテム'}はすでに冷蔵庫に入っています。\n追加して個数を増やしますか？`,
+        [
+          { text: "キャンセル", style: "cancel" },
+          { text: "追加する", onPress: proceedWithAdd }
+        ]
+      );
     } else {
-      await addToFridge(item.id, undefined, 'fridge');
-      Alert.alert("完了", "冷蔵庫に追加しました！");
+      proceedWithAdd();
     }
   };
 

@@ -68,8 +68,8 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
           elevation: 2,
         }}
       >
-        <TouchableOpacity onPress={() => onToggleCheck(item)} className="mr-1">
-          <Icon name={isChecked ? "check-circle" : "radio-button-unchecked"} size={32} className={isChecked ? "text-primary" : "text-outline-variant"} />
+        <TouchableOpacity onPress={() => onToggleCheck(item)} className="mr-2 p-1">
+          <Icon name={isChecked ? "check-circle" : "radio-button-unchecked"} size={48} className={isChecked ? "text-primary" : "text-outline-variant"} />
         </TouchableOpacity>
 
         <View className={`w-14 h-14 rounded-full flex items-center justify-center ${iconBgClass} ${isChecked ? 'opacity-50' : ''}`}>

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // GetLists は買い物リスト、冷蔵庫、消費済みアイテムをグループ化して取得します。
@@ -97,56 +96,30 @@ func AddListItem(c *gin.Context) {
 		now := time.Now()
 		var item models.FridgeItem
 
-		var err error
-		if input.ItemTemplateID != nil {
-			err = database.DB.Where("family_id = ? AND item_template_id = ? AND status = ?", input.FamilyID, *input.ItemTemplateID, "ACTIVE").First(&item).Error
-		} else {
-			// For custom items, assume we don't merge them in the fridge automatically unless by ID, so just force err to not be nil
-			err = gorm.ErrRecordNotFound
+		// Always create new item
+		item = models.FridgeItem{
+			FamilyID:       input.FamilyID,
+			ItemTemplateID: input.ItemTemplateID,
+			Name:           input.Name,
+			CategoryID:     input.CategoryID,
+			Note:           input.Note,
+			Status:         "ACTIVE",
+			StartedAt:      &now,
+			DefaultDays:    defaultDays,
+		}
+		if input.EndDate != nil {
+			item.EndDate = input.EndDate
+		} else if input.CustomDays != nil {
+			ed := now.AddDate(0, 0, *input.CustomDays)
+			item.EndDate = &ed
+		} else if defaultDays > 0 {
+			ed := now.AddDate(0, 0, defaultDays)
+			item.EndDate = &ed
 		}
 
-		if err == nil {
-			// Update existing item
-			item.StartedAt = &now
-			if input.EndDate != nil {
-				item.EndDate = input.EndDate
-			} else if input.CustomDays != nil {
-				ed := now.AddDate(0, 0, *input.CustomDays)
-				item.EndDate = &ed
-			}
-			if input.Note != nil {
-				item.Note = input.Note
-			}
-			if err := database.DB.Save(&item).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update existing fridge item"})
-				return
-			}
-		} else {
-			// Create new item
-			item = models.FridgeItem{
-				FamilyID:       input.FamilyID,
-				ItemTemplateID: input.ItemTemplateID,
-				Name:           input.Name,
-				CategoryID:     input.CategoryID,
-				Note:           input.Note,
-				Status:         "ACTIVE",
-				StartedAt:      &now,
-				DefaultDays:    defaultDays,
-			}
-			if input.EndDate != nil {
-				item.EndDate = input.EndDate
-			} else if input.CustomDays != nil {
-				ed := now.AddDate(0, 0, *input.CustomDays)
-				item.EndDate = &ed
-			} else if defaultDays > 0 {
-				ed := now.AddDate(0, 0, defaultDays)
-				item.EndDate = &ed
-			}
-
-			if err := database.DB.Create(&item).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add fridge item"})
-				return
-			}
+		if err := database.DB.Create(&item).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add fridge item"})
+			return
 		}
 
 		database.DB.Preload("ItemTemplate").First(&item, "id = ?", item.ID)
@@ -237,50 +210,27 @@ func UpdateListItem(c *gin.Context) {
 				actionLogged = "bought"
 
 				// Create a FridgeItem when sent to fridge ("PURCHASED" or similar explicit state)
-				var existingFridgeItem models.FridgeItem
-				var err error
-				if shoppingItem.ItemTemplateID != nil {
-					err = database.DB.Where("family_id = ? AND item_template_id = ? AND status = ?", shoppingItem.FamilyID, *shoppingItem.ItemTemplateID, "ACTIVE").First(&existingFridgeItem).Error
-				} else {
-					err = gorm.ErrRecordNotFound
+				// Always create a new item
+				fridgeItem := models.FridgeItem{
+					FamilyID:       shoppingItem.FamilyID,
+					ItemTemplateID: shoppingItem.ItemTemplateID,
+					Name:           shoppingItem.Name,
+					CategoryID:     shoppingItem.CategoryID,
+					Note:           shoppingItem.Note,
+					Status:         "ACTIVE",
+					StartedAt:      &now,
+					DefaultDays:    shoppingItem.ItemTemplate.DefaultDays,
 				}
-
-				if err == nil {
-					// Update existing item
-					existingFridgeItem.StartedAt = &now
-					if input.EndDate != nil {
-						existingFridgeItem.EndDate = input.EndDate
-					} else if shoppingItem.CustomDays != nil {
-						ed := now.AddDate(0, 0, *shoppingItem.CustomDays)
-						existingFridgeItem.EndDate = &ed
-					}
-					if shoppingItem.Note != nil {
-						existingFridgeItem.Note = shoppingItem.Note
-					}
-					database.DB.Save(&existingFridgeItem)
-				} else {
-					// Create new item
-					fridgeItem := models.FridgeItem{
-						FamilyID:       shoppingItem.FamilyID,
-						ItemTemplateID: shoppingItem.ItemTemplateID,
-						Name:           shoppingItem.Name,
-						CategoryID:     shoppingItem.CategoryID,
-						Note:           shoppingItem.Note,
-						Status:         "ACTIVE",
-						StartedAt:      &now,
-						DefaultDays:    shoppingItem.ItemTemplate.DefaultDays,
-					}
-					if input.EndDate != nil {
-						fridgeItem.EndDate = input.EndDate
-					} else if shoppingItem.CustomDays != nil {
-						ed := now.AddDate(0, 0, *shoppingItem.CustomDays)
-						fridgeItem.EndDate = &ed
-					} else if fridgeItem.DefaultDays > 0 {
-						ed := now.AddDate(0, 0, fridgeItem.DefaultDays)
-						fridgeItem.EndDate = &ed
-					}
-					database.DB.Create(&fridgeItem)
+				if input.EndDate != nil {
+					fridgeItem.EndDate = input.EndDate
+				} else if shoppingItem.CustomDays != nil {
+					ed := now.AddDate(0, 0, *shoppingItem.CustomDays)
+					fridgeItem.EndDate = &ed
+				} else if fridgeItem.DefaultDays > 0 {
+					ed := now.AddDate(0, 0, fridgeItem.DefaultDays)
+					fridgeItem.EndDate = &ed
 				}
+				database.DB.Create(&fridgeItem)
 			}
 		}
 
