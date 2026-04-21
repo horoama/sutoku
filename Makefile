@@ -1,4 +1,4 @@
-.PHONY: help up down build push release restart logs shell-frontend shell-backend sync-deps
+.PHONY: help up down build push release restart logs shell-frontend shell-backend sync-deps clean
 
 # ビルド用自動生成バージョン (例: 20260414-1234)
 VERSION := $(shell date +%Y%m%d-%H%M)
@@ -19,6 +19,7 @@ help:
 	@echo "  make shell-backend  - バックエンドコンテナのシェルに入ります"
 	@echo "  make sync-deps      - フロントエンドの node_modules をコンテナから抽出しローカルに同期します（IDEエラー対策）"
 	@echo "  make npm-install    - ローカル環境(frontend)のパッケージを更新・インストールします (例: make npm-install pkg=axios)"
+	@echo "  make clean          - 全コンテナとボリュームを削除し、ローカルのDBファイル等のキャッシュも消去します"
 
 up:
 	docker-compose up -d
@@ -80,4 +81,13 @@ sync-deps:
 npm-install:
 	@echo "ローカルの frontend/ にて npm install $(pkg) を実行します..."
 	docker run --rm -v "$$(pwd)/frontend:/app" -w /app -u "$$(id -u):$$(id -g)" node:20-alpine npm install $(pkg)
+
+clean:
+	@echo "コンテナ群とボリュームを削除しています..."
+	docker-compose down -v --remove-orphans
+	@echo "ローカルのデータベースファイルを削除しています..."
+	rm -f backend/data/dev.db
+	@echo "ローカルのフロントエンドキャッシュを削除しています..."
+	rm -rf frontend/.expo
+	@echo "==== クリーンアップ完了 ===="
 
