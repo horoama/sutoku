@@ -39,8 +39,6 @@ services:
       - REACT_NATIVE_PACKAGER_HOSTNAME=${REACT_NATIVE_PACKAGER_HOSTNAME:-192.168.11.116}
       - EXPO_DEBUG=true
       - CI=1
-    volumes:
-      - ./frontend/src:/app/src
     command: npx expo start --lan
     stdin_open: true
     tty: true
