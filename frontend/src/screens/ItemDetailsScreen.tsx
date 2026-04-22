@@ -49,6 +49,7 @@ export default function ItemDetailsScreen() {
 
   const [freshness, setFreshness] = useState(Math.max(0, initialDaysLeft));
   const [activePriority, setActivePriority] = useState<"TODAY" | "URGENT" | "NORMAL" | "LOW">("NORMAL");
+  const [storageType, setStorageType] = useState<'FRIDGE' | 'PANTRY'>(initialItem?.itemTemplate?.storageType || 'FRIDGE');
 
   const saveUpdates = async () => {
     if (initialItem) {
@@ -56,7 +57,8 @@ export default function ItemDetailsScreen() {
          // 1. Update or Duplicate Item Template
          const newTemplate = await updateItemTemplate(initialItem.itemTemplateId, {
            name: itemName,
-           defaultDays: defaultDays
+           defaultDays: defaultDays,
+           storageType: storageType
          });
 
          // 2. Update FridgeItem with new template ID and endDate
@@ -200,6 +202,27 @@ export default function ItemDetailsScreen() {
                   <Icon name="add" size={18} className="text-secondary" />
                 </TouchableOpacity>
               </View>
+            </View>
+          </View>
+
+          {/* Storage Type Selector */}
+          <View className="gap-y-3">
+            <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant ml-2">Storage Location</Text>
+            <View className="flex-row justify-between gap-3">
+              <TouchableOpacity
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors flex-row gap-2 ${storageType === 'FRIDGE' ? 'bg-primary-fixed/30 border-2 border-primary-fixed-dim/50' : 'bg-surface-container-low border-2 border-transparent'}`}
+                onPress={() => setStorageType('FRIDGE')}
+              >
+                <Icon name="kitchen" size={20} className={storageType === 'FRIDGE' ? 'text-on-primary-fixed' : 'text-on-surface-variant'} />
+                <Text className={`font-headline font-bold text-sm ${storageType === 'FRIDGE' ? 'text-on-primary-fixed' : 'text-on-surface-variant'}`}>Fridge</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors flex-row gap-2 ${storageType === 'PANTRY' ? 'bg-secondary-fixed/30 border-2 border-secondary-fixed-dim/50' : 'bg-surface-container-low border-2 border-transparent'}`}
+                onPress={() => setStorageType('PANTRY')}
+              >
+                <Icon name="inventory-2" size={20} className={storageType === 'PANTRY' ? 'text-on-secondary-fixed-variant' : 'text-on-surface-variant'} />
+                <Text className={`font-headline font-bold text-sm ${storageType === 'PANTRY' ? 'text-on-secondary-fixed-variant' : 'text-on-surface-variant'}`}>Pantry</Text>
+              </TouchableOpacity>
             </View>
           </View>
 

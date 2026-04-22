@@ -24,6 +24,7 @@ func CreateItemTemplate(c *gin.Context) {
 		Name        string `json:"name"`
 		CategoryID  string `json:"categoryId"`
 		DefaultDays int    `json:"defaultDays"`
+		StorageType string `json:"storageType"`
 		FamilyID    string `json:"familyId"`
 	}
 
@@ -32,10 +33,16 @@ func CreateItemTemplate(c *gin.Context) {
 		return
 	}
 
+	storageType := input.StorageType
+	if storageType == "" {
+		storageType = "FRIDGE"
+	}
+
 	template := models.ItemTemplate{
 		Name:        input.Name,
 		CategoryID:  input.CategoryID,
 		DefaultDays: input.DefaultDays,
+		StorageType: storageType,
 		IsSystem:    false,
 		FamilyID:    &input.FamilyID,
 	}
@@ -56,6 +63,7 @@ func UpdateItemTemplate(c *gin.Context) {
 	var input struct {
 		Name        string `json:"name"`
 		DefaultDays int    `json:"defaultDays"`
+		StorageType string `json:"storageType"`
 		FamilyID    string `json:"familyId"`
 	}
 
@@ -71,11 +79,16 @@ func UpdateItemTemplate(c *gin.Context) {
 	}
 
 	if template.IsSystem {
+		storageType := input.StorageType
+		if storageType == "" {
+			storageType = "FRIDGE"
+		}
 		// Create a new custom template for the family
 		newTemplate := models.ItemTemplate{
 			Name:        input.Name,
 			CategoryID:  template.CategoryID,
 			DefaultDays: input.DefaultDays,
+			StorageType: storageType,
 			ImageURL:    template.ImageURL,
 			IsSystem:    false,
 			FamilyID:    &input.FamilyID,
@@ -90,10 +103,15 @@ func UpdateItemTemplate(c *gin.Context) {
 	}
 
 	// Update existing custom template
-	if err := database.DB.Model(&template).Updates(models.ItemTemplate{
-		Name:        input.Name,
-		DefaultDays: input.DefaultDays,
-	}).Error; err != nil {
+	updates := map[string]interface{}{
+		"name":         input.Name,
+		"default_days": input.DefaultDays,
+	}
+	if input.StorageType != "" {
+		updates["storage_type"] = input.StorageType
+	}
+
+	if err := database.DB.Model(&template).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item template"})
 		return
 	}

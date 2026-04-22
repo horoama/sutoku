@@ -31,6 +31,7 @@ export interface ItemTemplate {
   name: string;
   categoryId: string;
   defaultDays: number;
+  storageType?: 'FRIDGE' | 'PANTRY';
   imageUrl: string;
   category?: {
     id: string;

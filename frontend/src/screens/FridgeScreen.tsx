@@ -37,17 +37,24 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
 
   const expiringItems = activeItems.filter(item => getDaysLeft(item) <= 3).sort((a, b) => getDaysLeft(a) - getDaysLeft(b));
 
-  // Default Days criteria for fridge vs pantry:
-  // Usually short lifespan goes to fridge, longer to pantry.
-  // Or check category name if populated, but fallback to all active items
+  // Determine section by storageType
   const fridgeSection = activeItems.filter(item => {
-    // NOTE: TypeScript error fix. Casting itemTemplate to any to access nested category for now.
-    const catName = (item.itemTemplate as any).category?.name?.toLowerCase() || "";
-    if (catName.includes("dairy") || catName.includes("meat") || catName.includes("produce")) return true;
-    return item.defaultDays < 30; // Shorter lived items typically go to fridge
+    const storageType = item.itemTemplate?.storageType;
+    if (storageType) {
+      return storageType === 'FRIDGE';
+    }
+    // Fallback for existing items without storageType
+    return item.defaultDays < 30;
   });
 
-  const pantrySection = activeItems.filter(item => !fridgeSection.includes(item));
+  const pantrySection = activeItems.filter(item => {
+    const storageType = item.itemTemplate?.storageType;
+    if (storageType) {
+      return storageType === 'PANTRY';
+    }
+    // Fallback for existing items without storageType
+    return item.defaultDays >= 30;
+  });
 
   const renderUrgentItem = (item: FridgeItem, index: number) => {
     const daysLeft = getDaysLeft(item);
@@ -157,6 +164,11 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
   };
 
   const renderPantryCard = (item: FridgeItem) => {
+    const startedAtDate = item.startedAt ? new Date(item.startedAt) : null;
+    const addedText = startedAtDate
+      ? `${startedAtDate.getMonth() + 1}/${startedAtDate.getDate()} に追加`
+      : 'In stock';
+
     return (
       <TouchableOpacity
         key={item.id}
@@ -168,7 +180,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
         </View>
         <View className="mb-2">
           <Text className="font-headline font-bold text-sm text-on-surface" numberOfLines={1}>{item.itemTemplate.name}</Text>
-          <Text className="text-xs text-outline font-medium">In stock</Text>
+          <Text className="text-xs text-outline font-medium">{addedText}</Text>
         </View>
         <View className="flex-col gap-2 mt-2">
           <View className="bg-primary-fixed px-2 py-0.5 rounded-full self-start">
