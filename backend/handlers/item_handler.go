@@ -33,16 +33,11 @@ func CreateItemTemplate(c *gin.Context) {
 		return
 	}
 
-	storageType := input.StorageType
-	if storageType == "" {
-		storageType = "FRIDGE"
-	}
-
 	template := models.ItemTemplate{
 		Name:        input.Name,
 		CategoryID:  input.CategoryID,
 		DefaultDays: input.DefaultDays,
-		StorageType: storageType,
+		StorageType: input.StorageType,
 		IsSystem:    false,
 		FamilyID:    &input.FamilyID,
 	}
@@ -79,16 +74,13 @@ func UpdateItemTemplate(c *gin.Context) {
 	}
 
 	if template.IsSystem {
-		storageType := input.StorageType
-		if storageType == "" {
-			storageType = "FRIDGE"
-		}
-		// Create a new custom template for the family
+		// 共通のシステムテンプレートは上書きせず、家族用のカスタムテンプレートとして新規作成(複製)する
+		// これにより、デフォルトの名称や日数を各家庭に合わせてパーソナライズできる
 		newTemplate := models.ItemTemplate{
 			Name:        input.Name,
 			CategoryID:  template.CategoryID,
 			DefaultDays: input.DefaultDays,
-			StorageType: storageType,
+			StorageType: input.StorageType,
 			ImageURL:    template.ImageURL,
 			IsSystem:    false,
 			FamilyID:    &input.FamilyID,
@@ -102,7 +94,7 @@ func UpdateItemTemplate(c *gin.Context) {
 		return
 	}
 
-	// Update existing custom template
+	// すでに家族固有のカスタムテンプレートになっている場合は、そのまま上書き更新する
 	updates := map[string]interface{}{
 		"name":         input.Name,
 		"default_days": input.DefaultDays,

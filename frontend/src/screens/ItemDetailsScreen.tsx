@@ -28,12 +28,15 @@ export default function ItemDetailsScreen() {
   const initialDefaultDays = initialItem?.defaultDays || initialItem?.itemTemplate?.defaultDays || 7;
   const [defaultDays, setDefaultDays] = useState(initialDefaultDays);
 
+  // 初期残り日数の計算
   let initialDaysLeft = 7;
   if (initialItem) {
     const itemDefaultDays = initialDefaultDays;
     if (initialItem.endDate) {
+      // ユーザーが手動で終了日(endDate)を設定していた場合はそれから計算
       initialDaysLeft = differenceInCalendarDays(new Date(initialItem.endDate), new Date());
     } else if (initialItem.startedAt) {
+      // なければ、保管開始日とデフォルトの日数から推定される終了日を計算
       const startDate = new Date(initialItem.startedAt);
       const endDate = new Date(startDate.setDate(startDate.getDate() + itemDefaultDays));
       initialDaysLeft = differenceInCalendarDays(endDate, new Date());
@@ -42,7 +45,7 @@ export default function ItemDetailsScreen() {
     }
   }
 
-  // Guard against NaN
+  // 異常な日付データに対するフォールバック
   if (isNaN(initialDaysLeft)) {
       initialDaysLeft = 7;
   }
@@ -54,14 +57,17 @@ export default function ItemDetailsScreen() {
   const saveUpdates = async () => {
     if (initialItem) {
        try {
-         // 1. Update or Duplicate Item Template
+         // 1. アイテムテンプレートの更新
+         // IsSystem=true(システム共通)のテンプレートの場合、バックエンド側で自動的に
+         // FamilyID が紐づいたカスタムテンプレートとして複製(Duplicate)され返却されます
          const newTemplate = await updateItemTemplate(initialItem.itemTemplateId, {
            name: itemName,
            defaultDays: defaultDays,
            storageType: storageType
          });
 
-         // 2. Update FridgeItem with new template ID and endDate
+         // 2. FridgeItem の更新
+         // 複製されて新しくなったテンプレートIDと、UIのStepperで調整された残り日数から逆算した新しい消費期限を保存
          const newEndDate = addDays(new Date(), freshness).toISOString();
          await updateFridgeItem(initialItem.id, {
            endDate: newEndDate,

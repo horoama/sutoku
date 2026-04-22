@@ -20,41 +20,25 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
 
   const activeItems = fridgeItems.filter(item => item.status === "ACTIVE");
 
-  // Calculate expiration logic
+  // 残り日数の計算: 明示的な終了日(endDate)があれば優先し、なければ保管開始日(startedAt) + 目安日数(defaultDays)から算出
   const getDaysLeft = (item: FridgeItem) => {
     if (!item.startedAt) return Number(item.defaultDays);
 
-    // If we have an exact endDate, use it
     if (item.endDate) {
       return differenceInCalendarDays(new Date(item.endDate), new Date());
     }
 
-    // Otherwise calculate based on startedAt + defaultDays
     const startDate = new Date(item.startedAt);
     const endDate = new Date(startDate.setDate(startDate.getDate() + Number(item.defaultDays)));
     return differenceInCalendarDays(endDate, new Date());
   };
 
+  // 期限が近いアイテムを抽出（3日以内を期限順にソート）
   const expiringItems = activeItems.filter(item => getDaysLeft(item) <= 3).sort((a, b) => getDaysLeft(a) - getDaysLeft(b));
 
-  // Determine section by storageType
-  const fridgeSection = activeItems.filter(item => {
-    const storageType = item.itemTemplate?.storageType;
-    if (storageType) {
-      return storageType === 'FRIDGE';
-    }
-    // Fallback for existing items without storageType
-    return item.defaultDays < 30;
-  });
-
-  const pantrySection = activeItems.filter(item => {
-    const storageType = item.itemTemplate?.storageType;
-    if (storageType) {
-      return storageType === 'PANTRY';
-    }
-    // Fallback for existing items without storageType
-    return item.defaultDays >= 30;
-  });
+  // テンプレートの storageType 指定を基準に冷蔵庫/パントリーを振り分け
+  const fridgeSection = activeItems.filter(item => item.itemTemplate?.storageType === 'FRIDGE');
+  const pantrySection = activeItems.filter(item => item.itemTemplate?.storageType === 'PANTRY');
 
   const renderUrgentItem = (item: FridgeItem, index: number) => {
     const daysLeft = getDaysLeft(item);
