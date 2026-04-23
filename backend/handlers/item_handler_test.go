@@ -211,3 +211,143 @@ func TestUpdateItemTemplate(t *testing.T) {
 		t.Errorf("Unexpected duplicated template: %+v", duplicated)
 	}
 }
+
+func TestUpdateItemTemplateValues(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	testutil.SetupTestDB()
+	defer testutil.ClearTables()
+
+	cat := models.Category{Name: "General"}
+	database.DB.Create(&cat)
+
+	familyID := "family-456"
+
+	router := gin.New()
+	router.PUT("/item-templates/:id", handlers.UpdateItemTemplate)
+
+	tests := []struct {
+		name        string
+		initial     models.ItemTemplate
+		update      map[string]interface{}
+		expected    models.ItemTemplate
+	}{
+		{
+			name: "Change everything",
+			initial: models.ItemTemplate{
+				CategoryID:  cat.ID,
+				Name:        "Old Apple",
+				DefaultDays: 7,
+				StorageType: "FRIDGE",
+				IsSystem:    false,
+				FamilyID:    &familyID,
+			},
+			update: map[string]interface{}{
+				"name":        "New Apple",
+				"defaultDays": 14,
+				"storageType": "PANTRY",
+				"familyId":    familyID,
+			},
+			expected: models.ItemTemplate{
+				Name:        "New Apple",
+				DefaultDays: 14,
+				StorageType: "PANTRY",
+			},
+		},
+		{
+			name: "Only change name and keep storageType FRIDGE",
+			initial: models.ItemTemplate{
+				CategoryID:  cat.ID,
+				Name:        "Milk",
+				DefaultDays: 7,
+				StorageType: "FRIDGE",
+				IsSystem:    false,
+				FamilyID:    &familyID,
+			},
+			update: map[string]interface{}{
+				"name":        "Organic Milk",
+				"defaultDays": 7,
+				"storageType": "FRIDGE",
+				"familyId":    familyID,
+			},
+			expected: models.ItemTemplate{
+				Name:        "Organic Milk",
+				DefaultDays: 7,
+				StorageType: "FRIDGE",
+			},
+		},
+		{
+			name: "Only change defaultDays",
+			initial: models.ItemTemplate{
+				CategoryID:  cat.ID,
+				Name:        "Cheese",
+				DefaultDays: 30,
+				StorageType: "FRIDGE",
+				IsSystem:    false,
+				FamilyID:    &familyID,
+			},
+			update: map[string]interface{}{
+				"name":        "Cheese",
+				"defaultDays": 60,
+				"storageType": "FRIDGE",
+				"familyId":    familyID,
+			},
+			expected: models.ItemTemplate{
+				Name:        "Cheese",
+				DefaultDays: 60,
+				StorageType: "FRIDGE",
+			},
+		},
+		{
+			name: "Missing storageType in payload should not clear existing storageType",
+			initial: models.ItemTemplate{
+				CategoryID:  cat.ID,
+				Name:        "Garlic",
+				DefaultDays: 90,
+				StorageType: "PANTRY",
+				IsSystem:    false,
+				FamilyID:    &familyID,
+			},
+			update: map[string]interface{}{
+				"name":        "Garlic",
+				"defaultDays": 90,
+				"familyId":    familyID,
+			},
+			expected: models.ItemTemplate{
+				Name:        "Garlic",
+				DefaultDays: 90,
+				StorageType: "PANTRY",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			database.DB.Create(&tt.initial)
+			database.DB.Model(&tt.initial).Update("IsSystem", false) // Ensure it is custom
+
+			body, _ := json.Marshal(tt.update)
+			req, _ := http.NewRequest("PUT", "/item-templates/"+tt.initial.ID, bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			if w.Code != http.StatusOK {
+				t.Fatalf("Expected status code %d, but got %d", http.StatusOK, w.Code)
+			}
+
+			var refetched models.ItemTemplate
+			database.DB.First(&refetched, "id = ?", tt.initial.ID)
+
+			if refetched.Name != tt.expected.Name {
+				t.Errorf("Expected Name %s, got %s", tt.expected.Name, refetched.Name)
+			}
+			if refetched.DefaultDays != tt.expected.DefaultDays {
+				t.Errorf("Expected DefaultDays %d, got %d", tt.expected.DefaultDays, refetched.DefaultDays)
+			}
+			if refetched.StorageType != tt.expected.StorageType {
+				t.Errorf("Expected StorageType %s, got %s", tt.expected.StorageType, refetched.StorageType)
+			}
+		})
+	}
+}
