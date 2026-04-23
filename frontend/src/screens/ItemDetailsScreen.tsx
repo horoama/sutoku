@@ -16,7 +16,7 @@ export default function ItemDetailsScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<ParamList, 'ItemDetails'>>();
 
-  const { fridgeItems, updateFridgeItem, updateItemTemplate } = useFridgeStore();
+  const { fridgeItems, updateFridgeItem, updateItemTemplate, fetchFridgeItems } = useFridgeStore();
   const { addToShoppingList } = useShoppingStore();
 
   const itemId = route.params?.itemId;
@@ -73,6 +73,10 @@ export default function ItemDetailsScreen() {
            endDate: newEndDate,
            itemTemplateId: newTemplate.id
          });
+
+         // 3. 最新のデータをサーバーから再取得し、Zustandのローカルステートを同期させる
+         // （ストレージの変更内容などをFridgeScreenのタブ振り分けに即座に反映するため）
+         await fetchFridgeItems();
 
          Alert.alert("Success", "Changes saved successfully.");
        } catch (error) {
