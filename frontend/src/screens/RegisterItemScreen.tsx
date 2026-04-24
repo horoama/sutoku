@@ -14,6 +14,8 @@ export default function RegisterItemScreen() {
   const [notes, setNotes] = useState("");
   const [freshness, setFreshness] = useState(7);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRegular, setIsRegular] = useState(true);
+  const [storageType, setStorageType] = useState<"FRIDGE" | "FREEZER">("FRIDGE");
 
   // Default to first category if available
   const [activeCategoryId, setActiveCategoryId] = useState(categories.length > 0 ? categories[0].id : "");
@@ -31,16 +33,27 @@ export default function RegisterItemScreen() {
 
     setIsSubmitting(true);
     try {
-      const newTemplate = await createItemTemplate(itemName, activeCategoryId, freshness);
-      if (newTemplate && newTemplate.id) {
-        await addToShoppingList(newTemplate.id, activePriority, notes.trim());
+      if (isRegular) {
+        const newTemplate = await createItemTemplate(itemName, activeCategoryId, freshness, storageType, notes.trim());
+        if (newTemplate && newTemplate.id) {
+          // 定番アイテムの場合はメモはFamilyItemOverrideに保存されるため、買い物リストには引き継がない
+          await addToShoppingList(newTemplate.id, newTemplate.name, activeCategoryId, activePriority, "");
+          navigation.navigate("RegistrationSuccess", {
+            itemName: newTemplate.name,
+            location: storageType,
+            expiresIn: `${freshness} Days`
+          });
+        } else {
+          Alert.alert("エラー", "アイテムの作成に失敗しました");
+        }
+      } else {
+        // 今回限りのアイテム
+        await addToShoppingList(null, itemName, activeCategoryId, activePriority, notes.trim());
         navigation.navigate("RegistrationSuccess", {
-          itemName: newTemplate.name,
-          location: "Main Pantry", // Example location
+          itemName: itemName,
+          location: "Shopping List",
           expiresIn: `${freshness} Days`
         });
-      } else {
-        Alert.alert("エラー", "アイテムの作成に失敗しました");
       }
     } catch (e) {
       Alert.alert("エラー", "アイテムの作成に失敗しました");
@@ -87,6 +100,22 @@ export default function RegisterItemScreen() {
 
         {/* Form Fields */}
         <View className="gap-y-6">
+          {/* 登録方法のトグル */}
+          <View className="flex-row bg-surface-container-low rounded-full p-1 shadow-sm">
+            <TouchableOpacity
+              className={`flex-1 py-3 rounded-full flex items-center justify-center transition-all ${isRegular ? 'bg-primary shadow-sm' : 'bg-transparent'}`}
+              onPress={() => setIsRegular(true)}
+            >
+              <Text className={`font-bold ${isRegular ? 'text-on-primary' : 'text-on-surface-variant'}`}>定番として追加</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className={`flex-1 py-3 rounded-full flex items-center justify-center transition-all ${!isRegular ? 'bg-primary shadow-sm' : 'bg-transparent'}`}
+              onPress={() => setIsRegular(false)}
+            >
+              <Text className={`font-bold ${!isRegular ? 'text-on-primary' : 'text-on-surface-variant'}`}>今回限りとして追加</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Item Name */}
           <View className="gap-y-2">
             <Text className="font-headline font-bold text-primary ml-1">Item Name</Text>
@@ -118,13 +147,36 @@ export default function RegisterItemScreen() {
             </View>
           </View>
 
+          {/* Storage Type Selection (Only for Regular items) */}
+          {isRegular && (
+            <View className="gap-y-2">
+              <Text className="font-headline font-bold text-primary ml-1">Storage Location</Text>
+              <View className="flex-row gap-3">
+                <TouchableOpacity
+                  className={`flex-1 py-3 rounded-xl border-2 items-center flex-row justify-center gap-2 transition-all ${storageType === 'FRIDGE' ? 'bg-primary-fixed/30 border-primary-fixed-dim/50' : 'bg-surface-container border-transparent'}`}
+                  onPress={() => setStorageType('FRIDGE')}
+                >
+                  <Icon name="kitchen" size={20} className={storageType === 'FRIDGE' ? 'text-on-primary-fixed' : 'text-outline'} />
+                  <Text className={`font-bold text-sm ${storageType === 'FRIDGE' ? 'text-on-primary-fixed' : 'text-outline'}`}>FRIDGE</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`flex-1 py-3 rounded-xl border-2 items-center flex-row justify-center gap-2 transition-all ${storageType === 'FREEZER' ? 'bg-secondary-fixed/30 border-secondary/50' : 'bg-surface-container border-transparent'}`}
+                  onPress={() => setStorageType('FREEZER')}
+                >
+                  <Icon name="ac-unit" size={20} className={storageType === 'FREEZER' ? 'text-secondary' : 'text-outline'} />
+                  <Text className={`font-bold text-sm ${storageType === 'FREEZER' ? 'text-secondary' : 'text-outline'}`}>FREEZER</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           {/* Notes & Origin */}
           <View className="gap-y-2">
-            <Text className="font-headline font-bold text-primary ml-1">Notes & Origin</Text>
+            <Text className="font-headline font-bold text-primary ml-1">{isRegular ? "我が家メモ" : "今回のメモ"}</Text>
             <View className="bg-surface-container-low rounded-lg px-6 py-4 shadow-sm min-h-[120px]">
               <TextInput
                 className="flex-1 bg-transparent border-none text-on-surface font-medium"
-                placeholder="Where did you get it? Special storage instructions..."
+                placeholder={isRegular ? "我が家メモ（例: いつも低脂肪を買う）" : "今回のメモ（例: 特売のやつでいいよ）"}
                 placeholderTextColor="#bfc9c1"
                 multiline
                 numberOfLines={3}

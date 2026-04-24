@@ -26,8 +26,8 @@ export default function AddToShoppingListScreen() {
     fetchFridgeItems();
   }, []);
 
-  const handleAddItem = async (templateId: string, itemName: string) => {
-    await addToShoppingList(templateId, selectedPriority, '');
+  const handleAddItem = async (templateId: string, itemName: string, categoryId: string) => {
+    await addToShoppingList(templateId, itemName, categoryId, selectedPriority, '');
     Alert.alert("Success", `${itemName} added to shopping list.`);
   };
 
@@ -136,7 +136,7 @@ export default function AddToShoppingListScreen() {
                   <Text className="font-headline font-semibold text-sm" numberOfLines={1}>{item.name}</Text>
                   <TouchableOpacity
                     className="w-full bg-secondary-fixed py-2 rounded-xl flex-row items-center justify-center gap-2 active:bg-secondary-container"
-                    onPress={() => handleAddItem(item.id, item.name)}
+                    onPress={() => handleAddItem(item.id, item.name, item.categoryId)}
                   >
                     <Icon name="add" size={16} className="text-on-secondary-fixed-variant" />
                     <Text className="text-on-secondary-fixed-variant font-label text-xs font-bold">Add</Text>
@@ -181,7 +181,7 @@ export default function AddToShoppingListScreen() {
                </View>
                <TouchableOpacity
                  className="w-12 h-12 bg-surface-container-lowest rounded-full flex items-center justify-center shadow-sm active:bg-primary"
-                 onPress={() => handleAddItem(item.id, item.name)}
+                 onPress={() => handleAddItem(item.id, item.name, item.categoryId)}
                >
                  <Icon name="add" size={24} className="text-primary" />
                </TouchableOpacity>

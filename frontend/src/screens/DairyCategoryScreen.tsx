@@ -23,7 +23,8 @@ export default function DairyCategoryScreen() {
   const items = dairyCategory?.items || [];
 
   const handleAddItem = async (templateId: string, itemName: string) => {
-    await addToShoppingList(templateId, 'NORMAL', '');
+    if (!dairyCategory) return;
+    await addToShoppingList(templateId, itemName, dairyCategory.id, 'NORMAL', '');
     Alert.alert("追加完了", `${itemName} をリストに追加しました`);
   };
 
