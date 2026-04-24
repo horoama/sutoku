@@ -55,7 +55,7 @@ export interface ShoppingItem {
   itemTemplate: ItemTemplate;
 }
 
-export interface FridgeItem {
+export interface StockItem {
   id: string;
   familyId: string;
   itemTemplateId: string;

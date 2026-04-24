@@ -3,16 +3,16 @@ import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Alert } fro
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
-import { useFridgeStore } from '../store/fridgeStore';
+import { useStockStore } from '../store/stockStore';
 import { useShoppingStore } from '../store/shoppingStore';
 
-export default function PantrySearchScreen() {
+export default function StockSearchScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { categories, fetchCategories } = useShoppingStore();
-  const { addToFridge } = useFridgeStore();
+  const { addToStock } = useStockStore();
 
   useEffect(() => {
     fetchCategories();
@@ -23,7 +23,7 @@ export default function PantrySearchScreen() {
   const items = allItems.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleAddItem = async (templateId: string, itemName: string) => {
-    await addToFridge(templateId, undefined, 'fridge');
+    await addToStock(templateId, undefined, 'fridge');
     Alert.alert("追加完了", `${itemName} を追加しました`);
   };
 

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Alert } fro
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
-import { useFridgeStore } from "../store/fridgeStore";
+import { useStockStore } from "../store/stockStore";
 import { useShoppingStore } from "../store/shoppingStore";
 import { differenceInCalendarDays, addDays } from "date-fns";
 
@@ -16,11 +16,11 @@ export default function ItemDetailsScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<ParamList, 'ItemDetails'>>();
 
-  const { fridgeItems, updateFridgeItem, updateItemTemplate, fetchFridgeItems } = useFridgeStore();
+  const { stockItems, updateStockItem, updateItemTemplate, fetchStockItems } = useStockStore();
   const { addToShoppingList } = useShoppingStore();
 
   const itemId = route.params?.itemId;
-  const initialItem = fridgeItems.find(i => i.id === itemId);
+  const initialItem = stockItems.find(i => i.id === itemId);
 
   const [itemName, setItemName] = useState(initialItem?.itemTemplate?.name || "");
   const [notes, setNotes] = useState(initialItem?.itemTemplate?.name ? `Stored safely.` : "");
@@ -66,17 +66,17 @@ export default function ItemDetailsScreen() {
            storageType: storageType
          });
 
-         // 2. FridgeItem の更新
+         // 2. StockItem の更新
          // 複製されて新しくなったテンプレートIDと、UIのStepperで調整された残り日数から逆算した新しい消費期限を保存
          const newEndDate = addDays(new Date(), freshness).toISOString();
-         await updateFridgeItem(initialItem.id, {
+         await updateStockItem(initialItem.id, {
            endDate: newEndDate,
            itemTemplateId: newTemplate.id
          });
 
          // 3. 最新のデータをサーバーから再取得し、Zustandのローカルステートを同期させる
-         // （ストレージの変更内容などをFridgeScreenのタブ振り分けに即座に反映するため）
-         await fetchFridgeItems();
+         // （ストレージの変更内容などをStockScreenのタブ振り分けに即座に反映するため）
+         await fetchStockItems();
 
          Alert.alert("Success", "Changes saved successfully.");
        } catch (error) {

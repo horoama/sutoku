@@ -4,13 +4,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { useShoppingStore, ItemTemplate, Category } from "../store/shoppingStore";
-import { useFridgeStore } from "../store/fridgeStore";
+import { useStockStore } from "../store/stockStore";
 
 export default function AddToShoppingListScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { categories, fetchCategories, addToShoppingList, shoppingList } = useShoppingStore();
-  const { consumedItems, fetchFridgeItems } = useFridgeStore();
+  const { consumedItems, fetchStockItems } = useStockStore();
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,7 +23,7 @@ export default function AddToShoppingListScreen() {
         setActiveCategoryId(storeCats[0].id);
       }
     });
-    fetchFridgeItems();
+    fetchStockItems();
   }, []);
 
   const handleAddItem = async (templateId: string, itemName: string) => {

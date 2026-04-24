@@ -32,7 +32,7 @@ type ItemTemplate struct {
 	IsSystem      bool           `gorm:"default:true" json:"isSystem"`     // システムデフォルトのアイテムかどうか
 	FamilyID      *string        `gorm:"type:uuid" json:"familyId"`        // カスタムアイテムの場合の家族ID
 	ShoppingItems []ShoppingItem `json:"shoppingItems,omitempty"`          // このテンプレートを使用した買い物アイテム
-	FridgeItems   []FridgeItem   `json:"fridgeItems,omitempty"`            // このテンプレートを使用した冷蔵庫アイテム
+	StockItems   []StockItem   `json:"stockItems,omitempty"`            // このテンプレートを使用した冷蔵庫アイテム
 }
 
 // BeforeCreate はアイテムテンプレート作成前にUUIDを生成して設定します。

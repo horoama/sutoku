@@ -4,10 +4,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
 
-import { useFridgeStore } from '../store/fridgeStore';
+import { useStockStore } from '../store/stockStore';
 import { useShoppingStore } from '../store/shoppingStore';
 
-export default function AddToPantryScreen() {
+export default function AddToStockScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,7 +16,7 @@ export default function AddToPantryScreen() {
   const [customDays, setCustomDays] = useState("7");
   const [selectedItemToAdd, setSelectedItemToAdd] = useState<any>(null);
 
-  const { addToFridge } = useFridgeStore();
+  const { addToStock } = useStockStore();
   const { categories } = useShoppingStore();
 
   const handleQuickStock = async (item: any) => {
@@ -26,7 +26,7 @@ export default function AddToPantryScreen() {
       setSelectedItemToAdd(item);
       setDateModalVisible(true);
     } else {
-      await addToFridge(item.id, undefined, 'fridge');
+      await addToStock(item.id, undefined, 'fridge');
       Alert.alert("完了", "冷蔵庫に追加しました！");
     }
   };
@@ -34,7 +34,7 @@ export default function AddToPantryScreen() {
   const confirmAddWithDate = async () => {
     if (selectedItemToAdd) {
       const days = parseInt(customDays, 10) || 7;
-      await addToFridge(selectedItemToAdd.id, days, 'fridge');
+      await addToStock(selectedItemToAdd.id, days, 'fridge');
       setDateModalVisible(false);
       setSelectedItemToAdd(null);
       Alert.alert("完了", "冷蔵庫に追加しました！");

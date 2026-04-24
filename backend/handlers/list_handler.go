@@ -19,15 +19,15 @@ func GetLists(c *gin.Context) {
 		return
 	}
 
-	var fridgeItems []models.FridgeItem
-	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("updated_at desc").Find(&fridgeItems).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch fridge items"})
+	var stockItems []models.StockItem
+	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("updated_at desc").Find(&stockItems).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch stock items"})
 		return
 	}
 
 	shopping := []models.ShoppingItem{}
-	fridge := []models.FridgeItem{}
-	consumed := []models.FridgeItem{}
+	stock := []models.StockItem{}
+	consumed := []models.StockItem{}
 
 	for _, item := range shoppingItems {
 		if item.Status != "PURCHASED" {
@@ -35,9 +35,9 @@ func GetLists(c *gin.Context) {
 		}
 	}
 
-	for _, item := range fridgeItems {
+	for _, item := range stockItems {
 		if item.Status == "ACTIVE" {
-			fridge = append(fridge, item)
+			stock = append(stock, item)
 		} else if item.Status == "CONSUMED" {
 			consumed = append(consumed, item)
 		}
@@ -45,7 +45,7 @@ func GetLists(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"SHOPPING": shopping,
-		"FRIDGE":   fridge,
+		"STOCK":   stock,
 		"CONSUMED": consumed,
 	})
 }
@@ -58,8 +58,8 @@ func AddListItem(c *gin.Context) {
 		ItemTemplateID string     `json:"itemTemplateId"`
 		Priority       string     `json:"priority"`
 		Note           *string    `json:"note"`
-		Status         string     `json:"status"` // legacy support, determines if Shopping or Fridge
-		Type           string     `json:"type"`   // "shopping" or "fridge"
+		Status         string     `json:"status"` // legacy support, determines if Shopping or Stock
+		Type           string     `json:"type"`   // "shopping" or "stock"
 		EndDate        *time.Time `json:"endDate"`
 	}
 
@@ -69,8 +69,8 @@ func AddListItem(c *gin.Context) {
 	}
 
 	if input.Type == "" {
-		if input.Status == "FRIDGE" || input.Status == "ACTIVE" {
-			input.Type = "fridge"
+		if input.Status == "STOCK" || input.Status == "ACTIVE" {
+			input.Type = "stock"
 		} else {
 			input.Type = "shopping"
 		}
@@ -79,9 +79,9 @@ func AddListItem(c *gin.Context) {
 	var template models.ItemTemplate
 	database.DB.First(&template, "id = ?", input.ItemTemplateID)
 
-	if input.Type == "fridge" {
+	if input.Type == "stock" {
 		now := time.Now()
-		var item models.FridgeItem
+		var item models.StockItem
 
 		err := database.DB.Where("family_id = ? AND item_template_id = ? AND status = ?", input.FamilyID, input.ItemTemplateID, "ACTIVE").First(&item).Error
 		if err == nil {
@@ -91,12 +91,12 @@ func AddListItem(c *gin.Context) {
 				item.EndDate = input.EndDate
 			}
 			if err := database.DB.Save(&item).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update existing fridge item"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update existing stock item"})
 				return
 			}
 		} else {
 			// Create new item
-			item = models.FridgeItem{
+			item = models.StockItem{
 				FamilyID:       input.FamilyID,
 				ItemTemplateID: input.ItemTemplateID,
 				Status:         "ACTIVE",
@@ -108,7 +108,7 @@ func AddListItem(c *gin.Context) {
 			}
 
 			if err := database.DB.Create(&item).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add fridge item"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add stock item"})
 				return
 			}
 		}
@@ -169,7 +169,7 @@ func UpdateListItem(c *gin.Context) {
 	itemID := c.Param("id")
 	var input struct {
 		Status         string     `json:"status"`
-		Type           string     `json:"type"` // "shopping" or "fridge"
+		Type           string     `json:"type"` // "shopping" or "stock"
 		Priority       string     `json:"priority"`
 		Note           *string    `json:"note"`
 		UserID         string     `json:"userId"`
@@ -182,7 +182,7 @@ func UpdateListItem(c *gin.Context) {
 		return
 	}
 
-	// Figure out if it's a shopping item or fridge item to update
+	// Figure out if it's a shopping item or stock item to update
 	var shoppingItem models.ShoppingItem
 	if err := database.DB.Preload("ItemTemplate").Where("id = ?", itemID).First(&shoppingItem).Error; err == nil {
 		updates := map[string]interface{}{}
@@ -197,20 +197,20 @@ func UpdateListItem(c *gin.Context) {
 				updates["bought_at"] = &now
 				actionLogged = "bought"
 
-				// Create a FridgeItem when sent to fridge ("PURCHASED" or similar explicit state)
-				var existingFridgeItem models.FridgeItem
-				err := database.DB.Where("family_id = ? AND item_template_id = ? AND status = ?", shoppingItem.FamilyID, shoppingItem.ItemTemplateID, "ACTIVE").First(&existingFridgeItem).Error
+				// Create a StockItem when sent to stock ("PURCHASED" or similar explicit state)
+				var existingStockItem models.StockItem
+				err := database.DB.Where("family_id = ? AND item_template_id = ? AND status = ?", shoppingItem.FamilyID, shoppingItem.ItemTemplateID, "ACTIVE").First(&existingStockItem).Error
 
 				if err == nil {
 					// Update existing item
-					existingFridgeItem.StartedAt = &now
+					existingStockItem.StartedAt = &now
 					if input.EndDate != nil {
-						existingFridgeItem.EndDate = input.EndDate
+						existingStockItem.EndDate = input.EndDate
 					}
-					database.DB.Save(&existingFridgeItem)
+					database.DB.Save(&existingStockItem)
 				} else {
 					// Create new item
-					fridgeItem := models.FridgeItem{
+					stockItem := models.StockItem{
 						FamilyID:       shoppingItem.FamilyID,
 						ItemTemplateID: shoppingItem.ItemTemplateID,
 						Status:         "ACTIVE",
@@ -218,9 +218,9 @@ func UpdateListItem(c *gin.Context) {
 						DefaultDays:    shoppingItem.ItemTemplate.DefaultDays,
 					}
 					if input.EndDate != nil {
-						fridgeItem.EndDate = input.EndDate
+						stockItem.EndDate = input.EndDate
 					}
-					database.DB.Create(&fridgeItem)
+					database.DB.Create(&stockItem)
 				}
 			}
 		}
@@ -254,12 +254,12 @@ func UpdateListItem(c *gin.Context) {
 		return
 	}
 
-	var fridgeItem models.FridgeItem
-	if err := database.DB.Preload("ItemTemplate").Where("id = ?", itemID).First(&fridgeItem).Error; err == nil {
+	var stockItem models.StockItem
+	if err := database.DB.Preload("ItemTemplate").Where("id = ?", itemID).First(&stockItem).Error; err == nil {
 		updates := map[string]interface{}{}
 		actionLogged := ""
 
-		if input.Status != "" && input.Status != fridgeItem.Status {
+		if input.Status != "" && input.Status != stockItem.Status {
 			updates["status"] = input.Status
 			if input.Status == "CONSUMED" {
 				actionLogged = "consumed"
@@ -270,28 +270,28 @@ func UpdateListItem(c *gin.Context) {
 			updates["end_date"] = input.EndDate
 		}
 
-		if input.ItemTemplateID != "" && input.ItemTemplateID != fridgeItem.ItemTemplateID {
+		if input.ItemTemplateID != "" && input.ItemTemplateID != stockItem.ItemTemplateID {
 			updates["item_template_id"] = input.ItemTemplateID
 		}
 
-		if err := database.DB.Model(&fridgeItem).Updates(updates).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update fridge item"})
+		if err := database.DB.Model(&stockItem).Updates(updates).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update stock item"})
 			return
 		}
 
-		database.DB.Preload("ItemTemplate").First(&fridgeItem, "id = ?", fridgeItem.ID)
+		database.DB.Preload("ItemTemplate").First(&stockItem, "id = ?", stockItem.ID)
 
 		if actionLogged != "" && input.UserID != "" {
 			logEntry := models.ActivityLog{
-				FamilyID: fridgeItem.FamilyID,
+				FamilyID: stockItem.FamilyID,
 				UserID:   input.UserID,
 				Action:   actionLogged,
-				Entity:   fridgeItem.ItemTemplate.Name,
+				Entity:   stockItem.ItemTemplate.Name,
 			}
 			database.DB.Create(&logEntry)
 		}
 
-		c.JSON(http.StatusOK, fridgeItem)
+		c.JSON(http.StatusOK, stockItem)
 		return
 	}
 
@@ -304,7 +304,7 @@ func DeleteListItem(c *gin.Context) {
 
 	// Try deleting from ShoppingItem
 	res1 := database.DB.Where("id = ?", itemID).Delete(&models.ShoppingItem{})
-	res2 := database.DB.Where("id = ?", itemID).Delete(&models.FridgeItem{})
+	res2 := database.DB.Where("id = ?", itemID).Delete(&models.StockItem{})
 
 	if res1.Error != nil && res2.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item"})
