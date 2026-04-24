@@ -34,9 +34,9 @@ func TestGetLists(t *testing.T) {
 		Status:         "PENDING",
 	})
 
-	// Fridge item (ACTIVE)
+	// Stock item (ACTIVE)
 	now := time.Now()
-	database.DB.Create(&models.FridgeItem{
+	database.DB.Create(&models.StockItem{
 		FamilyID:       family.ID,
 		ItemTemplateID: template.ID,
 		Status:         "ACTIVE",
@@ -64,8 +64,8 @@ func TestGetLists(t *testing.T) {
 		t.Errorf("Expected 1 SHOPPING item, got %d", len(response["SHOPPING"]))
 	}
 
-	if len(response["FRIDGE"]) != 1 {
-		t.Errorf("Expected 1 FRIDGE item, got %d", len(response["FRIDGE"]))
+	if len(response["STOCK"]) != 1 {
+		t.Errorf("Expected 1 STOCK item, got %d", len(response["STOCK"]))
 	}
 }
 

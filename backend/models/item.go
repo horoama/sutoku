@@ -27,11 +27,12 @@ type ItemTemplate struct {
 	CategoryID    string         `gorm:"type:uuid" json:"categoryId"`      // 所属するカテゴリーのID
 	Category      Category       `json:"category,omitempty"`               // 所属するカテゴリーデータ
 	DefaultDays   int            `gorm:"default:7" json:"defaultDays"`     // デフォルトの消費期限（日数）
+	StorageType   string         `gorm:"default:'FRIDGE'" json:"storageType"` // 保存先 ("FRIDGE" または "PANTRY")
 	ImageURL      string         `json:"imageUrl"`                         // アイテムの画像URL
 	IsSystem      bool           `gorm:"default:true" json:"isSystem"`     // システムデフォルトのアイテムかどうか
 	FamilyID      *string        `gorm:"type:uuid" json:"familyId"`        // カスタムアイテムの場合の家族ID
 	ShoppingItems []ShoppingItem `json:"shoppingItems,omitempty"`          // このテンプレートを使用した買い物アイテム
-	FridgeItems   []FridgeItem   `json:"fridgeItems,omitempty"`            // このテンプレートを使用した冷蔵庫アイテム
+	StockItems   []StockItem   `json:"stockItems,omitempty"`            // このテンプレートを使用した冷蔵庫アイテム
 }
 
 // BeforeCreate はアイテムテンプレート作成前にUUIDを生成して設定します。

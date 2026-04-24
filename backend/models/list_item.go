@@ -7,8 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// FridgeItem は冷蔵庫（または食糧庫）に保管されている実際のアイテムを表す構造体です。
-type FridgeItem struct {
+// StockItem は冷蔵庫（または食糧庫）に保管されている実際のアイテムを表す構造体です。
+type StockItem struct {
 	Base
 	FamilyID       string       `gorm:"type:uuid" json:"familyId"`       // 所有する家族のID
 	Family         Family       `json:"family,omitempty"`                // 所有する家族データ
@@ -23,7 +23,7 @@ type FridgeItem struct {
 
 // BeforeCreate はGORMのフックで、レコード作成前にUUIDを設定し、
 // DefaultDaysが未設定の場合はItemTemplateからデフォルト日数を取得して設定します。
-func (f *FridgeItem) BeforeCreate(tx *gorm.DB) error {
+func (f *StockItem) BeforeCreate(tx *gorm.DB) error {
 	if f.ID == "" {
 		f.ID = uuid.New().String()
 	}

@@ -24,6 +24,7 @@ func CreateItemTemplate(c *gin.Context) {
 		Name        string `json:"name"`
 		CategoryID  string `json:"categoryId"`
 		DefaultDays int    `json:"defaultDays"`
+		StorageType string `json:"storageType"`
 		FamilyID    string `json:"familyId"`
 	}
 
@@ -36,6 +37,7 @@ func CreateItemTemplate(c *gin.Context) {
 		Name:        input.Name,
 		CategoryID:  input.CategoryID,
 		DefaultDays: input.DefaultDays,
+		StorageType: input.StorageType,
 		IsSystem:    false,
 		FamilyID:    &input.FamilyID,
 	}
@@ -56,6 +58,7 @@ func UpdateItemTemplate(c *gin.Context) {
 	var input struct {
 		Name        string `json:"name"`
 		DefaultDays int    `json:"defaultDays"`
+		StorageType string `json:"storageType"`
 		FamilyID    string `json:"familyId"`
 	}
 
@@ -71,11 +74,13 @@ func UpdateItemTemplate(c *gin.Context) {
 	}
 
 	if template.IsSystem {
-		// Create a new custom template for the family
+		// 共通のシステムテンプレートは上書きせず、家族用のカスタムテンプレートとして新規作成(複製)する
+		// これにより、デフォルトの名称や日数を各家庭に合わせてパーソナライズできる
 		newTemplate := models.ItemTemplate{
 			Name:        input.Name,
 			CategoryID:  template.CategoryID,
 			DefaultDays: input.DefaultDays,
+			StorageType: input.StorageType,
 			ImageURL:    template.ImageURL,
 			IsSystem:    false,
 			FamilyID:    &input.FamilyID,
@@ -89,11 +94,16 @@ func UpdateItemTemplate(c *gin.Context) {
 		return
 	}
 
-	// Update existing custom template
-	if err := database.DB.Model(&template).Updates(models.ItemTemplate{
-		Name:        input.Name,
-		DefaultDays: input.DefaultDays,
-	}).Error; err != nil {
+	// すでに家族固有のカスタムテンプレートになっている場合は、そのまま上書き更新する
+	updates := map[string]interface{}{
+		"name":         input.Name,
+		"default_days": input.DefaultDays,
+	}
+	if input.StorageType != "" {
+		updates["storage_type"] = input.StorageType
+	}
+
+	if err := database.DB.Model(&template).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item template"})
 		return
 	}

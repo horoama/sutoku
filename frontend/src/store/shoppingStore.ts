@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { api } from '../api/client';
 import { useAppStore } from './appStore';
-import { useFridgeStore } from './fridgeStore';
+import { useStockStore } from './stockStore';
 import { Category, ShoppingItem, ItemTemplate } from '../types/store';
 
 export { Category, ShoppingItem, ItemTemplate };
@@ -112,7 +112,7 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
       await api.put(`/items/${id}`, payload);
       await Promise.all([
         get().fetchShoppingList(),
-        useFridgeStore.getState().fetchFridgeItems(),
+        useStockStore.getState().fetchStockItems(),
         useAppStore.getState().fetchActivityLogs()
       ]);
     } catch (err: any) {

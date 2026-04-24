@@ -1,55 +1,46 @@
 import React, { useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, ScrollView, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFridgeStore, FridgeItem } from "../store/fridgeStore";
+import { useStockStore, StockItem } from "../store/stockStore";
 import { useShoppingStore } from "../store/shoppingStore";
 import { useAppStore } from "../store/appStore";
 import { differenceInCalendarDays } from "date-fns";
 import Icon from "@expo/vector-icons/MaterialIcons";
 
-export default function FridgeScreen({ navigation }: { navigation: any }) {
+export default function StockScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
   const { family } = useAppStore();
-  const { fridgeItems, fetchFridgeItems, consumeItem } = useFridgeStore();
+  const { stockItems, fetchStockItems, consumeItem } = useStockStore();
 
   useEffect(() => {
     if (family?.id) {
-      fetchFridgeItems();
+      fetchStockItems();
     }
   }, [family?.id]);
 
-  const activeItems = fridgeItems.filter(item => item.status === "ACTIVE");
+  const activeItems = stockItems.filter(item => item.status === "ACTIVE");
 
-  // Calculate expiration logic
-  const getDaysLeft = (item: FridgeItem) => {
+  // 残り日数の計算: 明示的な終了日(endDate)があれば優先し、なければ保管開始日(startedAt) + 目安日数(defaultDays)から算出
+  const getDaysLeft = (item: StockItem) => {
     if (!item.startedAt) return Number(item.defaultDays);
 
-    // If we have an exact endDate, use it
     if (item.endDate) {
       return differenceInCalendarDays(new Date(item.endDate), new Date());
     }
 
-    // Otherwise calculate based on startedAt + defaultDays
     const startDate = new Date(item.startedAt);
     const endDate = new Date(startDate.setDate(startDate.getDate() + Number(item.defaultDays)));
     return differenceInCalendarDays(endDate, new Date());
   };
 
+  // 期限が近いアイテムを抽出（3日以内を期限順にソート）
   const expiringItems = activeItems.filter(item => getDaysLeft(item) <= 3).sort((a, b) => getDaysLeft(a) - getDaysLeft(b));
 
-  // Default Days criteria for fridge vs pantry:
-  // Usually short lifespan goes to fridge, longer to pantry.
-  // Or check category name if populated, but fallback to all active items
-  const fridgeSection = activeItems.filter(item => {
-    // NOTE: TypeScript error fix. Casting itemTemplate to any to access nested category for now.
-    const catName = (item.itemTemplate as any).category?.name?.toLowerCase() || "";
-    if (catName.includes("dairy") || catName.includes("meat") || catName.includes("produce")) return true;
-    return item.defaultDays < 30; // Shorter lived items typically go to fridge
-  });
+  // テンプレートの storageType 指定を基準に冷蔵庫/パントリーを振り分け
+  const fridgeSection = activeItems.filter(item => item.itemTemplate?.storageType === 'FRIDGE');
+  const pantrySection = activeItems.filter(item => item.itemTemplate?.storageType === 'PANTRY');
 
-  const pantrySection = activeItems.filter(item => !fridgeSection.includes(item));
-
-  const renderUrgentItem = (item: FridgeItem, index: number) => {
+  const renderUrgentItem = (item: StockItem, index: number) => {
     const daysLeft = getDaysLeft(item);
     const isCritical = daysLeft <= 1;
     const totalDays = item.defaultDays || 7;
@@ -112,7 +103,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     );
   };
 
-  const handleConsumePantryItem = async (item: FridgeItem) => {
+  const handleConsumePantryItem = async (item: StockItem) => {
     try {
       // Consume item from pantry
       await consumeItem(item.id);
@@ -121,7 +112,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     }
   };
 
-  const renderFridgeItem = (item: FridgeItem) => {
+  const renderStockItem = (item: StockItem) => {
     const daysLeft = getDaysLeft(item);
     return (
       <TouchableOpacity
@@ -156,7 +147,12 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     );
   };
 
-  const renderPantryCard = (item: FridgeItem) => {
+  const renderPantryCard = (item: StockItem) => {
+    const startedAtDate = item.startedAt ? new Date(item.startedAt) : null;
+    const addedText = startedAtDate
+      ? `${startedAtDate.getMonth() + 1}/${startedAtDate.getDate()} に追加`
+      : 'In stock';
+
     return (
       <TouchableOpacity
         key={item.id}
@@ -168,7 +164,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
         </View>
         <View className="mb-2">
           <Text className="font-headline font-bold text-sm text-on-surface" numberOfLines={1}>{item.itemTemplate.name}</Text>
-          <Text className="text-xs text-outline font-medium">In stock</Text>
+          <Text className="text-xs text-outline font-medium">{addedText}</Text>
         </View>
         <View className="flex-col gap-2 mt-2">
           <View className="bg-primary-fixed px-2 py-0.5 rounded-full self-start">
@@ -191,7 +187,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
       <View className="w-full flex-row items-center justify-between px-6 py-4 bg-surface z-50">
         <View className="flex-row items-center gap-3">
           <Icon name="restaurant-menu" size={24} className="text-primary" />
-          <Text className="font-headline font-extrabold tracking-tight text-2xl text-primary italic">The Living Larder</Text>
+          <Text className="font-headline font-extrabold tracking-tight text-2xl text-primary italic">Stock</Text>
         </View>
         <View className="flex-row items-center gap-4">
           <TouchableOpacity className="active:scale-95 transition-transform">
@@ -224,25 +220,25 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
             )}
           </View>
 
-          {/* The Fridge Bento */}
+          {/* Fridge Section */}
           <View className="mt-10">
             <View className="flex-row justify-between items-end mb-6">
-              <Text className="font-headline text-3xl font-bold tracking-tight text-primary">The Fridge</Text>
+              <Text className="font-headline text-3xl font-bold tracking-tight text-primary">Fridge</Text>
               <Text className="text-sm font-bold text-outline uppercase tracking-tighter">{fridgeSection.length} Items</Text>
             </View>
             <View>
               {fridgeSection.length > 0 ? (
-                fridgeSection.map(renderFridgeItem)
+                fridgeSection.map(renderStockItem)
               ) : (
                 <Text className="text-on-surface-variant font-body">冷蔵庫は空です</Text>
               )}
             </View>
           </View>
 
-          {/* The Pantry Horizontal */}
+          {/* Pantry Section */}
           <View className="mt-10 mb-6">
             <View className="flex-row justify-between items-end mb-6">
-              <Text className="font-headline text-3xl font-bold tracking-tight text-primary">The Pantry</Text>
+              <Text className="font-headline text-3xl font-bold tracking-tight text-primary">Pantry</Text>
               <TouchableOpacity className="flex-row items-center gap-1">
                 <Text className="text-sm font-bold text-primary uppercase tracking-tighter">See All</Text>
                 <Icon name="chevron-right" size={16} className="text-primary" />
@@ -281,7 +277,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
       {/* FAB */}
       <TouchableOpacity
         className="absolute bottom-6 right-6 w-16 h-16 bg-primary rounded-xl flex items-center justify-center shadow-xl active:scale-95 transition-transform z-50"
-        onPress={() => navigation.navigate("AddToPantry")}
+        onPress={() => navigation.navigate("AddToStock")}
       >
         <Icon name="add" size={28} className="text-on-primary" />
       </TouchableOpacity>

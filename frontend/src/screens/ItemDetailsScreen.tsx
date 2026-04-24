@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Alert } fro
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
-import { useFridgeStore } from "../store/fridgeStore";
+import { useStockStore } from "../store/stockStore";
 import { useShoppingStore } from "../store/shoppingStore";
 import { differenceInCalendarDays, addDays } from "date-fns";
 
@@ -16,11 +16,11 @@ export default function ItemDetailsScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<ParamList, 'ItemDetails'>>();
 
-  const { fridgeItems, updateFridgeItem, updateItemTemplate } = useFridgeStore();
+  const { stockItems, updateStockItem, updateItemTemplate, fetchStockItems } = useStockStore();
   const { addToShoppingList } = useShoppingStore();
 
   const itemId = route.params?.itemId;
-  const initialItem = fridgeItems.find(i => i.id === itemId);
+  const initialItem = stockItems.find(i => i.id === itemId);
 
   const [itemName, setItemName] = useState(initialItem?.itemTemplate?.name || "");
   const [notes, setNotes] = useState(initialItem?.itemTemplate?.name ? `Stored safely.` : "");
@@ -28,12 +28,15 @@ export default function ItemDetailsScreen() {
   const initialDefaultDays = initialItem?.defaultDays || initialItem?.itemTemplate?.defaultDays || 7;
   const [defaultDays, setDefaultDays] = useState(initialDefaultDays);
 
+  // 初期残り日数の計算
   let initialDaysLeft = 7;
   if (initialItem) {
     const itemDefaultDays = initialDefaultDays;
     if (initialItem.endDate) {
+      // ユーザーが手動で終了日(endDate)を設定していた場合はそれから計算
       initialDaysLeft = differenceInCalendarDays(new Date(initialItem.endDate), new Date());
     } else if (initialItem.startedAt) {
+      // なければ、保管開始日とデフォルトの日数から推定される終了日を計算
       const startDate = new Date(initialItem.startedAt);
       const endDate = new Date(startDate.setDate(startDate.getDate() + itemDefaultDays));
       initialDaysLeft = differenceInCalendarDays(endDate, new Date());
@@ -42,29 +45,38 @@ export default function ItemDetailsScreen() {
     }
   }
 
-  // Guard against NaN
+  // 異常な日付データに対するフォールバック
   if (isNaN(initialDaysLeft)) {
       initialDaysLeft = 7;
   }
 
   const [freshness, setFreshness] = useState(Math.max(0, initialDaysLeft));
   const [activePriority, setActivePriority] = useState<"TODAY" | "URGENT" | "NORMAL" | "LOW">("NORMAL");
+  const [storageType, setStorageType] = useState<'FRIDGE' | 'PANTRY'>(initialItem?.itemTemplate?.storageType || 'FRIDGE');
 
   const saveUpdates = async () => {
     if (initialItem) {
        try {
-         // 1. Update or Duplicate Item Template
+         // 1. アイテムテンプレートの更新
+         // IsSystem=true(システム共通)のテンプレートの場合、バックエンド側で自動的に
+         // FamilyID が紐づいたカスタムテンプレートとして複製(Duplicate)され返却されます
          const newTemplate = await updateItemTemplate(initialItem.itemTemplateId, {
            name: itemName,
-           defaultDays: defaultDays
+           defaultDays: defaultDays,
+           storageType: storageType
          });
 
-         // 2. Update FridgeItem with new template ID and endDate
+         // 2. StockItem の更新
+         // 複製されて新しくなったテンプレートIDと、UIのStepperで調整された残り日数から逆算した新しい消費期限を保存
          const newEndDate = addDays(new Date(), freshness).toISOString();
-         await updateFridgeItem(initialItem.id, {
+         await updateStockItem(initialItem.id, {
            endDate: newEndDate,
            itemTemplateId: newTemplate.id
          });
+
+         // 3. 最新のデータをサーバーから再取得し、Zustandのローカルステートを同期させる
+         // （ストレージの変更内容などをStockScreenのタブ振り分けに即座に反映するため）
+         await fetchStockItems();
 
          Alert.alert("Success", "Changes saved successfully.");
        } catch (error) {
@@ -200,6 +212,27 @@ export default function ItemDetailsScreen() {
                   <Icon name="add" size={18} className="text-secondary" />
                 </TouchableOpacity>
               </View>
+            </View>
+          </View>
+
+          {/* Storage Type Selector */}
+          <View className="gap-y-3">
+            <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant ml-2">Storage Location</Text>
+            <View className="flex-row justify-between gap-3">
+              <TouchableOpacity
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors flex-row gap-2 ${storageType === 'FRIDGE' ? 'bg-primary-fixed/30 border-2 border-primary-fixed-dim/50' : 'bg-surface-container-low border-2 border-transparent'}`}
+                onPress={() => setStorageType('FRIDGE')}
+              >
+                <Icon name="kitchen" size={20} className={storageType === 'FRIDGE' ? 'text-on-primary-fixed' : 'text-on-surface-variant'} />
+                <Text className={`font-headline font-bold text-sm ${storageType === 'FRIDGE' ? 'text-on-primary-fixed' : 'text-on-surface-variant'}`}>Fridge</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors flex-row gap-2 ${storageType === 'PANTRY' ? 'bg-secondary-fixed/30 border-2 border-secondary-fixed-dim/50' : 'bg-surface-container-low border-2 border-transparent'}`}
+                onPress={() => setStorageType('PANTRY')}
+              >
+                <Icon name="inventory-2" size={20} className={storageType === 'PANTRY' ? 'text-on-secondary-fixed-variant' : 'text-on-surface-variant'} />
+                <Text className={`font-headline font-bold text-sm ${storageType === 'PANTRY' ? 'text-on-secondary-fixed-variant' : 'text-on-surface-variant'}`}>Pantry</Text>
+              </TouchableOpacity>
             </View>
           </View>
 

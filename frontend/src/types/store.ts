@@ -31,6 +31,7 @@ export interface ItemTemplate {
   name: string;
   categoryId: string;
   defaultDays: number;
+  storageType?: 'FRIDGE' | 'PANTRY';
   imageUrl: string;
   category?: {
     id: string;
@@ -54,7 +55,7 @@ export interface ShoppingItem {
   itemTemplate: ItemTemplate;
 }
 
-export interface FridgeItem {
+export interface StockItem {
   id: string;
   familyId: string;
   itemTemplateId: string;

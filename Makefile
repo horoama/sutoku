@@ -83,11 +83,16 @@ npm-install:
 	docker run --rm -v "$$(pwd)/frontend:/app" -w /app -u "$$(id -u):$$(id -g)" node:20-alpine npm install $(pkg)
 
 clean:
-	@echo "コンテナ群とボリュームを削除しています..."
-	docker-compose down -v --remove-orphans
+	@echo "コンテナ群、ボリューム、ローカルのイメージキャッシュを削除しています..."
+	docker-compose down -v --remove-orphans --rmi all
 	@echo "ローカルのデータベースファイルを削除しています..."
 	rm -f backend/data/dev.db
-	@echo "ローカルのフロントエンドキャッシュを削除しています..."
+	@echo "ローカルのフロントエンドのキャッシュや依存関係を削除しています..."
 	rm -rf frontend/.expo
+	rm -rf frontend/node_modules
+	rm -rf frontend/web-build
+	rm -rf frontend/.npm
+	@echo "ローカルのバックエンドのビルドキャッシュなどを削除しています..."
+	cd backend && go clean -cache -modcache -testcache || true
 	@echo "==== クリーンアップ完了 ===="
 
