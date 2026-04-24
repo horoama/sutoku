@@ -46,7 +46,7 @@ export const useStockStore = create<StockState>((set, get) => ({
     }
   },
 
-  addToStock: async (itemTemplateId, customDays, type = 'fridge', note) => {
+  addToStock: async (itemTemplateId, customDays, type = 'stock', note) => {
     const familyId = useAppStore.getState().family?.id;
     const userId = useAppStore.getState().user?.id;
     if (!familyId) return;
@@ -71,7 +71,7 @@ export const useStockStore = create<StockState>((set, get) => ({
   consumeItem: async (id) => {
     const userId = useAppStore.getState().user?.id;
     try {
-      await api.put(`/items/${id}`, { status: 'CONSUMED', userId, type: 'fridge' });
+      await api.put(`/items/${id}`, { status: 'CONSUMED', userId, type: 'stock' });
       await get().fetchStockItems();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
@@ -82,7 +82,7 @@ export const useStockStore = create<StockState>((set, get) => ({
   updateStockItem: async (id, updates) => {
     const userId = useAppStore.getState().user?.id;
     try {
-      await api.put(`/items/${id}`, { ...updates, userId, type: 'fridge' });
+      await api.put(`/items/${id}`, { ...updates, userId, type: 'stock' });
       await get().fetchStockItems();
     } catch (err: any) {
       set({ error: err.message });

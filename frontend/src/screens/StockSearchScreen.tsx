@@ -23,7 +23,7 @@ export default function StockSearchScreen() {
   const items = allItems.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleAddItem = async (templateId: string, itemName: string) => {
-    await addToStock(templateId, undefined, 'fridge');
+    await addToStock(templateId, undefined, 'stock');
     Alert.alert("追加完了", `${itemName} を追加しました`);
   };
 

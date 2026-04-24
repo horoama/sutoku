@@ -26,7 +26,7 @@ export default function AddToStockScreen() {
       setSelectedItemToAdd(item);
       setDateModalVisible(true);
     } else {
-      await addToStock(item.id, undefined, 'fridge');
+      await addToStock(item.id, undefined, 'stock');
       Alert.alert("完了", "冷蔵庫に追加しました！");
     }
   };
@@ -34,7 +34,7 @@ export default function AddToStockScreen() {
   const confirmAddWithDate = async () => {
     if (selectedItemToAdd) {
       const days = parseInt(customDays, 10) || 7;
-      await addToStock(selectedItemToAdd.id, days, 'fridge');
+      await addToStock(selectedItemToAdd.id, days, 'stock');
       setDateModalVisible(false);
       setSelectedItemToAdd(null);
       Alert.alert("完了", "冷蔵庫に追加しました！");
