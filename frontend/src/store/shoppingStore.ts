@@ -21,13 +21,13 @@ interface ShoppingState {
   /** 買い物リストのアイテム一覧を取得 */
   fetchShoppingList: () => Promise<void>;
   /** 買い物リストに新しいアイテムを追加 */
-  addToShoppingList: (itemTemplateId: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW', note?: string, type?: string) => Promise<void>;
+  addToShoppingList: (itemTemplateId: string | null, name: string, categoryId: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW', note?: string, type?: string) => Promise<void>;
   /** 買い物アイテムを購入済みに変更し、必要に応じて冷蔵庫に移動 */
   purchaseItem: (id: string, price?: number, endDate?: string) => Promise<void>;
   /** 買い物アイテムのチェック状態を切り替える */
   toggleBoughtStatus: (id: string, isBought: boolean) => Promise<void>;
   /** 新しいカスタムアイテムテンプレートを作成 */
-  createItemTemplate: (name: string, categoryId: string, defaultDays: number) => Promise<ItemTemplate | null>;
+  createItemTemplate: (name: string, categoryId: string, defaultDays: number, storageType?: string, defaultNote?: string) => Promise<ItemTemplate | null>;
   /** 買い物アイテムの優先度を変更する */
   updateItemPriority: (id: string, priority: string) => Promise<void>;
   /** 買い物アイテムを削除する */
@@ -62,13 +62,13 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
     }
   },
 
-  addToShoppingList: async (itemTemplateId, priority, note, type = 'shopping') => {
+  addToShoppingList: async (itemTemplateId, name, categoryId, priority, note, type = 'shopping') => {
     const familyId = useAppStore.getState().family?.id;
     const userId = useAppStore.getState().user?.id;
     if (!familyId) return;
 
     try {
-      await api.post('/items', { familyId, userId, itemTemplateId, priority, note, type });
+      await api.post('/items', { familyId, userId, itemTemplateId, name, categoryId, priority, note, type });
       await get().fetchShoppingList();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
@@ -76,12 +76,12 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
     }
   },
 
-  createItemTemplate: async (name, categoryId, defaultDays) => {
+  createItemTemplate: async (name, categoryId, defaultDays, storageType, defaultNote) => {
     const familyId = useAppStore.getState().family?.id;
     if (!familyId) return null;
 
     try {
-      const { data } = await api.post('/item-templates', { name, categoryId, defaultDays, familyId });
+      const { data } = await api.post('/item-templates', { name, categoryId, defaultDays, familyId, storageType, defaultNote });
       await get().fetchCategories();
       return data;
     } catch (err: any) {

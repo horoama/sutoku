@@ -65,7 +65,7 @@ describe('useShoppingStore', () => {
     // activity logs 用のモック
     (api.get as jest.Mock).mockResolvedValueOnce({ data: [] });
 
-    await useShoppingStore.getState().addToShoppingList('t1', 'NORMAL', 'test note', 'shopping');
+    await useShoppingStore.getState().addToShoppingList('t1', 'Test Item', 'c1', 'NORMAL', 'test note');
 
     expect(api.post).toHaveBeenCalled();
     expect(useShoppingStore.getState().error).toBeNull();
@@ -75,7 +75,7 @@ describe('useShoppingStore', () => {
     const errorMessage = 'Internal Server Error';
     (api.post as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
 
-    await useShoppingStore.getState().addToShoppingList('t1', 'NORMAL');
+    await useShoppingStore.getState().addToShoppingList('t1', 'Test Item', 'c1', 'NORMAL');
 
     const state = useShoppingStore.getState();
     expect(state.shoppingList).toEqual([]);
@@ -85,7 +85,7 @@ describe('useShoppingStore', () => {
   it('familyId が存在しない場合、addToShoppingList は何もせず早期リターンすること（異常系）', async () => {
     useAppStore.setState({ family: null });
 
-    await useShoppingStore.getState().addToShoppingList('t1', 'NORMAL');
+    await useShoppingStore.getState().addToShoppingList('t1', 'Test Item', 'c1', 'NORMAL');
 
     const state = useShoppingStore.getState();
     expect(state.shoppingList).toEqual([]);

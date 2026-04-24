@@ -75,7 +75,10 @@ export default function ItemDetailsScreen() {
 
   const handleAddToShoppingList = async () => {
     if (initialItem) {
-      await addToShoppingList(initialItem.itemTemplateId, activePriority, notes.trim());
+      const templateId = initialItem.itemTemplateId || null;
+      const itemName = initialItem.itemTemplate ? initialItem.itemTemplate.name : ((initialItem as any).name || "");
+      const categoryId = initialItem.itemTemplate ? initialItem.itemTemplate.categoryId : ((initialItem as any).categoryId || "");
+      await addToShoppingList(templateId, itemName, categoryId, activePriority, notes.trim());
       Alert.alert("Success", "Added to your shopping list!");
       navigation.navigate("MainTabs", { screen: "Shopping" });
     }
