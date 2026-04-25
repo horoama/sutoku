@@ -7,7 +7,7 @@ import { ShoppingItem } from '../../store/shoppingStore';
  * @property {boolean} visible - モーダルの表示状態
  * @property {ShoppingItem | null} item - 選択されたアイテム
  * @property {() => void} onClose - モーダルを閉じる処理
- * @property {() => void} onMoveToFridge - 冷蔵庫へ移動する処理
+ * @property {() => void} onMoveToStock - Stockへ移動する処理
  * @property {() => void} onToggleCheck - チェック状態を切り替える処理
  * @property {(id: string, priority: string) => void} [onChangePriority] - 優先度を変更する処理
  * @property {(id: string) => void} [onDelete] - リストから削除する処理
@@ -16,7 +16,7 @@ interface ActionModalProps {
   visible: boolean;
   item: ShoppingItem | null;
   onClose: () => void;
-  onMoveToFridge: () => void;
+  onMoveToStock: () => void;
   onToggleCheck: () => void;
   onChangePriority?: (id: string, priority: string) => void;
   onDelete?: (id: string) => void;
@@ -25,7 +25,7 @@ interface ActionModalProps {
 /**
  * アイテム長押し時のアクション（冷蔵庫へ移動・チェック・優先度変更・削除）を選択するモーダル
  */
-export const ActionModal: React.FC<ActionModalProps> = ({ visible, item, onClose, onMoveToFridge, onToggleCheck, onChangePriority, onDelete }) => {
+export const ActionModal: React.FC<ActionModalProps> = ({ visible, item, onClose, onMoveToStock, onToggleCheck, onChangePriority, onDelete }) => {
   if (!item) return null;
 
   const priorities = ["TODAY", "URGENT", "NORMAL", "LOW"];
@@ -38,8 +38,8 @@ export const ActionModal: React.FC<ActionModalProps> = ({ visible, item, onClose
             {item.itemTemplate.name} のアクション
           </Text>
           {item.status === 'BOUGHT' ? (
-            <TouchableOpacity className="w-full bg-primary py-4 rounded-xl items-center mb-3" onPress={onMoveToFridge}>
-              <Text className="text-on-primary font-bold text-base">冷蔵庫 / 食糧庫に入れる</Text>
+            <TouchableOpacity className="w-full bg-primary py-4 rounded-xl items-center mb-3" onPress={onMoveToStock}>
+              <Text className="text-on-primary font-bold text-base">Stockに入れる</Text>
             </TouchableOpacity>
           ) : (
             <>

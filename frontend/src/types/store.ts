@@ -62,6 +62,7 @@ export interface FridgeItem {
   startedAt: string | null;
   endDate: string | null;
   defaultDays: number;
+  location?: 'FRIDGE' | 'PANTRY';
   itemTemplate: ItemTemplate;
 }
 

@@ -66,7 +66,7 @@ export default function ActivityLogScreen() {
             <Text className="font-label text-xs uppercase tracking-[0.2em] text-secondary font-bold mb-3">Collective Hearth</Text>
             <Text className="font-headline text-5xl font-extrabold text-primary leading-tight tracking-tighter">Family Activity Log</Text>
             <Text className="mt-4 text-on-surface-variant text-lg leading-relaxed max-w-md">
-              A chronological pulse of your home's kitchen. Track every addition, purchase, and pantry update as it happens.
+              A chronological pulse of your home's kitchen. Track every addition, purchase, and stock update as it happens.
             </Text>
           </View>
 

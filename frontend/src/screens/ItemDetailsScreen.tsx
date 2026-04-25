@@ -49,6 +49,7 @@ export default function ItemDetailsScreen() {
 
   const [freshness, setFreshness] = useState(Math.max(0, initialDaysLeft));
   const [activePriority, setActivePriority] = useState<"TODAY" | "URGENT" | "NORMAL" | "LOW">("NORMAL");
+  const [location, setLocation] = useState<"FRIDGE" | "PANTRY">(initialItem?.location || "FRIDGE");
 
   const saveUpdates = async () => {
     if (initialItem) {
@@ -63,7 +64,8 @@ export default function ItemDetailsScreen() {
          const newEndDate = addDays(new Date(), freshness).toISOString();
          await updateFridgeItem(initialItem.id, {
            endDate: newEndDate,
-           itemTemplateId: newTemplate.id
+           itemTemplateId: newTemplate.id,
+           location: location
          });
 
          Alert.alert("Success", "Changes saved successfully.");
@@ -224,6 +226,27 @@ export default function ItemDetailsScreen() {
                 onPress={() => setActivePriority('TODAY')}
               >
                 <Text className={`font-headline font-bold text-sm ${activePriority === 'TODAY' ? 'text-on-tertiary-container' : 'text-on-surface-variant'}`}>TODAY</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Storage Location Selector */}
+          <View className="gap-y-3">
+            <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant ml-2">Storage Location</Text>
+            <View className="flex-row justify-between gap-3">
+              <TouchableOpacity
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${location === 'FRIDGE' ? 'bg-primary border-2 border-primary' : 'bg-surface-container-low border-2 border-transparent'}`}
+                onPress={() => setLocation('FRIDGE')}
+              >
+                <Icon name="kitchen" size={24} className={`mb-1 ${location === 'FRIDGE' ? 'text-on-primary' : 'text-outline'}`} />
+                <Text className={`font-headline font-bold text-sm ${location === 'FRIDGE' ? 'text-on-primary' : 'text-on-surface-variant'}`}>Fridge</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${location === 'PANTRY' ? 'bg-secondary border-2 border-secondary' : 'bg-surface-container-low border-2 border-transparent'}`}
+                onPress={() => setLocation('PANTRY')}
+              >
+                <Icon name="inventory-2" size={24} className={`mb-1 ${location === 'PANTRY' ? 'text-on-secondary' : 'text-outline'}`} />
+                <Text className={`font-headline font-bold text-sm ${location === 'PANTRY' ? 'text-on-secondary' : 'text-on-surface-variant'}`}>Pantry</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -61,6 +61,7 @@ func AddListItem(c *gin.Context) {
 		Status         string     `json:"status"` // legacy support, determines if Shopping or Fridge
 		Type           string     `json:"type"`   // "shopping" or "fridge"
 		EndDate        *time.Time `json:"endDate"`
+		Location       string     `json:"location"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -90,6 +91,9 @@ func AddListItem(c *gin.Context) {
 			if input.EndDate != nil {
 				item.EndDate = input.EndDate
 			}
+			if input.Location != "" {
+				item.Location = input.Location
+			}
 			if err := database.DB.Save(&item).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update existing fridge item"})
 				return
@@ -102,6 +106,10 @@ func AddListItem(c *gin.Context) {
 				Status:         "ACTIVE",
 				StartedAt:      &now,
 				DefaultDays:    template.DefaultDays,
+				Location:       "FRIDGE",
+			}
+			if input.Location != "" {
+				item.Location = input.Location
 			}
 			if input.EndDate != nil {
 				item.EndDate = input.EndDate
@@ -175,6 +183,7 @@ func UpdateListItem(c *gin.Context) {
 		UserID         string     `json:"userId"`
 		EndDate        *time.Time `json:"endDate"`
 		ItemTemplateID string     `json:"itemTemplateId"`
+		Location       string     `json:"location"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -268,6 +277,10 @@ func UpdateListItem(c *gin.Context) {
 
 		if input.EndDate != nil {
 			updates["end_date"] = input.EndDate
+		}
+
+		if input.Location != "" && input.Location != fridgeItem.Location {
+			updates["location"] = input.Location
 		}
 
 		if input.ItemTemplateID != "" && input.ItemTemplateID != fridgeItem.ItemTemplateID {

@@ -75,9 +75,9 @@ export default function RegistrationSuccessScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               className="w-full bg-secondary-fixed py-5 rounded-xl flex items-center justify-center active:bg-secondary-container transition-colors"
-              onPress={() => navigation.navigate("MainTabs", { screen: "Fridge" })}
+              onPress={() => navigation.navigate("MainTabs", { screen: "Stock" })}
             >
-              <Text className="text-on-secondary-fixed-variant font-headline font-bold text-lg">Back to Pantry</Text>
+              <Text className="text-on-secondary-fixed-variant font-headline font-bold text-lg">Back to Stock</Text>
             </TouchableOpacity>
           </View>
 

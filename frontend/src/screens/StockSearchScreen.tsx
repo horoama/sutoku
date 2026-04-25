@@ -6,7 +6,7 @@ import Icon from "@expo/vector-icons/MaterialIcons";
 import { useFridgeStore } from '../store/fridgeStore';
 import { useShoppingStore } from '../store/shoppingStore';
 
-export default function PantrySearchScreen() {
+export default function StockSearchScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,7 +23,7 @@ export default function PantrySearchScreen() {
   const items = allItems.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleAddItem = async (templateId: string, itemName: string) => {
-    await addToFridge(templateId, undefined, 'fridge');
+    await addToFridge(templateId, undefined, 'FRIDGE');
     Alert.alert("追加完了", `${itemName} を追加しました`);
   };
 
@@ -129,7 +129,7 @@ export default function PantrySearchScreen() {
       <View className="absolute bottom-10 left-0 right-0 px-6 items-center z-50">
         <TouchableOpacity
           className="w-full max-w-xs py-5 bg-primary rounded-xl shadow-2xl flex-row items-center justify-center gap-3 active:scale-95 transition-all"
-          onPress={() => navigation.navigate("MainTabs", { screen: "Fridge" })}
+          onPress={() => navigation.navigate("MainTabs", { screen: "Stock" })}
         >
           <Text className="text-on-primary font-headline font-bold text-lg">Finish Adding</Text>
           <Icon name="check-circle" size={24} className="text-on-primary" />

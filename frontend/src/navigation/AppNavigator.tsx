@@ -2,14 +2,15 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import BottomTabNavigator from "./BottomTabNavigator";
 
+import StockScreen from "../screens/StockScreen";
 import ItemDetailsScreen from "../screens/ItemDetailsScreen";
 import RegisterItemScreen from "../screens/RegisterItemScreen";
 import RegistrationSuccessScreen from "../screens/RegistrationSuccessScreen";
 import DairyCategoryScreen from "../screens/DairyCategoryScreen";
 import AddToShoppingListScreen from "../screens/AddToShoppingListScreen";
 import ReviewListScreen from "../screens/ReviewListScreen";
-import AddToPantryScreen from "../screens/AddToPantryScreen";
-import PantrySearchScreen from "../screens/PantrySearchScreen";
+import AddToStockScreen from "../screens/AddToStockScreen";
+import StockSearchScreen from "../screens/StockSearchScreen";
 import ActivityLogScreen from "../screens/ActivityLogScreen";
 
 const Stack = createNativeStackNavigator();
@@ -27,8 +28,8 @@ export default function AppNavigator() {
       <Stack.Screen name="DairyCategory" component={DairyCategoryScreen} />
       <Stack.Screen name="AddToShoppingList" component={AddToShoppingListScreen} />
       <Stack.Screen name="ReviewList" component={ReviewListScreen} />
-      <Stack.Screen name="AddToPantry" component={AddToPantryScreen} />
-      <Stack.Screen name="PantrySearch" component={PantrySearchScreen} />
+      <Stack.Screen name="AddToStock" component={AddToStockScreen} />
+      <Stack.Screen name="StockSearch" component={StockSearchScreen} />
       <Stack.Screen name="ActivityLog" component={ActivityLogScreen} />
     </Stack.Navigator>
   );

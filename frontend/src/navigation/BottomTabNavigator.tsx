@@ -5,7 +5,7 @@ import { View, Text, Platform, TouchableOpacity, Dimensions, PanResponder } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import ShoppingListScreen from "../screens/ShoppingListScreen";
-import FridgeScreen from "../screens/FridgeScreen";
+import StockScreen from "../screens/StockScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 
 const Tab = createBottomTabNavigator();
@@ -50,9 +50,9 @@ const TabBarIcon = ({ focused, routeName }: { focused: boolean, routeName: strin
   if (routeName === "Shopping") {
     iconName = "shopping-basket";
     label = "List";
-  } else if (routeName === "Fridge") {
+  } else if (routeName === "Stock") {
     iconName = "kitchen";
-    label = "Pantry";
+    label = "Stock";
   } else if (routeName === "Settings") {
     iconName = "group";
     label = "Family";
@@ -149,21 +149,21 @@ export default function BottomTabNavigator() {
     >
       <Tab.Screen name="Shopping">
         {(props) => (
-          <ScreenEdgeSwipeContainer nextRoute="Fridge" navigation={props.navigation}>
+          <ScreenEdgeSwipeContainer nextRoute="Stock" navigation={props.navigation}>
             <ShoppingListScreen />
           </ScreenEdgeSwipeContainer>
         )}
       </Tab.Screen>
-      <Tab.Screen name="Fridge">
+      <Tab.Screen name="Stock">
         {(props) => (
           <ScreenEdgeSwipeContainer prevRoute="Shopping" nextRoute="Settings" navigation={props.navigation}>
-            <FridgeScreen navigation={props.navigation} />
+            <StockScreen navigation={props.navigation} />
           </ScreenEdgeSwipeContainer>
         )}
       </Tab.Screen>
       <Tab.Screen name="Settings">
         {(props) => (
-          <ScreenEdgeSwipeContainer prevRoute="Fridge" navigation={props.navigation}>
+          <ScreenEdgeSwipeContainer prevRoute="Stock" navigation={props.navigation}>
             <SettingsScreen navigation={props.navigation} />
           </ScreenEdgeSwipeContainer>
         )}

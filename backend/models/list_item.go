@@ -19,6 +19,7 @@ type FridgeItem struct {
 	StartedAt   *time.Time `json:"startedAt"`                      // 保管開始日時
 	EndDate     *time.Time `json:"endDate"`                        // 消費期限（または目標日時）
 	DefaultDays int        `json:"defaultDays"`                    // 消費期限の目安日数
+	Location    string     `gorm:"default:'FRIDGE'" json:"location"` // 保存先 ("FRIDGE", "PANTRY")
 }
 
 // BeforeCreate はGORMのフックで、レコード作成前にUUIDを設定し、

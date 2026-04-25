@@ -7,7 +7,7 @@ import Icon from "@expo/vector-icons/MaterialIcons";
 import { useFridgeStore } from '../store/fridgeStore';
 import { useShoppingStore } from '../store/shoppingStore';
 
-export default function AddToPantryScreen() {
+export default function AddToStockScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,7 +27,7 @@ export default function AddToPantryScreen() {
       setDateModalVisible(true);
     } else {
       await addToFridge(item.id, undefined, 'fridge');
-      Alert.alert("完了", "冷蔵庫に追加しました！");
+      Alert.alert("完了", "Stockに追加しました！");
     }
   };
 
@@ -37,7 +37,7 @@ export default function AddToPantryScreen() {
       await addToFridge(selectedItemToAdd.id, days, 'fridge');
       setDateModalVisible(false);
       setSelectedItemToAdd(null);
-      Alert.alert("完了", "冷蔵庫に追加しました！");
+      Alert.alert("完了", "Stockに追加しました！");
     }
   };
 
@@ -58,7 +58,7 @@ export default function AddToPantryScreen() {
         >
           <Icon name="arrow-back" size={24} className="text-on-surface" />
         </TouchableOpacity>
-        <Text className="font-headline text-xl font-bold text-on-surface pr-10 flex-1 text-center tracking-tight">Add to Pantry</Text>
+        <Text className="font-headline text-xl font-bold text-on-surface pr-10 flex-1 text-center tracking-tight">Add to Stock</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
@@ -153,7 +153,7 @@ export default function AddToPantryScreen() {
       <View className="absolute bottom-0 left-0 right-0 p-6 bg-background/90 z-50 flex items-center justify-center">
         <TouchableOpacity
           className="flex-row items-center justify-center gap-3 bg-secondary px-8 py-4 rounded-xl shadow-xl active:bg-secondary-container transition-colors w-full max-w-[300px]"
-          onPress={() => navigation.navigate("MainTabs", { screen: "Fridge" })}
+          onPress={() => navigation.navigate("MainTabs", { screen: "Stock" })}
         >
           <Text className="text-on-secondary font-headline font-bold text-lg">Finish Adding</Text>
           <Icon name="check-circle" size={20} className="text-on-secondary" />

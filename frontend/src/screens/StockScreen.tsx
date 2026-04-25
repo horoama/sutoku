@@ -7,7 +7,7 @@ import { useAppStore } from "../store/appStore";
 import { differenceInCalendarDays } from "date-fns";
 import Icon from "@expo/vector-icons/MaterialIcons";
 
-export default function FridgeScreen({ navigation }: { navigation: any }) {
+export default function StockScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
   const { family } = useAppStore();
   const { fridgeItems, fetchFridgeItems, consumeItem } = useFridgeStore();
@@ -41,7 +41,8 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
   // Usually short lifespan goes to fridge, longer to pantry.
   // Or check category name if populated, but fallback to all active items
   const fridgeSection = activeItems.filter(item => {
-    // NOTE: TypeScript error fix. Casting itemTemplate to any to access nested category for now.
+    if (item.location) return item.location === 'FRIDGE';
+    // Fallback logic
     const catName = (item.itemTemplate as any).category?.name?.toLowerCase() || "";
     if (catName.includes("dairy") || catName.includes("meat") || catName.includes("produce")) return true;
     return item.defaultDays < 30; // Shorter lived items typically go to fridge
@@ -103,7 +104,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform ml-2"
           onPress={(e) => {
             e.stopPropagation();
-            handleConsumePantryItem(item);
+            handleConsumeItem(item);
           }}
         >
           <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
@@ -112,7 +113,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     );
   };
 
-  const handleConsumePantryItem = async (item: FridgeItem) => {
+  const handleConsumeItem = async (item: FridgeItem) => {
     try {
       // Consume item from pantry
       await consumeItem(item.id);
@@ -146,7 +147,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
             className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform"
             onPress={(e) => {
               e.stopPropagation();
-              handleConsumePantryItem(item);
+              handleConsumeItem(item);
             }}
           >
             <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
@@ -176,7 +177,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           </View>
           <TouchableOpacity
             className="bg-secondary px-3 py-2 rounded-full active:scale-95 transition-transform w-full items-center justify-center"
-            onPress={() => handleConsumePantryItem(item)}
+            onPress={() => handleConsumeItem(item)}
           >
             <Text className="text-on-secondary text-[10px] font-bold uppercase tracking-widest">Consume</Text>
           </TouchableOpacity>
@@ -190,8 +191,8 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
       {/* TopAppBar */}
       <View className="w-full flex-row items-center justify-between px-6 py-4 bg-surface z-50">
         <View className="flex-row items-center gap-3">
-          <Icon name="restaurant-menu" size={24} className="text-primary" />
-          <Text className="font-headline font-extrabold tracking-tight text-2xl text-primary italic">The Living Larder</Text>
+          <Icon name="kitchen" size={24} className="text-primary" />
+          <Text className="font-headline font-extrabold tracking-tight text-2xl text-primary italic">Stock</Text>
         </View>
         <View className="flex-row items-center gap-4">
           <TouchableOpacity className="active:scale-95 transition-transform">
@@ -281,7 +282,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
       {/* FAB */}
       <TouchableOpacity
         className="absolute bottom-6 right-6 w-16 h-16 bg-primary rounded-xl flex items-center justify-center shadow-xl active:scale-95 transition-transform z-50"
-        onPress={() => navigation.navigate("AddToPantry")}
+        onPress={() => navigation.navigate("AddToStock")}
       >
         <Icon name="add" size={28} className="text-on-primary" />
       </TouchableOpacity>

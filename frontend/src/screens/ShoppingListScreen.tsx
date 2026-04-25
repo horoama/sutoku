@@ -64,9 +64,9 @@ export default function ShoppingListScreen() {
   };
 
   /**
-   * 冷蔵庫への移動処理（消費期限確認）
+   * Stockへの移動処理（消費期限確認）
    */
-  const handleMoveToFridge = async () => {
+  const handleMoveToStock = async () => {
     if (selectedItem) {
       if (!selectedItem.itemTemplate.defaultDays || selectedItem.itemTemplate.defaultDays === 0) {
         setModalVisible(false);
@@ -75,15 +75,15 @@ export default function ShoppingListScreen() {
         await purchaseItem(selectedItem.id);
         setModalVisible(false);
         setSelectedItem(null);
-        Alert.alert("完了", "冷蔵庫に追加しました！");
+        Alert.alert("完了", "Stockに追加しました！");
       }
     }
   };
 
   /**
-   * 日付指定付きでの冷蔵庫への移動処理
+   * 日付指定付きでのStockへの移動処理
    */
-  const confirmMoveToFridgeWithDate = async () => {
+  const confirmMoveToStockWithDate = async () => {
     if (selectedItem) {
       const days = parseInt(customDays, 10) || 7;
       const endDate = new Date();
@@ -91,7 +91,7 @@ export default function ShoppingListScreen() {
       await purchaseItem(selectedItem.id, undefined, endDate.toISOString());
       setDateModalVisible(false);
       setSelectedItem(null);
-      Alert.alert("完了", "冷蔵庫に追加しました！");
+      Alert.alert("完了", "Stockに追加しました！");
     }
   };
 
@@ -118,7 +118,7 @@ export default function ShoppingListScreen() {
     );
   };
 
-  const handleMoveAllCheckedToPantry = async () => {
+  const handleMoveAllCheckedToStock = async () => {
     const checkedItems = shoppingList.filter(item => item.status === "BOUGHT");
     if (checkedItems.length === 0) return;
     
@@ -126,7 +126,7 @@ export default function ShoppingListScreen() {
     try {
       // Create a loading state or just execute
       await Promise.all(checkedItems.map(item => purchaseItem(item.id)));
-      Alert.alert("完了", `${checkedItems.length}件のアイテムをTHE PANTRYに追加しました！`);
+      Alert.alert("完了", `${checkedItems.length}件のアイテムをStockに追加しました！`);
     } catch (e) {
       console.error(e);
       Alert.alert("エラー", "一部のアイテムの移動に失敗しました。");
@@ -186,7 +186,7 @@ export default function ShoppingListScreen() {
                     <Text className="font-headline text-lg font-bold text-on-surface-variant">チェック済み</Text>
                     <TouchableOpacity 
                       className="bg-primary/10 px-4 py-2 rounded-full flex-row items-center gap-1 active:scale-95 transition-transform"
-                      onPress={handleMoveAllCheckedToPantry}
+                      onPress={handleMoveAllCheckedToStock}
                     >
                       <Icon name="input" size={14} className="text-primary" />
                       <Text className="text-primary text-[10px] font-bold uppercase tracking-widest">全て送る</Text>
@@ -224,7 +224,7 @@ export default function ShoppingListScreen() {
         visible={isModalVisible}
         item={selectedItem}
         onClose={() => setModalVisible(false)}
-        onMoveToFridge={handleMoveToFridge}
+        onMoveToStock={handleMoveToStock}
         onToggleCheck={handleModalToggleCheck}
         onChangePriority={handleChangePriority}
         onDelete={handleDeleteItem}
@@ -234,7 +234,7 @@ export default function ShoppingListScreen() {
         visible={dateModalVisible}
         days={customDays}
         setDays={setCustomDays}
-        onConfirm={confirmMoveToFridgeWithDate}
+        onConfirm={confirmMoveToStockWithDate}
         onClose={() => setDateModalVisible(false)}
       />
     </View>

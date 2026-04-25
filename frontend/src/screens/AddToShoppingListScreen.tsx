@@ -118,7 +118,7 @@ export default function AddToShoppingListScreen() {
         <View>
           <View className="flex-row justify-between items-end mb-4 pr-2">
             <Text className="font-headline text-xl font-bold text-primary">Running Low</Text>
-            <Text className="font-label text-xs font-bold tracking-wider text-outline uppercase">Based on Pantry</Text>
+            <Text className="font-label text-xs font-bold tracking-wider text-outline uppercase">Based on Stock</Text>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-4 overflow-visible">
             {suggestions.map(item => (
