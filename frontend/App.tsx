@@ -8,6 +8,7 @@ import { cssInterop } from "nativewind";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { initI18n } from "./src/i18n";
 import { View, Text } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 cssInterop(Icon, {
   className: {
@@ -36,11 +37,13 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <AppNavigator />
-        <StatusBar style="auto" />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <AppNavigator />
+          <StatusBar style="auto" />
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

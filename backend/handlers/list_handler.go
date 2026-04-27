@@ -14,13 +14,13 @@ func GetLists(c *gin.Context) {
 	familyID := c.Param("familyId")
 
 	var shoppingItems []models.ShoppingItem
-	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("updated_at desc").Find(&shoppingItems).Error; err != nil {
+	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("sort_order asc, updated_at desc").Find(&shoppingItems).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch shopping items"})
 		return
 	}
 
 	var fridgeItems []models.FridgeItem
-	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("updated_at desc").Find(&fridgeItems).Error; err != nil {
+	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("sort_order asc, updated_at desc").Find(&fridgeItems).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch fridge items"})
 		return
 	}
@@ -330,4 +330,47 @@ func DeleteListItem(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Item deleted"})
+}
+
+// ReorderListItems はアイテムの並び順（SortOrder）を一括更新します。
+func ReorderListItems(c *gin.Context) {
+	var input struct {
+		Type  string `json:"type"` // "shopping" or "fridge"
+		Items []struct {
+			ID        string  `json:"id"`
+			SortOrder float64 `json:"sortOrder"`
+		} `json:"items"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	tx := database.DB.Begin()
+
+	if input.Type == "shopping" {
+		for _, item := range input.Items {
+			if err := tx.Model(&models.ShoppingItem{}).Where("id = ?", item.ID).Update("sort_order", item.SortOrder).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update shopping item order"})
+				return
+			}
+		}
+	} else if input.Type == "fridge" {
+		for _, item := range input.Items {
+			if err := tx.Model(&models.FridgeItem{}).Where("id = ?", item.ID).Update("sort_order", item.SortOrder).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update fridge item order"})
+				return
+			}
+		}
+	} else {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type"})
+		return
+	}
+
+	tx.Commit()
+	c.JSON(http.StatusOK, gin.H{"message": "Order updated successfully"})
 }

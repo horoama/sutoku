@@ -22,6 +22,7 @@ func SetupRoutes(router *gin.Engine) {
 		api.GET("/lists/:familyId", handlers.GetLists)
 
 		api.POST("/items", handlers.AddListItem)
+		api.PUT("/items/reorder", handlers.ReorderListItems)
 		api.PUT("/items/:id", handlers.UpdateListItem)
 		api.DELETE("/items/:id", handlers.DeleteListItem)
 

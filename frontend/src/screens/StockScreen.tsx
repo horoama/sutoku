@@ -6,11 +6,12 @@ import { useShoppingStore } from "../store/shoppingStore";
 import { useAppStore } from "../store/appStore";
 import { differenceInCalendarDays } from "date-fns";
 import Icon from "@expo/vector-icons/MaterialIcons";
+import DraggableFlatList, { NestableScrollContainer, NestableDraggableFlatList, RenderItemParams } from 'react-native-draggable-flatlist';
 
 export default function StockScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
   const { family } = useAppStore();
-  const { fridgeItems, fetchFridgeItems, consumeItem } = useFridgeStore();
+  const { fridgeItems, fetchFridgeItems, consumeItem, reorderFridgeList } = useFridgeStore();
 
   useEffect(() => {
     if (family?.id) {
@@ -122,12 +123,11 @@ export default function StockScreen({ navigation }: { navigation: any }) {
     }
   };
 
-  const renderFridgeItem = (item: FridgeItem) => {
+  const renderFridgeItem = ({ item, drag, isActive }: RenderItemParams<FridgeItem>) => {
     const daysLeft = getDaysLeft(item);
     return (
       <TouchableOpacity
-        key={item.id}
-        className="bg-surface-container-low p-4 rounded-lg flex-row items-center justify-between group mb-3"
+        className={`p-4 rounded-lg flex-row items-center justify-between group mb-3 shadow-sm ${isActive ? 'bg-surface-container' : 'bg-surface-container-low'}`}
         onPress={() => navigation.navigate("ItemDetails", { itemId: item.id })}
       >
         <View className="flex-row items-center gap-4 flex-1">
@@ -139,30 +139,40 @@ export default function StockScreen({ navigation }: { navigation: any }) {
             <Text className="text-xs text-outline font-medium">Added recently</Text>
           </View>
         </View>
-        <View className="items-end gap-1 shrink-0 ml-auto">
-          <Text className="font-headline font-bold text-primary text-base">
-            {daysLeft < 0 ? `期限切れ(${Math.abs(daysLeft)}日前)` : daysLeft === 0 ? "今日" : `あと${daysLeft}日`}
-          </Text>
-          <TouchableOpacity
-            className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform"
-            onPress={(e) => {
-              e.stopPropagation();
-              handleConsumeItem(item);
-            }}
-          >
-            <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
-          </TouchableOpacity>
+        <View className="flex-row items-center gap-3">
+          <View className="items-end gap-1 shrink-0">
+            <Text className="font-headline font-bold text-primary text-base">
+              {daysLeft < 0 ? `期限切れ(${Math.abs(daysLeft)}日前)` : daysLeft === 0 ? "今日" : `あと${daysLeft}日`}
+            </Text>
+            <TouchableOpacity
+              className="bg-secondary px-3 py-1.5 rounded-full active:scale-95 transition-transform"
+              onPress={(e) => {
+                e.stopPropagation();
+                handleConsumeItem(item);
+              }}
+            >
+              <Text className="text-on-secondary text-[10px] font-bold uppercase">Consume</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* ドラッグハンドル */}
+          {drag && (
+            <TouchableOpacity onPressIn={drag} className="p-2 active:opacity-50 h-full justify-center">
+              <Icon name="drag-handle" size={24} className="text-outline" />
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     );
   };
 
-  const renderPantryCard = (item: FridgeItem) => {
+  const renderPantryCard = ({ item, drag, isActive }: RenderItemParams<FridgeItem>) => {
     return (
       <TouchableOpacity
-        key={item.id}
-        className="w-40 bg-surface-container-lowest p-5 rounded-lg shadow-sm mr-4"
+        className={`w-40 p-5 rounded-lg shadow-sm mr-4 ${isActive ? 'bg-surface-container' : 'bg-surface-container-lowest'}`}
         onPress={() => navigation.navigate("ItemDetails", { itemId: item.id })}
+        onLongPress={drag}
+        activeOpacity={0.8}
       >
         <View className="w-full aspect-square bg-surface-container-low rounded-2xl overflow-hidden mb-4 items-center justify-center">
           <Icon name="inventory-2" size={48} className="text-secondary" />
@@ -207,7 +217,7 @@ export default function StockScreen({ navigation }: { navigation: any }) {
         </View>
       </View>
 
-      <ScrollView className="pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
+      <NestableScrollContainer className="pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="px-6 gap-y-10">
           {/* Expiring Soon Hero Section */}
           <View>
@@ -233,7 +243,18 @@ export default function StockScreen({ navigation }: { navigation: any }) {
             </View>
             <View>
               {fridgeSection.length > 0 ? (
-                fridgeSection.map(renderFridgeItem)
+                <NestableDraggableFlatList
+                  data={fridgeSection}
+                  keyExtractor={(item) => item.id}
+                  onDragEnd={({ data }) => {
+                    const itemsToUpdate = data.map((item, index) => ({
+                      id: item.id,
+                      sortOrder: index,
+                    }));
+                    reorderFridgeList(itemsToUpdate);
+                  }}
+                  renderItem={renderFridgeItem}
+                />
               ) : (
                 <Text className="text-on-surface-variant font-body">冷蔵庫は空です</Text>
               )}
@@ -250,9 +271,22 @@ export default function StockScreen({ navigation }: { navigation: any }) {
               </TouchableOpacity>
             </View>
             {pantrySection.length > 0 ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6 pb-4">
-                {pantrySection.map(renderPantryCard)}
-              </ScrollView>
+              <View className="-mx-6 px-6 pb-4">
+                <DraggableFlatList
+                  horizontal
+                  data={pantrySection}
+                  keyExtractor={(item) => item.id}
+                  showsHorizontalScrollIndicator={false}
+                  onDragEnd={({ data }) => {
+                    const itemsToUpdate = data.map((item, index) => ({
+                      id: item.id,
+                      sortOrder: index,
+                    }));
+                    reorderFridgeList(itemsToUpdate);
+                  }}
+                  renderItem={renderPantryCard}
+                />
+              </View>
             ) : (
                 <Text className="text-on-surface-variant font-body">食糧庫は空です</Text>
             )}
@@ -277,7 +311,7 @@ export default function StockScreen({ navigation }: { navigation: any }) {
             </View>
           </View>
         </View>
-      </ScrollView>
+      </NestableScrollContainer>
 
       {/* FAB */}
       <TouchableOpacity
