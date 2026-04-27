@@ -8,6 +8,6 @@ type User struct {
 	FamilyID  *string       `gorm:"type:uuid" json:"familyId"`            // 所属する家族のID
 	Family    *Family       `json:"family,omitempty"`                     // 所属する家族のデータ
 	Messages  []ChatMessage `json:"messages,omitempty"`                   // ユーザーが送信したメッセージ
-	Role      string        `gorm:"default:'member'" json:"role"`         // 役割 ("admin", "member", "guest")
+	Role      string        `gorm:"default:'member'" json:"role"`         // 役割 ("admin", "member")
 	AvatarURL string        `json:"avatarUrl"`                            // アバター画像のURL
 }

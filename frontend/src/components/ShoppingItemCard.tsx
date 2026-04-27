@@ -26,7 +26,7 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
   let categoryName = "GROCERY";
   let priorityBadge = null;
 
-  if (item.priority === "URGENT" || item.priority === "TODAY") {
+  if (item.priority === "high") {
     iconName = "eco";
     iconColorClass = "text-tertiary text-2xl";
     iconBgClass = "bg-tertiary-fixed";
@@ -36,7 +36,7 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
         <Text className="text-on-tertiary-fixed-variant text-[10px] font-bold tracking-[0.1em] uppercase font-label">{item.priority}</Text>
       </View>
     );
-  } else if (item.itemTemplate.name.toLowerCase().includes("milk") || item.itemTemplate.name.toLowerCase().includes("egg") || item.itemTemplate.name.toLowerCase().includes("yogurt")) {
+  } else if (item.template.name.toLowerCase().includes("milk") || item.template.name.toLowerCase().includes("egg") || item.template.name.toLowerCase().includes("yogurt")) {
     iconName = "egg";
     categoryName = "DAIRY";
     priorityBadge = (
@@ -46,7 +46,7 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
     );
   }
 
-  const isChecked = item.status === 'BOUGHT';
+  const isChecked = item.status === 'checked';
 
   return (
     <Animated.View
@@ -77,11 +77,11 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
         </View>
         <View className="flex-1">
           <View className="flex-row items-center gap-2 mb-1">
-            <Text className={`font-headline font-bold text-xl ${isChecked ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>{item.itemTemplate.name}</Text>
+            <Text className={`font-headline font-bold text-xl ${isChecked ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>{item.template.name}</Text>
             {!isChecked && priorityBadge}
           </View>
           <View className="flex-row items-center gap-3">
-            <Text className="text-sm font-semibold text-on-surface-variant font-body">{item.note || "1 unit"}</Text>
+            <Text className="text-sm font-semibold text-on-surface-variant font-body">{item.purchaseMemo || "1 unit"}</Text>
             <View className="w-1 h-1 rounded-full bg-outline-variant"></View>
             <Text className="text-xs font-bold text-primary font-label tracking-widest uppercase">{categoryName}</Text>
           </View>

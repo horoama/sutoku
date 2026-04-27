@@ -22,7 +22,7 @@ export default function AddToPantryScreen() {
   const handleQuickStock = async (item: any) => {
     if (!item.id) return;
 
-    if (!item.defaultDays || item.defaultDays === 0) {
+    if (!item.defaultExpiryDays || item.defaultExpiryDays === 0) {
       setSelectedItemToAdd(item);
       setDateModalVisible(true);
     } else {
@@ -134,7 +134,7 @@ export default function AddToPantryScreen() {
                   </View>
                   <View>
                     <Text className="font-semibold text-on-surface">{item.name}</Text>
-                    <Text className="text-xs font-label uppercase tracking-wider text-on-surface-variant mt-0.5">Default freshness: {item.defaultDays} Days</Text>
+                    <Text className="text-xs font-label uppercase tracking-wider text-on-surface-variant mt-0.5">Default freshness: {item.defaultExpiryDays} Days</Text>
                   </View>
                 </View>
                 <TouchableOpacity

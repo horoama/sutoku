@@ -1,16 +1,16 @@
 import { create } from 'zustand';
 import { api } from '../api/client';
 import { useAppStore } from './appStore';
-import { ItemTemplate } from './shoppingStore';
+import { ProductTemplate } from './shoppingStore';
 
 export interface PurchaseHistoryItem {
   id: string;
   familyId: string;
-  itemTemplateId: string;
+  templateId: string;
   purchasedAt: string;
   price: number | null;
   quantity: number;
-  itemTemplate: ItemTemplate;
+  template: ProductTemplate;
 }
 
 interface HistoryState {

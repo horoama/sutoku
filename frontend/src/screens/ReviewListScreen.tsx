@@ -16,7 +16,7 @@ export default function ReviewListScreen() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'URGENT': return 'text-tertiary';
+      case 'high': return 'text-tertiary';
       case 'HIGH': return 'text-secondary';
       default: return 'text-primary';
     }
@@ -59,10 +59,10 @@ export default function ReviewListScreen() {
           {shoppingList.length > 0 ? shoppingList.map((item: ShoppingItem) => (
             <View key={item.id} className="bg-surface-container-lowest p-5 rounded-lg flex-row items-center gap-5 transition-all mb-4 border border-transparent shadow-sm">
               <View className="w-14 h-14 bg-surface-container-low rounded-xl flex items-center justify-center">
-                <Icon name={getIconForCategory(item.itemTemplate.name) as any} size={30} className="text-primary" />
+                <Icon name={getIconForCategory(item.template.name) as any} size={30} className="text-primary" />
               </View>
               <View className="flex-1">
-                <Text className="font-headline font-bold text-lg text-on-surface">{item.itemTemplate.name}</Text>
+                <Text className="font-headline font-bold text-lg text-on-surface">{item.template.name}</Text>
                 <Text className={`font-label text-[10px] font-semibold tracking-widest uppercase ${getPriorityColor(item.priority)}`}>{item.priority}</Text>
               </View>
               <View className="flex-row items-center gap-3">

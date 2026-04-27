@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, TextInput, Image, Alert } fro
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
-import { useShoppingStore, ItemTemplate, Category } from "../store/shoppingStore";
+import { useShoppingStore, Category } from "../store/shoppingStore";
 import { useFridgeStore } from "../store/fridgeStore";
 
 export default function AddToShoppingListScreen() {
@@ -14,7 +14,7 @@ export default function AddToShoppingListScreen() {
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPriority, setSelectedPriority] = useState<'TODAY' | 'URGENT' | 'NORMAL' | 'LOW'>('NORMAL');
+  const [selectedPriority, setSelectedPriority] = useState<'high' | 'high' | 'medium' | 'low'>('medium');
 
   useEffect(() => {
     fetchCategories().then(() => {
@@ -37,10 +37,10 @@ export default function AddToShoppingListScreen() {
 
   // Get recently consumed items, removing duplicates based on itemTemplateId
   const getRecentConsumedTemplates = () => {
-    const uniqueTemplates = new Map<string, ItemTemplate>();
+    const uniqueTemplates = new Map<string, any>();
     consumedItems.forEach(item => {
-      if (item && item.itemTemplate && !uniqueTemplates.has(item.itemTemplateId)) {
-        uniqueTemplates.set(item.itemTemplateId, item.itemTemplate);
+      if (item && item.template && !uniqueTemplates.has(item.templateId)) {
+        uniqueTemplates.set(item.templateId, item.template);
       }
     });
     return Array.from(uniqueTemplates.values());
@@ -84,7 +84,7 @@ export default function AddToShoppingListScreen() {
         <View className="mt-4 px-1">
           <Text className="text-xs font-bold text-outline-variant mb-2 ml-1">追加時の優先度</Text>
           <View className="flex-row justify-between">
-            {(['TODAY', 'URGENT', 'NORMAL', 'LOW'] as const).map((p) => (
+            {(['high', 'high', 'medium', 'low'] as const).map((p) => (
               <TouchableOpacity
                 key={p}
                 className={`flex-1 mx-1 py-2 rounded-lg border items-center ${selectedPriority === p ? 'bg-primary-container border-primary-container' : 'bg-surface border-outline-variant'}`}
@@ -177,7 +177,7 @@ export default function AddToShoppingListScreen() {
                </View>
                <View className="flex-1">
                  <Text className="font-headline font-bold text-on-surface text-base">{item.name}</Text>
-                 <Text className="text-xs text-outline font-medium">Default freshness: {item.defaultDays} days</Text>
+                 <Text className="text-xs text-outline font-medium">Default freshness: {item.defaultExpiryDays} days</Text>
                </View>
                <TouchableOpacity
                  className="w-12 h-12 bg-surface-container-lowest rounded-full flex items-center justify-center shadow-sm active:bg-primary"

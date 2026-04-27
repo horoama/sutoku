@@ -95,7 +95,7 @@ export default function PantrySearchScreen() {
               <View className="flex-row justify-between items-end w-full">
                 <View>
                   <Text className="font-headline text-lg font-bold text-on-surface leading-tight" numberOfLines={1}>{item.name}</Text>
-                  <Text className="font-label text-[10px] font-bold tracking-widest text-outline uppercase">{item.defaultDays} Days</Text>
+                  <Text className="font-label text-[10px] font-bold tracking-widest text-outline uppercase">{item.defaultExpiryDays} Days</Text>
                 </View>
                 <TouchableOpacity
                   className="h-10 w-10 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center active:scale-90 transition-transform shadow-sm"

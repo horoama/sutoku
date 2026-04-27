@@ -18,21 +18,21 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
     }
   }, [family?.id]);
 
-  const activeItems = fridgeItems.filter(item => item.status === "ACTIVE");
+  const activeItems = fridgeItems.filter(item => item.consumedAt === null);
 
   // Calculate expiration logic
   const getDaysLeft = (item: FridgeItem) => {
-    if (!item.startedAt) return Number(item.defaultDays);
+    if (!item.createdAt) return Number(item.template.defaultExpiryDays);
 
-    // If we have an exact endDate, use it
-    if (item.endDate) {
-      return differenceInCalendarDays(new Date(item.endDate), new Date());
+    // If we have an exact expiryDate, use it
+    if (item.expiryDate) {
+      return differenceInCalendarDays(new Date(item.expiryDate), new Date());
     }
 
-    // Otherwise calculate based on startedAt + defaultDays
-    const startDate = new Date(item.startedAt);
-    const endDate = new Date(startDate.setDate(startDate.getDate() + Number(item.defaultDays)));
-    return differenceInCalendarDays(endDate, new Date());
+    // Otherwise calculate based on createdAt + defaultDays
+    const startDate = new Date(item.createdAt);
+    const expiryDate = new Date(startDate.setDate(startDate.getDate() + Number(item.template.defaultExpiryDays)));
+    return differenceInCalendarDays(expiryDate, new Date());
   };
 
   const expiringItems = activeItems.filter(item => getDaysLeft(item) <= 3).sort((a, b) => getDaysLeft(a) - getDaysLeft(b));
@@ -42,9 +42,9 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
   // Or check category name if populated, but fallback to all active items
   const fridgeSection = activeItems.filter(item => {
     // NOTE: TypeScript error fix. Casting itemTemplate to any to access nested category for now.
-    const catName = (item.itemTemplate as any).category?.name?.toLowerCase() || "";
+    const catName = (item.template as any).category?.name?.toLowerCase() || "";
     if (catName.includes("dairy") || catName.includes("meat") || catName.includes("produce")) return true;
-    return item.defaultDays < 30; // Shorter lived items typically go to fridge
+    return item.template.defaultExpiryDays < 30; // Shorter lived items typically go to fridge
   });
 
   const pantrySection = activeItems.filter(item => !fridgeSection.includes(item));
@@ -52,7 +52,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
   const renderUrgentItem = (item: FridgeItem, index: number) => {
     const daysLeft = getDaysLeft(item);
     const isCritical = daysLeft <= 1;
-    const totalDays = item.defaultDays || 7;
+    const totalDays = item.template.defaultExpiryDays || 7;
     const progressPercent = Math.max(0, Math.min(100, (daysLeft / totalDays) * 100));
 
     if (index === 0) {
@@ -60,7 +60,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
         <View key={item.id} className="relative overflow-hidden bg-primary p-4 rounded-lg text-on-primary shadow-lg flex-col mb-4">
           <View className="flex-row justify-between items-center mb-3">
             <View>
-              <Text className="font-headline text-xl font-bold text-on-primary" numberOfLines={1}>{item.itemTemplate.name}</Text>
+              <Text className="font-headline text-xl font-bold text-on-primary" numberOfLines={1}>{item.template.name}</Text>
             </View>
             <View className="bg-tertiary-container px-2 py-1 rounded-full flex-row items-center gap-1">
               <Icon name="timer" size={12} className="text-on-tertiary-container" />
@@ -89,7 +89,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
            <Icon name="kitchen" size={32} className="text-tertiary" />
         </View>
         <View className="flex-1">
-          <Text className="font-headline font-bold text-on-surface text-base" numberOfLines={1}>{item.itemTemplate.name}</Text>
+          <Text className="font-headline font-bold text-on-surface text-base" numberOfLines={1}>{item.template.name}</Text>
           <View className="flex-row items-center gap-2 mt-1">
             <View className="h-1.5 w-20 bg-surface-container-high rounded-full overflow-hidden shrink">
               <View className="h-full bg-tertiary rounded-full" style={{ width: `${progressPercent}%` }}></View>
@@ -134,7 +134,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
             <Icon name="kitchen" size={24} className="text-primary" />
           </View>
           <View className="flex-1 pr-2">
-            <Text className="font-headline font-semibold text-on-surface text-base" numberOfLines={1}>{item.itemTemplate.name}</Text>
+            <Text className="font-headline font-semibold text-on-surface text-base" numberOfLines={1}>{item.template.name}</Text>
             <Text className="text-xs text-outline font-medium">Added recently</Text>
           </View>
         </View>
@@ -167,7 +167,7 @@ export default function FridgeScreen({ navigation }: { navigation: any }) {
           <Icon name="inventory-2" size={48} className="text-secondary" />
         </View>
         <View className="mb-2">
-          <Text className="font-headline font-bold text-sm text-on-surface" numberOfLines={1}>{item.itemTemplate.name}</Text>
+          <Text className="font-headline font-bold text-sm text-on-surface" numberOfLines={1}>{item.template.name}</Text>
           <Text className="text-xs text-outline font-medium">In stock</Text>
         </View>
         <View className="flex-col gap-2 mt-2">

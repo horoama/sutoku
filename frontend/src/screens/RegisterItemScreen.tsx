@@ -17,7 +17,7 @@ export default function RegisterItemScreen() {
 
   // Default to first category if available
   const [activeCategoryId, setActiveCategoryId] = useState(categories.length > 0 ? categories[0].id : "");
-  const [activePriority, setActivePriority] = useState<"TODAY" | "URGENT" | "NORMAL" | "LOW">("NORMAL");
+  const [activePriority, setActivePriority] = useState<"high" | "medium" | "low">("medium");
 
   const handleRegister = async () => {
     if (!itemName) {
@@ -31,7 +31,7 @@ export default function RegisterItemScreen() {
 
     setIsSubmitting(true);
     try {
-      const newTemplate = await createItemTemplate(itemName, activeCategoryId, freshness);
+      const newTemplate = await createItemTemplate(itemName, activeCategoryId, freshness, "FRIDGE");
       if (newTemplate && newTemplate.id) {
         await addToShoppingList(newTemplate.id, activePriority, notes.trim());
         navigation.navigate("RegistrationSuccess", {
@@ -163,27 +163,27 @@ export default function RegisterItemScreen() {
             <Text className="font-headline font-bold text-primary ml-1">Priority Level</Text>
             <View className="flex-row justify-between gap-3">
               <TouchableOpacity
-                className={`flex-1 flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activePriority === 'NORMAL' ? 'bg-primary-fixed/30 border-primary-fixed-dim/50' : 'bg-surface-container border-transparent'}`}
-                onPress={() => setActivePriority('NORMAL')}
+                className={`flex-1 flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activePriority === 'medium' ? 'bg-primary-fixed/30 border-primary-fixed-dim/50' : 'bg-surface-container border-transparent'}`}
+                onPress={() => setActivePriority('medium')}
               >
-                <Icon name="low-priority" size={24} className={`mb-1 ${activePriority === 'NORMAL' ? 'text-on-primary-fixed' : 'text-outline'}`} />
-                <Text className={`text-[10px] font-bold tracking-widest uppercase ${activePriority === 'NORMAL' ? 'text-on-primary-fixed' : 'text-outline'}`}>NORMAL</Text>
+                <Icon name="low-priority" size={24} className={`mb-1 ${activePriority === 'medium' ? 'text-on-primary-fixed' : 'text-outline'}`} />
+                <Text className={`text-[10px] font-bold tracking-widest uppercase ${activePriority === 'medium' ? 'text-on-primary-fixed' : 'text-outline'}`}>NORMAL</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                className={`flex-1 flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activePriority === 'TODAY' ? 'bg-secondary-fixed border-secondary' : 'bg-surface-container border-transparent'}`}
-                onPress={() => setActivePriority('TODAY')}
+                className={`flex-1 flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activePriority === 'high' ? 'bg-secondary-fixed border-secondary' : 'bg-surface-container border-transparent'}`}
+                onPress={() => setActivePriority('high')}
               >
-                <Icon name="priority-high" size={24} className={`mb-1 ${activePriority === 'TODAY' ? 'text-secondary' : 'text-outline'}`} />
-                <Text className={`text-[10px] font-bold tracking-widest uppercase ${activePriority === 'TODAY' ? 'text-secondary' : 'text-outline'}`}>TODAY</Text>
+                <Icon name="priority-high" size={24} className={`mb-1 ${activePriority === 'high' ? 'text-secondary' : 'text-outline'}`} />
+                <Text className={`text-[10px] font-bold tracking-widest uppercase ${activePriority === 'high' ? 'text-secondary' : 'text-outline'}`}>TODAY</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                className={`flex-1 flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activePriority === 'URGENT' ? 'bg-tertiary-fixed border-tertiary' : 'bg-surface-container border-transparent'}`}
-                onPress={() => setActivePriority('URGENT')}
+                className={`flex-1 flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activePriority === 'high' ? 'bg-tertiary-fixed border-tertiary' : 'bg-surface-container border-transparent'}`}
+                onPress={() => setActivePriority('high')}
               >
-                <Icon name="emergency" size={24} className={`mb-1 ${activePriority === 'URGENT' ? 'text-tertiary' : 'text-outline'}`} />
-                <Text className={`text-[10px] font-bold tracking-widest uppercase ${activePriority === 'URGENT' ? 'text-tertiary' : 'text-outline'}`}>URGENT</Text>
+                <Icon name="emergency" size={24} className={`mb-1 ${activePriority === 'high' ? 'text-tertiary' : 'text-outline'}`} />
+                <Text className={`text-[10px] font-bold tracking-widest uppercase ${activePriority === 'high' ? 'text-tertiary' : 'text-outline'}`}>URGENT</Text>
               </TouchableOpacity>
             </View>
           </View>

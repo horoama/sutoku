@@ -26,12 +26,18 @@ export interface ActivityLog {
   user?: User;
 }
 
-export interface ItemTemplate {
+export interface ProductTemplate {
   id: string;
+  familyId: string | null;
+  createdById: string | null;
+  sourceTemplateId: string | null;
   name: string;
-  categoryId: string;
-  defaultDays: number;
+  defaultExpiryDays: number;
+  defaultStorageLocation: string;
+  memo: string;
   imageUrl: string;
+  categoryId: string;
+  isSystem?: boolean; // System if familyId is null
   category?: {
     id: string;
     name: string;
@@ -41,28 +47,38 @@ export interface ItemTemplate {
 export interface Category {
   id: string;
   name: string;
-  items: ItemTemplate[];
+  items: ProductTemplate[];
 }
 
-export interface ShoppingItem {
+export interface ShoppingListItem {
   id: string;
   familyId: string;
-  itemTemplateId: string;
-  priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW';
-  note: string | null;
-  status: 'PENDING' | 'BOUGHT' | 'PURCHASED';
-  itemTemplate: ItemTemplate;
+  templateId: string;
+  addedById: string;
+  priority: 'high' | 'medium' | 'low';
+  purchaseMemo: string;
+  storeHint: string;
+  status: 'pending' | 'checked' | 'moved';
+  checkedAt: string | null;
+  template: ProductTemplate;
+  addedBy?: User;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface FridgeItem {
+export interface StockItem {
   id: string;
   familyId: string;
-  itemTemplateId: string;
-  status: 'ACTIVE' | 'CONSUMED';
-  startedAt: string | null;
-  endDate: string | null;
-  defaultDays: number;
-  itemTemplate: ItemTemplate;
+  templateId: string;
+  shoppingItemId: string | null;
+  addedById: string;
+  storageLocation: string;
+  expiryDate: string | null;
+  consumedAt: string | null;
+  template: ProductTemplate;
+  addedBy?: User;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ChatMessage {

@@ -9,58 +9,50 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetLists は買い物リスト、冷蔵庫、消費済みアイテムをグループ化して取得します。
+// GetLists は買い物リスト、ストック、消費済みアイテムをグループ化して取得します。
 func GetLists(c *gin.Context) {
 	familyID := c.Param("familyId")
 
-	var shoppingItems []models.ShoppingItem
-	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("updated_at desc").Find(&shoppingItems).Error; err != nil {
+	var shoppingItems []models.ShoppingListItem
+	if err := database.DB.Preload("Template").Preload("AddedBy").Where("family_id = ? AND status IN ('pending', 'checked')", familyID).Order("updated_at desc").Find(&shoppingItems).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch shopping items"})
 		return
 	}
 
-	var fridgeItems []models.FridgeItem
-	if err := database.DB.Preload("ItemTemplate").Where("family_id = ?", familyID).Order("updated_at desc").Find(&fridgeItems).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch fridge items"})
+	var stockItems []models.StockItem
+	if err := database.DB.Preload("Template").Preload("AddedBy").Where("family_id = ?", familyID).Order("updated_at desc").Find(&stockItems).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch stock items"})
 		return
 	}
 
-	shopping := []models.ShoppingItem{}
-	fridge := []models.FridgeItem{}
-	consumed := []models.FridgeItem{}
+	stock := []models.StockItem{}
+	consumed := []models.StockItem{}
 
-	for _, item := range shoppingItems {
-		if item.Status != "PURCHASED" {
-			shopping = append(shopping, item) // Includes both PENDING and BOUGHT, but hides PURCHASED
-		}
-	}
-
-	for _, item := range fridgeItems {
-		if item.Status == "ACTIVE" {
-			fridge = append(fridge, item)
-		} else if item.Status == "CONSUMED" {
+	for _, item := range stockItems {
+		if item.ConsumedAt == nil {
+			stock = append(stock, item)
+		} else {
 			consumed = append(consumed, item)
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"SHOPPING": shopping,
-		"FRIDGE":   fridge,
-		"CONSUMED": consumed,
+		"shopping": shoppingItems,
+		"fridge":   stock, // 互換性のためキー名を維持
+		"stock":    stock,
+		"consumed": consumed,
 	})
 }
 
-// AddListItem はリスト（買い物または冷蔵庫）にアイテムを追加します。
-func AddListItem(c *gin.Context) {
+// AddShoppingItem は買い物リストにアイテムを追加します。
+func AddShoppingItem(c *gin.Context) {
 	var input struct {
-		FamilyID       string     `json:"familyId"`
-		UserID         string     `json:"userId"`
-		ItemTemplateID string     `json:"itemTemplateId"`
-		Priority       string     `json:"priority"`
-		Note           *string    `json:"note"`
-		Status         string     `json:"status"` // legacy support, determines if Shopping or Fridge
-		Type           string     `json:"type"`   // "shopping" or "fridge"
-		EndDate        *time.Time `json:"endDate"`
+		FamilyID     string `json:"familyId"`
+		TemplateID   string `json:"templateId"`
+		Priority     string `json:"priority"`
+		PurchaseMemo string `json:"purchaseMemo"`
+		StoreHint    string `json:"storeHint"`
+		AddedByID    string `json:"addedById"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -68,113 +60,72 @@ func AddListItem(c *gin.Context) {
 		return
 	}
 
-	if input.Type == "" {
-		if input.Status == "FRIDGE" || input.Status == "ACTIVE" {
-			input.Type = "fridge"
-		} else {
-			input.Type = "shopping"
-		}
-	}
-
-	var template models.ItemTemplate
-	database.DB.First(&template, "id = ?", input.ItemTemplateID)
-
-	if input.Type == "fridge" {
-		now := time.Now()
-		var item models.FridgeItem
-
-		err := database.DB.Where("family_id = ? AND item_template_id = ? AND status = ?", input.FamilyID, input.ItemTemplateID, "ACTIVE").First(&item).Error
-		if err == nil {
-			// Update existing item
-			item.StartedAt = &now
-			if input.EndDate != nil {
-				item.EndDate = input.EndDate
-			}
-			if err := database.DB.Save(&item).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update existing fridge item"})
-				return
-			}
-		} else {
-			// Create new item
-			item = models.FridgeItem{
-				FamilyID:       input.FamilyID,
-				ItemTemplateID: input.ItemTemplateID,
-				Status:         "ACTIVE",
-				StartedAt:      &now,
-				DefaultDays:    template.DefaultDays,
-			}
-			if input.EndDate != nil {
-				item.EndDate = input.EndDate
-			}
-
-			if err := database.DB.Create(&item).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add fridge item"})
-				return
-			}
-		}
-
-		database.DB.Preload("ItemTemplate").First(&item, "id = ?", item.ID)
-
-		if input.UserID != "" {
-			logEntry := models.ActivityLog{
-				FamilyID: input.FamilyID,
-				UserID:   input.UserID,
-				Action:   "stocked",
-				Entity:   template.Name,
-				Tags:     "ACTIVE",
-			}
-			database.DB.Create(&logEntry)
-		}
-
-		c.JSON(http.StatusOK, item)
-		return
-	}
-
-	// Shopping Item
 	if input.Priority == "" {
-		input.Priority = "NORMAL"
+		input.Priority = "medium"
 	}
 
-	item := models.ShoppingItem{
-		FamilyID:       input.FamilyID,
-		ItemTemplateID: input.ItemTemplateID,
-		Status:         "PENDING",
-		Priority:       input.Priority,
-		Note:           input.Note,
+	item := models.ShoppingListItem{
+		FamilyID:     input.FamilyID,
+		TemplateID:   input.TemplateID,
+		AddedByID:    input.AddedByID,
+		Priority:     input.Priority,
+		PurchaseMemo: input.PurchaseMemo,
+		StoreHint:    input.StoreHint,
+		Status:       "pending",
 	}
 
 	if err := database.DB.Create(&item).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add shopping item"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add to shopping list"})
 		return
 	}
 
-	database.DB.Preload("ItemTemplate").First(&item, "id = ?", item.ID)
+	// Eager load template for response
+	database.DB.Preload("Template").First(&item, "id = ?", item.ID)
 
-	if input.UserID != "" {
-		logEntry := models.ActivityLog{
-			FamilyID: input.FamilyID,
-			UserID:   input.UserID,
-			Action:   "added",
-			Entity:   template.Name,
-			Tags:     "PENDING," + input.Priority,
-		}
-		database.DB.Create(&logEntry)
+	c.JSON(http.StatusOK, item)
+}
+
+// UpdateShoppingItemStatus は買い物リストのアイテムのステータスを更新します。
+// checked の場合は CheckedAt を設定します。
+func UpdateShoppingItemStatus(c *gin.Context) {
+	id := c.Param("id")
+	var input struct {
+		Status string `json:"status"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	var item models.ShoppingListItem
+	if err := database.DB.First(&item, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+		return
+	}
+
+	item.Status = input.Status
+	if input.Status == "checked" {
+		now := time.Now()
+		item.CheckedAt = &now
+	} else if input.Status == "pending" {
+		item.CheckedAt = nil
+	}
+
+	if err := database.DB.Save(&item).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update status"})
+		return
 	}
 
 	c.JSON(http.StatusOK, item)
 }
 
-// UpdateListItem はリスト内のアイテムのステータスや属性を更新します。
-func UpdateListItem(c *gin.Context) {
-	itemID := c.Param("id")
+// MoveToStock は買い物リストのアイテム（checked状態）をストックに移動させます。
+func MoveToStock(c *gin.Context) {
+	id := c.Param("id")
+
 	var input struct {
-		Status         string     `json:"status"`
-		Type           string     `json:"type"` // "shopping" or "fridge"
-		Priority       string     `json:"priority"`
-		Note           *string    `json:"note"`
-		UserID         string     `json:"userId"`
-		EndDate        *time.Time `json:"endDate"`
-		ItemTemplateID string     `json:"itemTemplateId"`
+		AddedByID string `json:"addedById"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -182,139 +133,184 @@ func UpdateListItem(c *gin.Context) {
 		return
 	}
 
-	// Figure out if it's a shopping item or fridge item to update
-	var shoppingItem models.ShoppingItem
-	if err := database.DB.Preload("ItemTemplate").Where("id = ?", itemID).First(&shoppingItem).Error; err == nil {
-		updates := map[string]interface{}{}
-		actionLogged := ""
-
-		if input.Status != "" && input.Status != shoppingItem.Status {
-			updates["status"] = input.Status
-			if input.Status == "BOUGHT" {
-				actionLogged = "checked"
-			} else if input.Status == "PURCHASED" {
-				now := time.Now()
-				updates["bought_at"] = &now
-				actionLogged = "bought"
-
-				// Create a FridgeItem when sent to fridge ("PURCHASED" or similar explicit state)
-				var existingFridgeItem models.FridgeItem
-				err := database.DB.Where("family_id = ? AND item_template_id = ? AND status = ?", shoppingItem.FamilyID, shoppingItem.ItemTemplateID, "ACTIVE").First(&existingFridgeItem).Error
-
-				if err == nil {
-					// Update existing item
-					existingFridgeItem.StartedAt = &now
-					if input.EndDate != nil {
-						existingFridgeItem.EndDate = input.EndDate
-					}
-					database.DB.Save(&existingFridgeItem)
-				} else {
-					// Create new item
-					fridgeItem := models.FridgeItem{
-						FamilyID:       shoppingItem.FamilyID,
-						ItemTemplateID: shoppingItem.ItemTemplateID,
-						Status:         "ACTIVE",
-						StartedAt:      &now,
-						DefaultDays:    shoppingItem.ItemTemplate.DefaultDays,
-					}
-					if input.EndDate != nil {
-						fridgeItem.EndDate = input.EndDate
-					}
-					database.DB.Create(&fridgeItem)
-				}
-			}
-		}
-
-		if input.Priority != "" && input.Priority != shoppingItem.Priority {
-			updates["priority"] = input.Priority
-		}
-
-		if input.Note != nil {
-			updates["note"] = input.Note
-		}
-
-		if err := database.DB.Model(&shoppingItem).Updates(updates).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update shopping item"})
-			return
-		}
-
-		database.DB.Preload("ItemTemplate").First(&shoppingItem, "id = ?", shoppingItem.ID)
-
-		if actionLogged != "" && input.UserID != "" {
-			logEntry := models.ActivityLog{
-				FamilyID: shoppingItem.FamilyID,
-				UserID:   input.UserID,
-				Action:   actionLogged,
-				Entity:   shoppingItem.ItemTemplate.Name,
-			}
-			database.DB.Create(&logEntry)
-		}
-
-		c.JSON(http.StatusOK, shoppingItem)
+	var shopItem models.ShoppingListItem
+	if err := database.DB.Preload("Template").First(&shopItem, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Shopping item not found"})
 		return
 	}
 
-	var fridgeItem models.FridgeItem
-	if err := database.DB.Preload("ItemTemplate").Where("id = ?", itemID).First(&fridgeItem).Error; err == nil {
-		updates := map[string]interface{}{}
-		actionLogged := ""
-
-		if input.Status != "" && input.Status != fridgeItem.Status {
-			updates["status"] = input.Status
-			if input.Status == "CONSUMED" {
-				actionLogged = "consumed"
-			}
-		}
-
-		if input.EndDate != nil {
-			updates["end_date"] = input.EndDate
-		}
-
-		if input.ItemTemplateID != "" && input.ItemTemplateID != fridgeItem.ItemTemplateID {
-			updates["item_template_id"] = input.ItemTemplateID
-		}
-
-		if err := database.DB.Model(&fridgeItem).Updates(updates).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update fridge item"})
-			return
-		}
-
-		database.DB.Preload("ItemTemplate").First(&fridgeItem, "id = ?", fridgeItem.ID)
-
-		if actionLogged != "" && input.UserID != "" {
-			logEntry := models.ActivityLog{
-				FamilyID: fridgeItem.FamilyID,
-				UserID:   input.UserID,
-				Action:   actionLogged,
-				Entity:   fridgeItem.ItemTemplate.Name,
-			}
-			database.DB.Create(&logEntry)
-		}
-
-		c.JSON(http.StatusOK, fridgeItem)
+	if shopItem.Status != "checked" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Only checked items can be moved to stock"})
 		return
 	}
 
-	c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+	// Move to Stock
+	stockItem := models.StockItem{
+		FamilyID:       shopItem.FamilyID,
+		TemplateID:     shopItem.TemplateID,
+		ShoppingItemID: &shopItem.ID,
+		AddedByID:      input.AddedByID,
+	}
+
+	tx := database.DB.Begin()
+
+	if err := tx.Create(&stockItem).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create stock item"})
+		return
+	}
+
+	shopItem.Status = "moved"
+	if err := tx.Save(&shopItem).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update shopping item status"})
+		return
+	}
+
+	tx.Commit()
+
+	// Load relationships for response
+	database.DB.Preload("Template").First(&stockItem, "id = ?", stockItem.ID)
+
+	c.JSON(http.StatusOK, stockItem)
 }
 
-// DeleteListItem はアイテムを削除します。（買い物と冷蔵庫から削除を試みます）
-func DeleteListItem(c *gin.Context) {
-	itemID := c.Param("id")
+// AddStockItem は手動でストックにアイテムを追加します。
+func AddStockItem(c *gin.Context) {
+	var input struct {
+		FamilyID        string `json:"familyId"`
+		TemplateID      string `json:"templateId"`
+		AddedByID       string `json:"addedById"`
+		StorageLocation string `json:"storageLocation"`
+	}
 
-	// Try deleting from ShoppingItem
-	res1 := database.DB.Where("id = ?", itemID).Delete(&models.ShoppingItem{})
-	res2 := database.DB.Where("id = ?", itemID).Delete(&models.FridgeItem{})
-
-	if res1.Error != nil && res2.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item"})
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	if res1.RowsAffected == 0 && res2.RowsAffected == 0 {
+	item := models.StockItem{
+		FamilyID:        input.FamilyID,
+		TemplateID:      input.TemplateID,
+		AddedByID:       input.AddedByID,
+		StorageLocation: input.StorageLocation,
+	}
+
+	if err := database.DB.Create(&item).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add stock item"})
+		return
+	}
+
+	database.DB.Preload("Template").First(&item, "id = ?", item.ID)
+
+	c.JSON(http.StatusOK, item)
+}
+
+// ConsumeStockItem はストックのアイテムを消費済みにします。
+func ConsumeStockItem(c *gin.Context) {
+	id := c.Param("id")
+
+	var item models.StockItem
+	if err := database.DB.First(&item, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Stock item not found"})
+		return
+	}
+
+	now := time.Now()
+	item.ConsumedAt = &now
+
+	if err := database.DB.Save(&item).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to consume item"})
+		return
+	}
+
+	c.JSON(http.StatusOK, item)
+}
+
+// DeleteShoppingItem は買い物リストのアイテムを削除します。
+func DeleteShoppingItem(c *gin.Context) {
+	id := c.Param("id")
+	if err := database.DB.Delete(&models.ShoppingListItem{}, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete shopping item"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Deleted successfully"})
+}
+
+// DeleteStockItem はストックのアイテムを削除します。
+func DeleteStockItem(c *gin.Context) {
+	id := c.Param("id")
+	if err := database.DB.Delete(&models.StockItem{}, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete stock item"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Deleted successfully"})
+}
+
+// UpdateShoppingItem は買い物リストのアイテムを更新します。
+func UpdateShoppingItem(c *gin.Context) {
+	id := c.Param("id")
+	var input struct {
+		Priority     string `json:"priority"`
+		PurchaseMemo string `json:"purchaseMemo"`
+		StoreHint    string `json:"storeHint"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	var item models.ShoppingListItem
+	if err := database.DB.First(&item, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Item deleted"})
+	if input.Priority != "" {
+		item.Priority = input.Priority
+	}
+	item.PurchaseMemo = input.PurchaseMemo
+	item.StoreHint = input.StoreHint
+
+	if err := database.DB.Save(&item).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update shopping item"})
+		return
+	}
+
+	c.JSON(http.StatusOK, item)
+}
+
+// UpdateStockItem はストックのアイテムを個別に更新します。
+func UpdateStockItem(c *gin.Context) {
+	id := c.Param("id")
+	var input struct {
+		StorageLocation string     `json:"storageLocation"`
+		ExpiryDate      *time.Time `json:"expiryDate"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	var item models.StockItem
+	if err := database.DB.First(&item, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+		return
+	}
+
+	if input.StorageLocation != "" {
+		item.StorageLocation = input.StorageLocation
+	}
+	if input.ExpiryDate != nil {
+		item.ExpiryDate = input.ExpiryDate
+	}
+
+	if err := database.DB.Save(&item).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update stock item"})
+		return
+	}
+
+	c.JSON(http.StatusOK, item)
 }

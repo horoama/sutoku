@@ -23,7 +23,7 @@ export default function DairyCategoryScreen() {
   const items = dairyCategory?.items || [];
 
   const handleAddItem = async (templateId: string, itemName: string) => {
-    await addToShoppingList(templateId, 'NORMAL', '');
+    await addToShoppingList(templateId, 'medium', '');
     Alert.alert("追加完了", `${itemName} をリストに追加しました`);
   };
 
@@ -109,7 +109,7 @@ export default function DairyCategoryScreen() {
               </View>
               <View>
                 <Text className="font-headline font-bold text-on-surface">{item.name}</Text>
-                <Text className="font-body text-xs text-on-surface-variant mt-1">Default: {item.defaultDays} Days</Text>
+                <Text className="font-body text-xs text-on-surface-variant mt-1">Default: {item.defaultExpiryDays} Days</Text>
               </View>
             </View>
           )) : (

@@ -1,98 +1,109 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, Alert } from 'react-native';
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, ScrollView, Image, TextInput, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import Icon from "@expo/vector-icons/MaterialIcons";
 import { useFridgeStore } from "../store/fridgeStore";
 import { useShoppingStore } from "../store/shoppingStore";
-import { differenceInCalendarDays, addDays } from "date-fns";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import Icon from "@expo/vector-icons/MaterialIcons";
+import { differenceInCalendarDays, parseISO, formatISO } from "date-fns";
 
-type ParamList = {
+type RootStackParamList = {
   ItemDetails: { itemId: string };
 };
 
+type ItemDetailsRouteProp = RouteProp<RootStackParamList, 'ItemDetails'>;
+
 export default function ItemDetailsScreen() {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation<any>();
-  const route = useRoute<RouteProp<ParamList, 'ItemDetails'>>();
+  const navigation = useNavigation();
+  const route = useRoute<ItemDetailsRouteProp>();
+  const { itemId } = route.params;
 
-  const { fridgeItems, updateFridgeItem, updateItemTemplate } = useFridgeStore();
+  const { stockItems, updateItemTemplate, updateStockItem } = useFridgeStore();
   const { addToShoppingList } = useShoppingStore();
 
-  const itemId = route.params?.itemId;
-  const initialItem = fridgeItems.find(i => i.id === itemId);
+  const item = stockItems.find(i => i.id === itemId);
 
-  const [itemName, setItemName] = useState(initialItem?.itemTemplate?.name || "");
-  const [notes, setNotes] = useState(initialItem?.itemTemplate?.name ? `Stored safely.` : "");
+  const [itemName, setItemName] = useState("");
+  const [notes, setNotes] = useState("");
+  const [freshness, setFreshness] = useState(0);
+  const [defaultExpiryDays, setDefaultExpiryDays] = useState(7);
+  const [activePriority, setActivePriority] = useState<"medium" | "high" | "low">("medium");
 
-  const initialDefaultDays = initialItem?.defaultDays || initialItem?.itemTemplate?.defaultDays || 7;
-  const [defaultDays, setDefaultDays] = useState(initialDefaultDays);
+  useEffect(() => {
+    if (item) {
+      setItemName(item.template?.name || "Unknown Item");
+      setNotes(item.template?.memo || "");
+      setDefaultExpiryDays(item.template?.defaultExpiryDays || 7);
 
-  let initialDaysLeft = 7;
-  if (initialItem) {
-    const itemDefaultDays = initialDefaultDays;
-    if (initialItem.endDate) {
-      initialDaysLeft = differenceInCalendarDays(new Date(initialItem.endDate), new Date());
-    } else if (initialItem.startedAt) {
-      const startDate = new Date(initialItem.startedAt);
-      const endDate = new Date(startDate.setDate(startDate.getDate() + itemDefaultDays));
-      initialDaysLeft = differenceInCalendarDays(endDate, new Date());
-    } else {
-      initialDaysLeft = itemDefaultDays;
+      let daysLeft = 0;
+      if (item.expiryDate) {
+        daysLeft = differenceInCalendarDays(parseISO(item.expiryDate), new Date());
+      } else {
+        const startedAt = item.createdAt ? parseISO(item.createdAt) : new Date();
+        const expiry = new Date(startedAt);
+        expiry.setDate(expiry.getDate() + (item.template?.defaultExpiryDays || 7));
+        daysLeft = differenceInCalendarDays(expiry, new Date());
+      }
+      setFreshness(Math.max(0, daysLeft));
     }
-  }
+  }, [item]);
 
-  // Guard against NaN
-  if (isNaN(initialDaysLeft)) {
-      initialDaysLeft = 7;
+  if (!item) {
+    return (
+      <View className="flex-1 bg-surface items-center justify-center">
+        <Text className="text-on-surface">アイテムが見つかりません</Text>
+      </View>
+    );
   }
-
-  const [freshness, setFreshness] = useState(Math.max(0, initialDaysLeft));
-  const [activePriority, setActivePriority] = useState<"TODAY" | "URGENT" | "NORMAL" | "LOW">("NORMAL");
 
   const saveUpdates = async () => {
-    if (initialItem) {
-       try {
-         // 1. Update or Duplicate Item Template
-         const newTemplate = await updateItemTemplate(initialItem.itemTemplateId, {
-           name: itemName,
-           defaultDays: defaultDays
-         });
+    try {
+      if (item.templateId) {
+        await updateItemTemplate(item.templateId, {
+          name: itemName,
+          memo: notes,
+          defaultExpiryDays: defaultExpiryDays
+        });
+      }
 
-         // 2. Update FridgeItem with new template ID and endDate
-         const newEndDate = addDays(new Date(), freshness).toISOString();
-         await updateFridgeItem(initialItem.id, {
-           endDate: newEndDate,
-           itemTemplateId: newTemplate.id
-         });
+      // Update specific stock item details like expiryDate here
+      const newExpiryDate = new Date();
+      newExpiryDate.setDate(newExpiryDate.getDate() + freshness);
+      await updateStockItem(item.id, {
+        expiryDate: formatISO(newExpiryDate)
+      });
 
-         Alert.alert("Success", "Changes saved successfully.");
-       } catch (error) {
-         Alert.alert("Error", "Failed to save changes.");
-       }
+      Alert.alert("Success", "Item updated successfully!");
+      navigation.goBack();
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to update item.");
     }
   };
 
   const handleAddToShoppingList = async () => {
-    if (initialItem) {
-      await addToShoppingList(initialItem.itemTemplateId, activePriority, notes.trim());
+    try {
+      await addToShoppingList(item.templateId, activePriority);
       Alert.alert("Success", "Added to your shopping list!");
-      navigation.navigate("MainTabs", { screen: "Shopping" });
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to add to shopping list.");
     }
   };
 
   return (
-    <View className="flex-1 bg-surface font-body text-on-surface" style={{ paddingTop: insets.top }}>
-      {/* Top App Bar */}
-      <View className="w-full bg-[#f8faf6] flex-row items-center justify-between px-6 py-4 z-50">
+    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top }}>
+      {/* Detail Header */}
+      <View className="flex-row items-center justify-between px-6 py-4 border-b border-surface-container-low bg-surface z-50">
         <View className="flex-row items-center gap-4">
           <TouchableOpacity
-            className="p-2 rounded-full hover:bg-emerald-50 transition-colors active:scale-95"
+            className="p-2 -ml-2 rounded-full hover:bg-surface-variant transition-colors active:scale-95"
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-back" size={24} className="text-emerald-800" />
+            <Icon name="arrow-back" size={24} className="text-on-surface" />
           </TouchableOpacity>
-          <Text className="font-headline font-bold text-2xl tracking-tight text-emerald-800">Item Details</Text>
+          <Text className="font-headline font-bold text-xl text-emerald-950">Item Details</Text>
         </View>
         <TouchableOpacity className="p-2 rounded-full hover:bg-emerald-50 transition-colors active:scale-95">
           <Icon name="more-vert" size={24} className="text-emerald-800" />
@@ -176,7 +187,7 @@ export default function ItemDetailsScreen() {
             <View className="flex-row justify-between items-end px-2">
               <View>
                 <Text className="font-label text-[10px] font-medium tracking-wide uppercase text-on-surface-variant mb-0.5">Default Shelf Life</Text>
-                <Text className="font-headline font-bold text-base text-secondary">{defaultDays} Days</Text>
+                <Text className="font-headline font-bold text-base text-secondary">{defaultExpiryDays} Days</Text>
               </View>
               <View className="bg-secondary-container px-3 py-1 rounded-full">
                 <Text className="text-on-secondary-container text-[10px] font-bold uppercase tracking-wider">Template</Text>
@@ -186,7 +197,7 @@ export default function ItemDetailsScreen() {
               <View className="flex-row items-center gap-4">
                 <TouchableOpacity
                   className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center active:scale-90 transition-all"
-                  onPress={() => setDefaultDays(Math.max(1, defaultDays - 1))}
+                  onPress={() => setDefaultExpiryDays(Math.max(1, defaultExpiryDays - 1))}
                 >
                   <Icon name="remove" size={18} className="text-secondary" />
                 </TouchableOpacity>
@@ -195,7 +206,7 @@ export default function ItemDetailsScreen() {
                 </View>
                 <TouchableOpacity
                   className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center active:scale-90 transition-all"
-                  onPress={() => setDefaultDays(defaultDays + 1)}
+                  onPress={() => setDefaultExpiryDays(defaultExpiryDays + 1)}
                 >
                   <Icon name="add" size={18} className="text-secondary" />
                 </TouchableOpacity>
@@ -208,22 +219,22 @@ export default function ItemDetailsScreen() {
             <Text className="font-label text-[11px] font-medium tracking-wide uppercase text-on-surface-variant ml-2">Usage Priority</Text>
             <View className="flex-row justify-between gap-3">
               <TouchableOpacity
-                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${activePriority === 'NORMAL' ? 'bg-primary-fixed/30 border-2 border-primary-fixed-dim/50' : 'bg-surface-container-low border-2 border-transparent'}`}
-                onPress={() => setActivePriority('NORMAL')}
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${activePriority === 'medium' ? 'bg-primary-fixed/30 border-2 border-primary-fixed-dim/50' : 'bg-surface-container-low border-2 border-transparent'}`}
+                onPress={() => setActivePriority('medium')}
               >
-                <Text className={`font-headline font-bold text-sm ${activePriority === 'NORMAL' ? 'text-on-primary-fixed' : 'text-on-surface-variant'}`}>NORMAL</Text>
+                <Text className={`font-headline font-bold text-sm ${activePriority === 'medium' ? 'text-on-primary-fixed' : 'text-on-surface-variant'}`}>MEDIUM</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${activePriority === 'URGENT' ? 'bg-secondary-fixed border-2 border-secondary/20' : 'bg-surface-container-low border-2 border-transparent'}`}
-                onPress={() => setActivePriority('URGENT')}
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${activePriority === 'high' ? 'bg-secondary-fixed border-2 border-secondary/20' : 'bg-surface-container-low border-2 border-transparent'}`}
+                onPress={() => setActivePriority('high')}
               >
-                <Text className={`font-headline font-bold text-sm ${activePriority === 'URGENT' ? 'text-on-secondary-fixed-variant' : 'text-on-surface-variant'}`}>URGENT</Text>
+                <Text className={`font-headline font-bold text-sm ${activePriority === 'high' ? 'text-on-secondary-fixed-variant' : 'text-on-surface-variant'}`}>HIGH</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${activePriority === 'TODAY' ? 'bg-tertiary-container border-2 border-transparent' : 'bg-surface-container-low border-2 border-transparent'}`}
-                onPress={() => setActivePriority('TODAY')}
+                className={`flex-1 py-4 rounded-lg items-center justify-center transition-colors ${activePriority === 'low' ? 'bg-tertiary-container border-2 border-transparent' : 'bg-surface-container-low border-2 border-transparent'}`}
+                onPress={() => setActivePriority('low')}
               >
-                <Text className={`font-headline font-bold text-sm ${activePriority === 'TODAY' ? 'text-on-tertiary-container' : 'text-on-surface-variant'}`}>TODAY</Text>
+                <Text className={`font-headline font-bold text-sm ${activePriority === 'low' ? 'text-on-tertiary-container' : 'text-on-surface-variant'}`}>LOW</Text>
               </TouchableOpacity>
             </View>
           </View>

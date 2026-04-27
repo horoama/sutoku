@@ -28,16 +28,16 @@ interface ActionModalProps {
 export const ActionModal: React.FC<ActionModalProps> = ({ visible, item, onClose, onMoveToFridge, onToggleCheck, onChangePriority, onDelete }) => {
   if (!item) return null;
 
-  const priorities = ["TODAY", "URGENT", "NORMAL", "LOW"];
+  const priorities = ["high", "high", "medium", "low"];
 
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View className="flex-1 bg-black/50 justify-center items-center">
         <View className="bg-surface-container-lowest p-6 rounded-2xl w-4/5 items-center">
           <Text className="font-headline text-lg font-bold mb-6 text-center text-on-surface">
-            {item.itemTemplate.name} のアクション
+            {item.template.name} のアクション
           </Text>
-          {item.status === 'BOUGHT' ? (
+          {item.status === 'checked' ? (
             <TouchableOpacity className="w-full bg-primary py-4 rounded-xl items-center mb-3" onPress={onMoveToFridge}>
               <Text className="text-on-primary font-bold text-base">冷蔵庫 / 食糧庫に入れる</Text>
             </TouchableOpacity>

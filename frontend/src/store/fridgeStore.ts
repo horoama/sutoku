@@ -1,67 +1,83 @@
 import { create } from 'zustand';
 import { api } from '../api/client';
 import { useAppStore } from './appStore';
-import { FridgeItem, ItemTemplate } from '../types/store';
+import { StockItem, ProductTemplate } from '../types/store';
 
-export { FridgeItem };
+export { StockItem as FridgeItem }; // Keep backward compatibility for imports where possible
 
 /**
- * @interface FridgeState
- * 冷蔵庫・食糧庫の状態を管理するストアの型定義
+ * @interface StockState
+ * ストック・食糧庫の状態を管理するストアの型定義
  */
-interface FridgeState {
-  fridgeItems: FridgeItem[];
-  consumedItems: FridgeItem[];
+interface StockState {
+  fridgeItems: StockItem[]; // Renamed internally or kept for backward compat? Let's use stockItems and map fridgeItems to it
+  stockItems: StockItem[];
+  consumedItems: StockItem[];
   isLoading: boolean;
   error: string | null;
 
-  /** 冷蔵庫のアイテム一覧を取得 */
-  fetchFridgeItems: () => Promise<void>;
-  /** アイテムを冷蔵庫に追加 */
-  addToFridge: (itemTemplateId: string, customDays?: number, type?: string, note?: string) => Promise<void>;
-  /** 冷蔵庫のアイテムを消費済みに変更 */
+  /** ストックのアイテム一覧を取得 */
+  fetchFridgeItems: () => Promise<void>; // Kept for compatibility
+  fetchStockItems: () => Promise<void>;
+  /** アイテムをストックに追加 */
+  addToFridge: (templateId: string, customDays?: number, type?: string) => Promise<void>;
+  addToStock: (templateId: string, storageLocation: string) => Promise<void>;
+  /** ストックのアイテムを消費済みに変更 */
   consumeItem: (id: string) => Promise<void>;
-  /** 冷蔵庫のアイテム情報を更新 */
-  updateFridgeItem: (id: string, updates: Partial<FridgeItem>) => Promise<void>;
+  /** ストックのアイテム情報を更新（削除用など） */
+  deleteStockItem: (id: string) => Promise<void>;
+  /** ストックのアイテム情報を更新（個別更新） */
+  updateStockItem: (id: string, updates: Partial<StockItem>) => Promise<void>;
   /** アイテムテンプレートを更新する */
-  updateItemTemplate: (templateId: string, updates: Partial<ItemTemplate>) => Promise<ItemTemplate>;
+  updateItemTemplate: (templateId: string, updates: Partial<ProductTemplate>) => Promise<ProductTemplate>;
 }
 
-export const useFridgeStore = create<FridgeState>((set, get) => ({
+export const useFridgeStore = create<StockState>((set, get) => ({
   fridgeItems: [],
+  stockItems: [],
   consumedItems: [],
   isLoading: false,
   error: null,
 
   fetchFridgeItems: async () => {
+    return get().fetchStockItems();
+  },
+
+  fetchStockItems: async () => {
     const familyId = useAppStore.getState().family?.id;
     if (!familyId) return;
 
     set({ isLoading: true });
     try {
       const { data } = await api.get(`/lists/${familyId}`);
-      set({ fridgeItems: data.FRIDGE || [], consumedItems: data.CONSUMED || [], isLoading: false });
+      set({
+        stockItems: data.stock || [],
+        fridgeItems: data.stock || [], // map to same data for compat
+        consumedItems: data.consumed || [],
+        isLoading: false
+      });
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
     }
   },
 
-  addToFridge: async (itemTemplateId, customDays, type = 'fridge', note) => {
+  addToFridge: async (templateId, customDays, type = 'FRIDGE') => {
+    return get().addToStock(templateId, type);
+  },
+
+  addToStock: async (templateId, storageLocation) => {
     const familyId = useAppStore.getState().family?.id;
     const userId = useAppStore.getState().user?.id;
-    if (!familyId) return;
+    if (!familyId || !userId) return;
 
     try {
-      let payload: any = { familyId, userId, itemTemplateId, status: 'ACTIVE', type };
-
-      if (customDays) {
-        const endDate = new Date();
-        endDate.setDate(endDate.getDate() + customDays);
-        payload.endDate = endDate.toISOString();
-      }
-
-      await api.post('/items', payload);
-      await get().fetchFridgeItems();
+      await api.post('/stock-items', {
+        familyId,
+        addedById: userId,
+        templateId,
+        storageLocation
+      });
+      await get().fetchStockItems();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
       set({ error: err.message });
@@ -69,21 +85,28 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
   },
 
   consumeItem: async (id) => {
-    const userId = useAppStore.getState().user?.id;
     try {
-      await api.put(`/items/${id}`, { status: 'CONSUMED', userId, type: 'fridge' });
-      await get().fetchFridgeItems();
+      await api.put(`/stock-items/${id}/consume`, {});
+      await get().fetchStockItems();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
       set({ error: err.message });
     }
   },
 
-  updateFridgeItem: async (id, updates) => {
-    const userId = useAppStore.getState().user?.id;
+  deleteStockItem: async (id) => {
     try {
-      await api.put(`/items/${id}`, { ...updates, userId, type: 'fridge' });
-      await get().fetchFridgeItems();
+      await api.delete(`/stock-items/${id}`);
+      await get().fetchStockItems();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  updateStockItem: async (id, updates) => {
+    try {
+      await api.put(`/stock-items/${id}`, updates);
+      await get().fetchStockItems();
     } catch (err: any) {
       set({ error: err.message });
     }
@@ -91,10 +114,11 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
 
   updateItemTemplate: async (templateId, updates) => {
     const familyId = useAppStore.getState().family?.id;
+    const userId = useAppStore.getState().user?.id;
     if (!familyId) throw new Error("Family ID is missing");
 
     try {
-      const { data } = await api.put(`/item-templates/${templateId}`, { ...updates, familyId });
+      const { data } = await api.put(`/item-templates/${templateId}`, { ...updates, familyId, createdById: userId });
       return data;
     } catch (err: any) {
       set({ error: err.message });

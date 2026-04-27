@@ -2,9 +2,10 @@ import { create } from 'zustand';
 import { api } from '../api/client';
 import { useAppStore } from './appStore';
 import { useFridgeStore } from './fridgeStore';
-import { Category, ShoppingItem, ItemTemplate } from '../types/store';
+import { Category, ShoppingListItem, ProductTemplate } from '../types/store';
 
-export { Category, ShoppingItem, ItemTemplate };
+export { Category, ProductTemplate };
+export { ShoppingListItem as ShoppingItem }; // backward compatibility
 
 /**
  * @interface ShoppingState
@@ -12,7 +13,7 @@ export { Category, ShoppingItem, ItemTemplate };
  */
 interface ShoppingState {
   categories: Category[];
-  shoppingList: ShoppingItem[];
+  shoppingList: ShoppingListItem[];
   isLoading: boolean;
   error: string | null;
 
@@ -21,17 +22,21 @@ interface ShoppingState {
   /** 買い物リストのアイテム一覧を取得 */
   fetchShoppingList: () => Promise<void>;
   /** 買い物リストに新しいアイテムを追加 */
-  addToShoppingList: (itemTemplateId: string, priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW', note?: string, type?: string) => Promise<void>;
-  /** 買い物アイテムを購入済みに変更し、必要に応じて冷蔵庫に移動 */
-  purchaseItem: (id: string, price?: number, endDate?: string) => Promise<void>;
-  /** 買い物アイテムのチェック状態を切り替える */
-  toggleBoughtStatus: (id: string, isBought: boolean) => Promise<void>;
+  addToShoppingList: (templateId: string, priority: 'high' | 'medium' | 'low', purchaseMemo?: string, storeHint?: string) => Promise<void>;
+  /** 買い物アイテムのステータスを更新する（チェックなど） */
+  updateItemStatus: (id: string, status: 'pending' | 'checked') => Promise<void>;
+  /** 買い物アイテムをストックへ移動する */
+  moveToStock: (id: string) => Promise<void>;
   /** 新しいカスタムアイテムテンプレートを作成 */
-  createItemTemplate: (name: string, categoryId: string, defaultDays: number) => Promise<ItemTemplate | null>;
+  createItemTemplate: (name: string, categoryId: string, defaultExpiryDays: number, defaultStorageLocation: string, memo?: string) => Promise<ProductTemplate | null>;
   /** 買い物アイテムの優先度を変更する */
   updateItemPriority: (id: string, priority: string) => Promise<void>;
   /** 買い物アイテムを削除する */
   deleteItem: (id: string) => Promise<void>;
+
+  // Legacy stubs for compatibility
+  toggleBoughtStatus: (id: string, isBought: boolean) => Promise<void>;
+  purchaseItem: (id: string, price?: number, endDate?: string) => Promise<void>;
 }
 
 export const useShoppingStore = create<ShoppingState>((set, get) => ({
@@ -41,9 +46,12 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
   error: null,
 
   fetchCategories: async () => {
+    const familyId = useAppStore.getState().family?.id;
+    if (!familyId) return;
+
     try {
-      const { data } = await api.get('/items');
-      set({ categories: data });
+      const { data } = await api.get(`/items?familyId=${familyId}`);
+      set({ categories: data || [] });
     } catch (err: any) {
       set({ error: err.message });
     }
@@ -56,19 +64,19 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
     set({ isLoading: true });
     try {
       const { data } = await api.get(`/lists/${familyId}`);
-      set({ shoppingList: data.SHOPPING || [], isLoading: false });
+      set({ shoppingList: data.shopping || [], isLoading: false });
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
     }
   },
 
-  addToShoppingList: async (itemTemplateId, priority, note, type = 'shopping') => {
+  addToShoppingList: async (templateId, priority, purchaseMemo = '', storeHint = '') => {
     const familyId = useAppStore.getState().family?.id;
     const userId = useAppStore.getState().user?.id;
-    if (!familyId) return;
+    if (!familyId || !userId) return;
 
     try {
-      await api.post('/items', { familyId, userId, itemTemplateId, priority, note, type });
+      await api.post('/shopping-items', { familyId, addedById: userId, templateId, priority, purchaseMemo, storeHint });
       await get().fetchShoppingList();
       useAppStore.getState().fetchActivityLogs();
     } catch (err: any) {
@@ -76,12 +84,13 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
     }
   },
 
-  createItemTemplate: async (name, categoryId, defaultDays) => {
+  createItemTemplate: async (name, categoryId, defaultExpiryDays, defaultStorageLocation, memo = '') => {
     const familyId = useAppStore.getState().family?.id;
-    if (!familyId) return null;
+    const userId = useAppStore.getState().user?.id;
+    if (!familyId || !userId) return null;
 
     try {
-      const { data } = await api.post('/item-templates', { name, categoryId, defaultDays, familyId });
+      const { data } = await api.post('/item-templates', { name, categoryId, defaultExpiryDays, defaultStorageLocation, memo, familyId, createdById: userId });
       await get().fetchCategories();
       return data;
     } catch (err: any) {
@@ -90,29 +99,24 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
     }
   },
 
-  toggleBoughtStatus: async (id, isBought) => {
-    const userId = useAppStore.getState().user?.id;
-    const status = isBought ? 'BOUGHT' : 'PENDING';
+  updateItemStatus: async (id, status) => {
     try {
-      await api.put(`/items/${id}`, { status, userId, type: 'shopping' });
+      await api.put(`/shopping-items/${id}/status`, { status });
       await get().fetchShoppingList();
     } catch (err: any) {
       set({ error: err.message });
     }
   },
 
-  purchaseItem: async (id, price, endDate) => {
+  moveToStock: async (id) => {
     const userId = useAppStore.getState().user?.id;
+    if (!userId) return;
+
     try {
-      // Send to fridge by marking as 'PURCHASED'
-      const payload: any = { status: 'PURCHASED', price, userId, type: 'shopping' };
-      if (endDate) {
-        payload.endDate = endDate;
-      }
-      await api.put(`/items/${id}`, payload);
+      await api.post(`/shopping-items/${id}/move`, { addedById: userId });
       await Promise.all([
         get().fetchShoppingList(),
-        useFridgeStore.getState().fetchFridgeItems(),
+        useFridgeStore.getState().fetchStockItems(),
         useAppStore.getState().fetchActivityLogs()
       ]);
     } catch (err: any) {
@@ -122,7 +126,7 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
 
   updateItemPriority: async (id, priority) => {
     try {
-      await api.put(`/items/${id}`, { priority, type: 'shopping' });
+      await api.put(`/shopping-items/${id}`, { priority });
       await get().fetchShoppingList();
     } catch (err: any) {
       set({ error: err.message });
@@ -131,10 +135,19 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
 
   deleteItem: async (id) => {
     try {
-      await api.delete(`/items/${id}`);
+      await api.delete(`/shopping-items/${id}`);
       await get().fetchShoppingList();
     } catch (err: any) {
       set({ error: err.message });
     }
   },
+
+  // Legacy mappings
+  toggleBoughtStatus: async (id, isBought) => {
+    return get().updateItemStatus(id, isBought ? 'checked' : 'pending');
+  },
+
+  purchaseItem: async (id, price, endDate) => {
+    return get().moveToStock(id);
+  }
 }));

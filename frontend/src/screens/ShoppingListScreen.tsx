@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, Alert, ScrollView, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppStore } from "../store/appStore";
-import { useShoppingStore, ItemTemplate, ShoppingItem } from "../store/shoppingStore";
+import { useShoppingStore, ShoppingItem } from "../store/shoppingStore";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
@@ -49,7 +49,7 @@ export default function ShoppingListScreen() {
    * チェック状態のトグル
    */
   const handleToggleCheck = async (item: ShoppingItem) => {
-    const isBought = item.status === 'BOUGHT';
+    const isBought = item.status === 'checked';
     await toggleBoughtStatus(item.id, !isBought);
   };
 
@@ -68,7 +68,7 @@ export default function ShoppingListScreen() {
    */
   const handleMoveToFridge = async () => {
     if (selectedItem) {
-      if (!selectedItem.itemTemplate.defaultDays || selectedItem.itemTemplate.defaultDays === 0) {
+      if (!selectedItem.template.defaultExpiryDays || selectedItem.template.defaultExpiryDays === 0) {
         setModalVisible(false);
         setDateModalVisible(true);
       } else {
@@ -119,7 +119,7 @@ export default function ShoppingListScreen() {
   };
 
   const handleMoveAllCheckedToPantry = async () => {
-    const checkedItems = shoppingList.filter(item => item.status === "BOUGHT");
+    const checkedItems = shoppingList.filter(item => item.status === "checked");
     if (checkedItems.length === 0) return;
     
     // Concurrently process all purchases
@@ -163,10 +163,10 @@ export default function ShoppingListScreen() {
 
         {/* List Section */}
         <View className="gap-y-4">
-          {shoppingList.filter((item) => item.status !== "PURCHASED").length > 0 ? (
+          {shoppingList.filter((item) => item.status !== "moved").length > 0 ? (
             <>
               {shoppingList
-                .filter((item) => item.status === "PENDING")
+                .filter((item) => item.status === "pending")
                 .map((item) => (
                   <ShoppingItemCard
                     key={item.id}
@@ -176,7 +176,7 @@ export default function ShoppingListScreen() {
                   />
                 ))}
 
-              {shoppingList.filter((item) => item.status === "BOUGHT").length > 0 && (
+              {shoppingList.filter((item) => item.status === "checked").length > 0 && (
                 <Animated.View
                   layout={LinearTransition.springify().damping(16).mass(0.6).stiffness(120)}
                   entering={FadeIn.duration(300)}
@@ -193,7 +193,7 @@ export default function ShoppingListScreen() {
                     </TouchableOpacity>
                   </View>
                   {shoppingList
-                    .filter((item) => item.status === "BOUGHT")
+                    .filter((item) => item.status === "checked")
                     .map((item) => (
                       <ShoppingItemCard
                         key={item.id}
