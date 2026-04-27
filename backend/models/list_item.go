@@ -15,11 +15,12 @@ type FridgeItem struct {
 	ItemTemplateID string       `gorm:"type:uuid" json:"itemTemplateId"` // 元となるアイテムテンプレートのID
 	ItemTemplate   ItemTemplate `json:"itemTemplate,omitempty"`          // 元となるアイテムテンプレートデータ
 
-	Status      string     `gorm:"default:'ACTIVE'" json:"status"` // ステータス ("ACTIVE", "CONSUMED")
-	StartedAt   *time.Time `json:"startedAt"`                      // 保管開始日時
-	EndDate     *time.Time `json:"endDate"`                        // 消費期限（または目標日時）
-	DefaultDays int        `json:"defaultDays"`                    // 消費期限の目安日数
+	Status      string     `gorm:"default:'ACTIVE'" json:"status"`   // ステータス ("ACTIVE", "CONSUMED")
+	StartedAt   *time.Time `json:"startedAt"`                        // 保管開始日時
+	EndDate     *time.Time `json:"endDate"`                          // 消費期限（または目標日時）
+	DefaultDays int        `json:"defaultDays"`                      // 消費期限の目安日数
 	Location    string     `gorm:"default:'FRIDGE'" json:"location"` // 保存先 ("FRIDGE", "PANTRY")
+	SortOrder   float64    `gorm:"default:0" json:"sortOrder"`       // 並び順
 }
 
 // BeforeCreate はGORMのフックで、レコード作成前にUUIDを設定し、
@@ -45,10 +46,11 @@ type ShoppingItem struct {
 	ItemTemplateID string       `gorm:"type:uuid" json:"itemTemplateId"` // 元となるアイテムテンプレートのID
 	ItemTemplate   ItemTemplate `json:"itemTemplate,omitempty"`          // 元となるアイテムテンプレートデータ
 
-	Priority string     `gorm:"default:'NORMAL'" json:"priority"` // 優先度 ("TODAY", "URGENT", "NORMAL", "LOW")
-	Status   string     `gorm:"default:'PENDING'" json:"status"`  // ステータス ("PENDING", "BOUGHT", "PURCHASED")
-	Note     *string    `json:"note"`                             // メモ書き
-	BoughtAt *time.Time `json:"boughtAt"`                         // 購入日時
+	Priority  string     `gorm:"default:'NORMAL'" json:"priority"` // 優先度 ("TODAY", "URGENT", "NORMAL", "LOW")
+	Status    string     `gorm:"default:'PENDING'" json:"status"`  // ステータス ("PENDING", "BOUGHT", "PURCHASED")
+	Note      *string    `json:"note"`                             // メモ書き
+	BoughtAt  *time.Time `json:"boughtAt"`                         // 購入日時
+	SortOrder float64    `gorm:"default:0" json:"sortOrder"`       // 並び順
 }
 
 // BeforeCreate はGORMのフックで、買い物アイテム作成前にUUIDを生成して設定します。

@@ -32,6 +32,8 @@ interface ShoppingState {
   updateItemPriority: (id: string, priority: string) => Promise<void>;
   /** 買い物アイテムを削除する */
   deleteItem: (id: string) => Promise<void>;
+  /** 買い物リストの並び順を一括更新する */
+  reorderShoppingList: (items: { id: string; sortOrder: number }[]) => Promise<void>;
 }
 
 export const useShoppingStore = create<ShoppingState>((set, get) => ({
@@ -135,6 +137,31 @@ export const useShoppingStore = create<ShoppingState>((set, get) => ({
       await get().fetchShoppingList();
     } catch (err: any) {
       set({ error: err.message });
+    }
+  },
+
+  reorderShoppingList: async (items) => {
+    // 楽観的UI更新
+    const currentList = get().shoppingList;
+    const itemOrderMap = new Map(items.map((i) => [i.id, i.sortOrder]));
+
+    const updatedList = [...currentList].map(item => {
+      if (itemOrderMap.has(item.id)) {
+        return { ...item, sortOrder: itemOrderMap.get(item.id) };
+      }
+      return item;
+    });
+
+    // 並び替えたリストでローカルステートを即時更新
+    updatedList.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    set({ shoppingList: updatedList });
+
+    try {
+      await api.put('/items/reorder', { type: 'shopping', items });
+    } catch (err: any) {
+      set({ error: err.message });
+      // ロールバック（再度取得）
+      await get().fetchShoppingList();
     }
   },
 }));

@@ -14,12 +14,14 @@ interface ShoppingItemCardProps {
   item: ShoppingItem;
   onLongPress: (item: ShoppingItem) => void;
   onToggleCheck: (item: ShoppingItem) => void;
+  drag?: () => void;
+  isActive?: boolean;
 }
 
 /**
  * 買い物リストの1アイテムを表示するコンポーネント
  */
-export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLongPress, onToggleCheck }) => {
+export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLongPress, onToggleCheck, drag, isActive }) => {
   let iconName: React.ComponentProps<typeof Icon>['name'] = "local-grocery-store";
   let iconColorClass = "text-primary text-2xl";
   let iconBgClass = "bg-primary-fixed";
@@ -88,11 +90,18 @@ export const ShoppingItemCard: React.FC<ShoppingItemCardProps> = ({ item, onLong
         </View>
 
         {/* 家族メンバーのアバター（プレースホルダー） */}
-        <View className="flex-row -space-x-3">
+        <View className="flex-row -space-x-3 mr-2">
           <View className="w-8 h-8 rounded-full border-2 border-surface-container-lowest overflow-hidden bg-surface-container">
             <Image source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAWXxIn9vkOJkM6PINi0yWB5YnNUFN2iUe8ENrb1prTy3CywJnqQgcSyUGjHjGzRKF5FVKQzfrFCxc1LflbtW1H-7Kjz4EyBhEG2Ir5-lzht5fkn07JXndNTHy26vznKGojtw6tQeFBobHuHP3F1c34TDx8ikUeiv0UNeKkxhi38LvSIZJnNAm67ooMtjERCHnxuSF-pUZ6hFXtDrWBbz0-UDBDlJY5EVX6A5Okq8Cx7z4ei6GutfcWV5NTCRCRvrasLGGu_o0ZPcTw" }} className="w-full h-full" />
           </View>
         </View>
+
+        {/* ドラッグハンドル */}
+        {drag && (
+          <TouchableOpacity onPressIn={drag} className="p-2 active:opacity-50">
+            <Icon name="drag-handle" size={24} className="text-outline" />
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
     </Animated.View>
   );

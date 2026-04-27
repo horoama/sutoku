@@ -51,6 +51,7 @@ export interface ShoppingItem {
   priority: 'TODAY' | 'URGENT' | 'NORMAL' | 'LOW';
   note: string | null;
   status: 'PENDING' | 'BOUGHT' | 'PURCHASED';
+  sortOrder?: number;
   itemTemplate: ItemTemplate;
 }
 
@@ -63,6 +64,7 @@ export interface FridgeItem {
   endDate: string | null;
   defaultDays: number;
   location?: 'FRIDGE' | 'PANTRY';
+  sortOrder?: number;
   itemTemplate: ItemTemplate;
 }
 

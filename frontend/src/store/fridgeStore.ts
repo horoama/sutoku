@@ -25,6 +25,8 @@ interface FridgeState {
   updateFridgeItem: (id: string, updates: Partial<FridgeItem>) => Promise<void>;
   /** アイテムテンプレートを更新する */
   updateItemTemplate: (templateId: string, updates: Partial<ItemTemplate>) => Promise<ItemTemplate>;
+  /** 冷蔵庫リストの並び順を一括更新する */
+  reorderFridgeList: (items: { id: string; sortOrder: number }[]) => Promise<void>;
 }
 
 export const useFridgeStore = create<FridgeState>((set, get) => ({
@@ -99,6 +101,31 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
     } catch (err: any) {
       set({ error: err.message });
       throw err;
+    }
+  },
+
+  reorderFridgeList: async (items) => {
+    // 楽観的UI更新
+    const currentList = get().fridgeItems;
+    const itemOrderMap = new Map(items.map((i) => [i.id, i.sortOrder]));
+
+    const updatedList = [...currentList].map(item => {
+      if (itemOrderMap.has(item.id)) {
+        return { ...item, sortOrder: itemOrderMap.get(item.id) };
+      }
+      return item;
+    });
+
+    // 並び替えたリストでローカルステートを即時更新
+    updatedList.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    set({ fridgeItems: updatedList });
+
+    try {
+      await api.put('/items/reorder', { type: 'fridge', items });
+    } catch (err: any) {
+      set({ error: err.message });
+      // ロールバック
+      await get().fetchFridgeItems();
     }
   }
 }));

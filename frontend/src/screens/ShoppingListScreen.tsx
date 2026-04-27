@@ -6,6 +6,7 @@ import { useShoppingStore, ItemTemplate, ShoppingItem } from "../store/shoppingS
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
+import DraggableFlatList, { NestableScrollContainer, NestableDraggableFlatList, RenderItemParams } from 'react-native-draggable-flatlist';
 
 import { ShoppingItemCard } from "../components/ShoppingItemCard";
 import { ActionModal } from "../components/modals/ActionModal";
@@ -18,7 +19,7 @@ export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { user, family, initializeUser } = useAppStore();
-  const { categories, shoppingList, fetchCategories, fetchShoppingList, purchaseItem, toggleBoughtStatus, updateItemPriority, deleteItem } = useShoppingStore();
+  const { categories, shoppingList, fetchCategories, fetchShoppingList, purchaseItem, toggleBoughtStatus, updateItemPriority, deleteItem, reorderShoppingList } = useShoppingStore();
 
   const [selectedItem, setSelectedItem] = useState<ShoppingItem | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -154,7 +155,7 @@ export default function ShoppingListScreen() {
         </View>
       </View>
 
-      <ScrollView className="px-6 pt-8" contentContainerStyle={{ paddingBottom: 100 }}>
+      <NestableScrollContainer className="px-6 pt-8" contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Editorial Header Section */}
         <View className="mb-12 ml-4">
           <Text className="font-headline font-extrabold text-primary leading-tight tracking-tighter text-4xl mb-2">Shopping List</Text>
@@ -165,16 +166,26 @@ export default function ShoppingListScreen() {
         <View className="gap-y-4">
           {shoppingList.filter((item) => item.status !== "PURCHASED").length > 0 ? (
             <>
-              {shoppingList
-                .filter((item) => item.status === "PENDING")
-                .map((item) => (
+              <NestableDraggableFlatList
+                data={shoppingList.filter((item) => item.status === "PENDING")}
+                keyExtractor={(item) => item.id}
+                onDragEnd={({ data }) => {
+                  const itemsToUpdate = data.map((item, index) => ({
+                    id: item.id,
+                    sortOrder: index,
+                  }));
+                  reorderShoppingList(itemsToUpdate);
+                }}
+                renderItem={({ item, drag, isActive }: RenderItemParams<ShoppingItem>) => (
                   <ShoppingItemCard
-                    key={item.id}
                     item={item}
                     onLongPress={handleLongPress}
                     onToggleCheck={handleToggleCheck}
+                    drag={drag}
+                    isActive={isActive}
                   />
-                ))}
+                )}
+              />
 
               {shoppingList.filter((item) => item.status === "BOUGHT").length > 0 && (
                 <Animated.View
@@ -192,16 +203,26 @@ export default function ShoppingListScreen() {
                       <Text className="text-primary text-[10px] font-bold uppercase tracking-widest">全て送る</Text>
                     </TouchableOpacity>
                   </View>
-                  {shoppingList
-                    .filter((item) => item.status === "BOUGHT")
-                    .map((item) => (
+                  <NestableDraggableFlatList
+                    data={shoppingList.filter((item) => item.status === "BOUGHT")}
+                    keyExtractor={(item) => item.id}
+                    onDragEnd={({ data }) => {
+                      const itemsToUpdate = data.map((item, index) => ({
+                        id: item.id,
+                        sortOrder: index,
+                      }));
+                      reorderShoppingList(itemsToUpdate);
+                    }}
+                    renderItem={({ item, drag, isActive }: RenderItemParams<ShoppingItem>) => (
                       <ShoppingItemCard
-                        key={item.id}
                         item={item}
                         onLongPress={handleLongPress}
                         onToggleCheck={handleToggleCheck}
+                        drag={drag}
+                        isActive={isActive}
                       />
-                    ))}
+                    )}
+                  />
                 </Animated.View>
               )}
             </>
@@ -209,7 +230,7 @@ export default function ShoppingListScreen() {
             <Text className="text-center text-outline mt-10 font-body">買い物リストは空です</Text>
           )}
         </View>
-      </ScrollView>
+      </NestableScrollContainer>
 
       {/* Contextual FAB */}
       <TouchableOpacity
